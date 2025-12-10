@@ -1,0 +1,23 @@
+name = "${name}"
+account_id = "${account_id}"
+main = "${main}"
+compatibility_date = "${compatibility_date}"
+compatibility_flags = ["nodejs_compat"]
+assets = { binding = "${assets_binding}", directory = "${assets_directory}" }
+
+[observability]
+enabled = true
+head_sampling_rate = 1
+
+[[d1_databases]]
+binding = "${d1_binding}"
+database_name = "${d1_database_name}"
+database_id = "${d1_database_id}"
+
+[[r2_buckets]]
+binding = "${r2_binding}"
+bucket_name = "${r2_bucket_name}"
+
+[[kv_namespaces]]
+binding = "${kv_binding}"
+id = "${kv_namespace_id}"

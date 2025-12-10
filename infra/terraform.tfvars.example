@@ -1,0 +1,10 @@
+# Required
+cloudflare_api_token = "replace-with-api-token"
+
+# Optional overrides (defaults match wrangler.toml)
+# cloudflare_account_id = "d8ee18029fb3e06794971d45b9c4a67d"
+# d1_name              = "template-database"
+# r2_bucket_name       = "template-bucket"
+# kv_namespace_title   = "kv"
+# wrangler_output_path  = "../wrangler.generated.toml"
+# wrangler_template_path = "${path.module}/wrangler.tftpl"

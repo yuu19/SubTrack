@@ -1,0 +1,105 @@
+import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
+import { z } from 'zod';
+
+export const registerSchema = z
+	.object({
+		email: z.email(),
+		name: z.string().min(3).max(20),
+		password: z.string().min(8).max(100),
+		confirmPassword: z.string().min(8).max(100)
+	})
+	.refine((data) => data.password === data.confirmPassword, {
+		message: 'Passwords do not match',
+		path: ['confirmPassword']
+	});
+export type RegisterSchema = typeof registerSchema;
+
+export const loginSchema = z.object({
+	email: z.email(),
+	password: z.string().min(8).max(100)
+});
+
+export type LoginSchema = typeof loginSchema;
+
+export const updateEmailSchema = z.object({
+	email: z.email()
+});
+export const requestPasswordResetSchema = z.object({
+	email: z.email()
+});
+
+const isValidPhoneNumber = (phone: string): boolean => {
+	const regex = /^([0|+[0-9]{1,5})?([7-9][0-9]{9})$/;
+	return regex.test(phone);
+};
+export const addressSchema = z.object({
+	name: z
+		.string()
+		.min(3, { message: 'Name must be at least 3 characters long' })
+		.max(100, { message: 'Name cannot exceed 100 characters' }),
+
+	address: z
+		.string()
+		.min(1, { message: 'Address is required' })
+		.max(200, { message: 'Address cannot exceed 200 characters' }),
+
+	state: z.string().max(100, { message: 'State name cannot exceed 100 characters' }),
+
+	country: z.string().min(1, { message: 'Country is required' }),
+
+	isDefaultShipping: z.boolean().default(false),
+	isDefaultBilling: z.boolean().default(false)
+});
+
+export const resetPasswordSchema = z
+	.object({
+		password: z.string().min(8),
+		confirmPassword: z.string().min(8)
+	})
+	.refine((data) => data.password === data.confirmPassword, {
+		message: 'Passwords do not match',
+		path: ['confirmPassword']
+	});
+export const updatePasswordSchema = z
+	.object({
+		currentPassword: z.string().min(8),
+		newPassword: z.string().min(8),
+		confirmNewPassword: z.string().min(8)
+	})
+	.refine((data) => data.newPassword === data.confirmNewPassword, {
+		message: 'Passwords do not match',
+		path: ['confirmNewPassword']
+	});
+export const updateNumberSchema = z.object({
+	number: z.string().refine(isValidPhoneNumber, {
+		message: 'Please enter a valid phone number'
+	})
+});
+export const updateNameSchema = z.object({
+	name: z.string().min(3)
+});
+
+export const guestInformationSchema = z.object({
+	email: z.email(),
+	firstName: z.string().min(1),
+	lastName: z.string().min(1)
+});
+
+// Schema for inserting a user - can be used to validate API requests
+export const categorySchema = z.object({
+	name: z.string().min(1),
+	description: z.string(),
+	subCategories: z.string().array().min(1)
+});
+export const productSchema = z.object({
+	name: z.string().min(1),
+	description: z.string().min(3),
+	category: z.number().positive(),
+	subCategory: z.string().min(1),
+	price: z.number().positive(),
+	stock: z.number().nonnegative(),
+	images: z
+		.instanceof(File, { message: 'Please upload a file.' })
+		.refine((f) => f.size < 100_000, 'Max 100 kB upload size.')
+		.array()
+});
