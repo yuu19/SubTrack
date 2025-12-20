@@ -9,7 +9,7 @@
 	import { toast } from 'svelte-sonner';
 	import { registerModalState } from '$lib/states/modalState.svelte';
 	import { authClient } from '$lib/auth-client';
-import { m } from '$lib/paraglide/messages.js';
+	import { m } from '$lib/paraglide/messages.js';
 	const form = superForm(defaults(zod4(registerSchema)), {
 		SPA: true,
 		validators: zod4(registerSchema),

@@ -1,51 +1,45 @@
-// const modalState = (modalState: boolean) => {
-// 	 $state = $state({ value: modalState });
-// 	function setTrue() {
-// 		state.value = true;
-// 	}
-// 	function setFalse() {
-// 		state.value = false;
-// 	}
-
-// 	function toggleModal() {
-// 		state.value = !state.value;
-// 	}
-// 	return {
-// 		setTrue,
-// 		setFalse,
-// 		toggleModal,
-// 		get() {
-
-// 			return state
-// 		}
-// 	};
-// };
+type ModalInitializer = boolean | (() => boolean);
 
 class ModalState {
-	public value = $state<boolean>();
-	constructor(modalState: boolean) {
-		this.value = modalState;
-	}
-	setTrue() {
-		this.value = true;
-	}
-	setFalse() {
-		this.value = false;
+	public value = $state(false);
+
+	constructor(initial: ModalInitializer = false) {
+		this.value = typeof initial === 'function' ? initial() : initial;
 	}
 
-	toggleModal() {
+	// Setter helpers keep `this` bound when used as callbacks
+	set = (next: boolean) => {
+		this.value = next;
+	};
+
+	setTrue = () => {
+		this.value = true;
+	};
+
+	setFalse = () => {
+		this.value = false;
+	};
+
+	toggle = () => {
 		this.value = !this.value;
-	}
+	};
+
+	toggleModal = () => {
+		this.toggle();
+	};
 }
 
-export const searchModalState = new ModalState(false);
-export const registerModalState = new ModalState(false);
-export const confirmEmailModalState = new ModalState(false);
-export const loginModalState = new ModalState(false);
-export const requestPasswordResetModalState = new ModalState(false);
-export const productModalState = new ModalState(false);
-export const cartSheetState = new ModalState(false);
-export const addressModalState = new ModalState(false);
-export const editAddressModalState = new ModalState(false);
-export const enterDeliveryModalState = new ModalState(false);
-export const mobileAuthState = new ModalState(false);
+const createModalState = (initial: ModalInitializer = false) => new ModalState(initial);
+
+export const searchModalState = createModalState(false);
+export const registerModalState = createModalState(false);
+export const confirmEmailModalState = createModalState(false);
+export const loginModalState = createModalState(false);
+export const requestPasswordResetModalState = createModalState(false);
+export const productModalState = createModalState(false);
+export const cartSheetState = createModalState(false);
+export const addressModalState = createModalState(false);
+export const editAddressModalState = createModalState(false);
+export const enterDeliveryModalState = createModalState(false);
+export const mobileAuthState = createModalState(false);
+export const addSubscriptionModalState = createModalState(false);

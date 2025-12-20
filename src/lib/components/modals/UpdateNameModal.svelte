@@ -11,7 +11,7 @@
 	import { toast } from 'svelte-sonner';
 	import { page } from '$app/state';
 	import { authClient } from '$lib/auth-client';
-import { m } from '$lib/paraglide/messages.js';
+	import { m } from '$lib/paraglide/messages.js';
 
 	let modalState = $state(false);
 	const form = superForm(defaults(page.data.user, zod4(updateNameSchema)), {
@@ -52,7 +52,9 @@ import { m } from '$lib/paraglide/messages.js';
 	<Dialog.Trigger class={buttonVariants({ variant: 'link' })}>{page.data.user.name}</Dialog.Trigger>
 	<Dialog.Content class="w-full p-3 sm:p-5">
 		<Dialog.Header class="mt-10">
-			<Dialog.Title class="font-display text-lg sm:text-xl md:text-3xl  ">{m.update_name_title()}</Dialog.Title>
+			<Dialog.Title class="font-display text-lg sm:text-xl md:text-3xl  "
+				>{m.update_name_title()}</Dialog.Title
+			>
 		</Dialog.Header>
 
 		<form class="mt-5 flex flex-col gap-5" method="post" use:enhance>

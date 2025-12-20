@@ -11,7 +11,7 @@
 	import { goto } from '$app/navigation';
 	import { loginModalState, requestPasswordResetModalState } from '$lib/states/modalState.svelte';
 	import { authClient } from '$lib/auth-client';
-import { m } from '$lib/paraglide/messages.js';
+	import { m } from '$lib/paraglide/messages.js';
 
 	const form = superForm(defaults(zod4(loginSchema)), {
 		SPA: true,
@@ -26,10 +26,10 @@ import { m } from '$lib/paraglide/messages.js';
 					},
 					{
 						onSuccess(ctx) {
-						toast.success(m.login_success());
+							toast.success(m.login_success());
 							loginModalState.setFalse();
-							if (page.url.pathname === '/password-reset')
-								goto('/', {
+							// if (page.url.pathname === '/password-reset')
+								goto('/subscriptions', {
 									invalidateAll: true
 								});
 						}

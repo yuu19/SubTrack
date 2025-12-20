@@ -87,6 +87,7 @@ npx wrangler d1 create template-database
 Miniflare 内部で、この binding (`DB`) に対する SQLite ファイルを作って動かしています。
 
 補足: `pnpm run dev`で開発用サーバを起動したタイミングで`.wrangler`以下のファイルが生成される。
+さらに補足: npx wrangler dev必要だったた
 
 ### 2-4. ローカル D1 の永続化
 

@@ -103,3 +103,27 @@ export const productSchema = z.object({
 		.refine((f) => f.size < 100_000, 'Max 100 kB upload size.')
 		.array()
 });
+
+export const subscriptionSchema = z.object({
+	select: z
+		.string({ error: 'Please select an option.' })
+		.min(1, { error: 'Please select an option.' }),
+	number: z
+		.number({ error: 'Please enter a valid number.' })
+		.int({ error: 'Please enter a whole number.' })
+		.min(1, { error: 'Value must be at least 1.' })
+		.max(100000, { error: 'Value must not exceed 100000.' }),
+	datepicker: z
+		.string({ error: 'Please select a date.' })
+		.refine((v) => v, { error: 'Please select a date.' }),
+	text: z
+		.string({ error: 'Please enter the service name.' })
+		.min(1, { error: 'Please enter the service name.' }),
+	tagsinput: z.string().array().min(1, { error: 'Please add at least one tag.' }),
+	notifyDaysBefore: z
+		.number({ error: 'Please select notify days.' })
+		.int()
+		.min(0)
+		.max(365)
+		.default(1)
+});

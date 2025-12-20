@@ -16,7 +16,18 @@ export default defineConfig({
 			// Prefer persisted user choice, fall back to URL, then base locale
 			strategy: ['localStorage', 'cookie', 'url', 'baseLocale'],
 			// Cloudflare/edge friendly: avoid AsyncLocalStorage
-			disableAsyncLocalStorage: true
+			disableAsyncLocalStorage: true,
+			// urlPatterns部分は不要になった場合は削除する
+			// Drop explicit port in generated localized URLs to avoid Codespaces forwarding issues
+			urlPatterns: [
+				{
+					pattern: ':protocol://:domain(.*)/:path(.*)?',
+					localized: [
+						['ja', ':protocol://:domain(.*)/ja/:path(.*)?'],
+						['en', ':protocol://:domain(.*)/:path(.*)?']
+					]
+				}
+			]
 		})
 	],
 	test: {

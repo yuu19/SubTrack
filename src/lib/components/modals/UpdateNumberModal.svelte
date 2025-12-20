@@ -9,7 +9,7 @@
 	import { zod4 } from 'sveltekit-superforms/adapters';
 	import { updateNumberSchema } from '$lib/formSchema';
 	import { toast } from 'svelte-sonner';
-import { m } from '$lib/paraglide/messages.js';
+	import { m } from '$lib/paraglide/messages.js';
 	let { user } = $derived(page.data);
 
 	let modalState = $state(false);
@@ -28,7 +28,8 @@ import { m } from '$lib/paraglide/messages.js';
 	</Dialog.Trigger>
 	<Dialog.Content class="w-full   p-3 sm:p-5">
 		<Dialog.Header class="mt-10">
-			<Dialog.Title class="font-display text-lg sm:text-xl md:text-3xl  ">{m.update_number_title()}</Dialog.Title
+			<Dialog.Title class="font-display text-lg sm:text-xl md:text-3xl  "
+				>{m.update_number_title()}</Dialog.Title
 			>
 		</Dialog.Header>
 		<form method="POST" use:enhance>

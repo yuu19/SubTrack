@@ -12,7 +12,7 @@
 		requestPasswordResetModalState
 	} from '$lib/states/modalState.svelte';
 	import { authClient } from '$lib/auth-client';
-import { m } from '$lib/paraglide/messages.js';
+	import { m } from '$lib/paraglide/messages.js';
 	const form = superForm(defaults(zod4(requestPasswordResetSchema)), {
 		SPA: true,
 		validators: zod4(requestPasswordResetSchema),

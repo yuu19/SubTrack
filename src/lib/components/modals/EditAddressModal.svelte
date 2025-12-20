@@ -11,7 +11,7 @@
 	import { page } from '$app/state';
 	import { invalidateAll } from '$app/navigation';
 	import { editAddressModalState } from '$lib/states/modalState.svelte';
-import { m } from '$lib/paraglide/messages.js';
+	import { m } from '$lib/paraglide/messages.js';
 	let countries = page.data.countries;
 
 	let form = superForm(page.state.form);
@@ -36,7 +36,9 @@ import { m } from '$lib/paraglide/messages.js';
 			<Form.Field {form} name="name">
 				<Form.Control>
 					{#snippet children({ props })}
-						<Form.Label>{m.add_address_label()} <span class="font-bold text-red-500">*</span></Form.Label>
+						<Form.Label
+							>{m.add_address_label()} <span class="font-bold text-red-500">*</span></Form.Label
+						>
 
 						<Input {...props} bind:value={$formData.name} />
 					{/snippet}
@@ -46,7 +48,9 @@ import { m } from '$lib/paraglide/messages.js';
 			<Form.Field {form} name="address">
 				<Form.Control>
 					{#snippet children({ props })}
-						<Form.Label>{m.add_address_address()} <span class="font-bold text-red-500">*</span></Form.Label>
+						<Form.Label
+							>{m.add_address_address()} <span class="font-bold text-red-500">*</span></Form.Label
+						>
 						<Input {...props} bind:value={$formData.address} />
 					{/snippet}
 				</Form.Control>
@@ -65,7 +69,9 @@ import { m } from '$lib/paraglide/messages.js';
 				<Form.Field {form} name="postalCode" class="col-span-1">
 					<Form.Control>
 						{#snippet children({ props })}
-							<Form.Label>{m.edit_address_postal()} <span class="font-bold text-red-500">*</span></Form.Label>
+							<Form.Label
+								>{m.edit_address_postal()} <span class="font-bold text-red-500">*</span></Form.Label
+							>
 							<Input {...props} bind:value={$formData.postalCode} />
 						{/snippet}
 					</Form.Control>
@@ -74,7 +80,9 @@ import { m } from '$lib/paraglide/messages.js';
 				<Form.Field {form} class="col-span-3" name="city">
 					<Form.Control>
 						{#snippet children({ props })}
-							<Form.Label>{m.edit_address_city()} <span class="font-bold text-red-500">*</span></Form.Label>
+							<Form.Label
+								>{m.edit_address_city()} <span class="font-bold text-red-500">*</span></Form.Label
+							>
 							<Input {...props} bind:value={$formData.city} />
 						{/snippet}
 					</Form.Control>
@@ -93,7 +101,9 @@ import { m } from '$lib/paraglide/messages.js';
 			<Form.Field {form} name="country">
 				<Form.Control>
 					{#snippet children({ props })}
-						<Form.Label>{m.add_address_country()} <span class="font-bold text-red-500">*</span></Form.Label>
+						<Form.Label
+							>{m.add_address_country()} <span class="font-bold text-red-500">*</span></Form.Label
+						>
 						<select
 							{...props}
 							class="border-input bg-background ring-offset-background focus-visible:ring-primary h-10 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
@@ -126,7 +136,7 @@ import { m } from '$lib/paraglide/messages.js';
 					{#snippet children({ props })}
 						<Checkbox {...props} bind:checked={$formData.isDefaultShipping} />
 						<div class="space-y-1 leading-none">
-						<Form.Label>{m.add_address_default_shipping()}</Form.Label>
+							<Form.Label>{m.add_address_default_shipping()}</Form.Label>
 						</div>
 						<input name={props.name} value={$formData.isDefaultShipping} hidden />
 					{/snippet}
@@ -141,7 +151,7 @@ import { m } from '$lib/paraglide/messages.js';
 					{#snippet children({ props })}
 						<Checkbox {...props} bind:checked={$formData.isDefaultBilling} />
 						<div class="space-y-1 leading-none">
-						<Form.Label>{m.add_address_default_billing()}</Form.Label>
+							<Form.Label>{m.add_address_default_billing()}</Form.Label>
 						</div>
 						<input name={props.name} value={$formData.isDefaultBilling} hidden />
 					{/snippet}

@@ -9,7 +9,7 @@
 	import { defaults, superForm } from 'sveltekit-superforms/client';
 	import { toast } from 'svelte-sonner';
 	import { zod4 } from 'sveltekit-superforms/adapters';
-import { m } from '$lib/paraglide/messages.js';
+	import { m } from '$lib/paraglide/messages.js';
 	let modalState = $state(false);
 	const form = superForm(defaults(zod4(updateEmailSchema)), {
 		SPA: true,
@@ -43,7 +43,9 @@ import { m } from '$lib/paraglide/messages.js';
 </script>
 
 <Dialog.Root bind:open={modalState}>
-	<Dialog.Trigger class={buttonVariants({ variant: 'link' })}>{m.update_email_trigger()}</Dialog.Trigger>
+	<Dialog.Trigger class={buttonVariants({ variant: 'link' })}
+		>{m.update_email_trigger()}</Dialog.Trigger
+	>
 	<Dialog.Content class="w-full p-3 sm:p-5">
 		<Dialog.Header class="mt-10">
 			<Dialog.Title class="font-display text-3xl ">{m.update_email_title()}</Dialog.Title>

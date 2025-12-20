@@ -56,9 +56,8 @@
 	)}
 >
 	<a href="/" class="text-2xl capitalize">
-		<span class="text-primary font-bold">Demo</span>
-		Svelte-Cloudflare</a
-	>
+		<span class="text-primary font-bold">SubTrack</span>
+	</a>
 
 	<div class="flex items-center gap-2 md:gap-6">
 		{#if page.data.user}

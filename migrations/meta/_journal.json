@@ -1,13 +1,34 @@
 {
-	"version": "7",
-	"dialect": "sqlite",
-	"entries": [
-		{
-			"idx": 0,
-			"version": "6",
-			"when": 1764934824536,
-			"tag": "0000_wise_zaladane",
-			"breakpoints": true
-		}
-	]
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1764934824536,
+      "tag": "0000_wise_zaladane",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1765901140032,
+      "tag": "0001_useful_killmonger",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1765977982716,
+      "tag": "0002_steep_midnight",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1766229982736,
+      "tag": "0003_melodic_thunderball",
+      "breakpoints": true
+    }
+  ]
 }

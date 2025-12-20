@@ -1,0 +1,1 @@
+ALTER TABLE `subscription` ADD `notify_days_before` integer DEFAULT 1 NOT NULL;

@@ -10,7 +10,7 @@ import Database from 'better-sqlite3';
 import { drizzle as drizzleSqlite } from 'drizzle-orm/better-sqlite3';
 import * as schema from '$lib/server/db/schema';
 
-const protectedUserRoutes = ['/me', '/checkout'];
+const protectedUserRoutes = ['/me', '/checkout', '/subscriptions'];
 
 const handleAuth: Handle = async ({ event, resolve }) => {
 	const { locals, url, request } = event;
@@ -21,6 +21,7 @@ const handleAuth: Handle = async ({ event, resolve }) => {
 	if (url.pathname.startsWith('/admin') && session?.user.role !== 'admin') {
 		redirect(303, '/');
 	}
+	
 
 	const isProtectedUserRoute = protectedUserRoutes.some((route) => url.pathname.startsWith(route));
 
@@ -81,10 +82,10 @@ const handleParaglide: Handle = ({ event, resolve }) =>
 	});
 
 export const handle = sequence(
+	handleParaglide,
 	sentryHandleConfigured ?? noopHandle,
 	sentryHandle(),
 	preloadFonts,
 	handleDb,
-	handleAuth,
-	handleParaglide
+	handleAuth
 );

@@ -7,7 +7,7 @@
 	} from '$lib/states/modalState.svelte';
 
 	import Button from '../ui/button/button.svelte';
-import { m } from '$lib/paraglide/messages.js';
+	import { m } from '$lib/paraglide/messages.js';
 </script>
 
 <Dialog.Root bind:open={mobileAuthState.value}>
