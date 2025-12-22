@@ -51,5 +51,10 @@
 	"settings_name": "Name",
 	"settings_password": "Password",
 	"settings_logout_label": "Log out from store",
-	"settings_logout_button": "Logout"
+	"settings_logout_button": "Logout",
+	"settings_theme": "Theme",
+	"settings_theme_title": "Select theme",
+	"settings_theme_label": "Select theme color",
+	"settings_theme_selected_label": "Selected: ",
+	"settings_theme_default": "Default"
 }

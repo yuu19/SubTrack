@@ -6,6 +6,7 @@ import { sequence } from '@sveltejs/kit/hooks';
 import { svelteKitHandler } from 'better-auth/svelte-kit';
 import { createDb } from '$lib/server/db';
 import { createAuth } from '$lib/auth';
+import { THEMES } from '$lib/constant';
 import Database from 'better-sqlite3';
 import { drizzle as drizzleSqlite } from 'drizzle-orm/better-sqlite3';
 import * as schema from '$lib/server/db/schema';
@@ -21,7 +22,6 @@ const handleAuth: Handle = async ({ event, resolve }) => {
 	if (url.pathname.startsWith('/admin') && session?.user.role !== 'admin') {
 		redirect(303, '/');
 	}
-	
 
 	const isProtectedUserRoute = protectedUserRoutes.some((route) => url.pathname.startsWith(route));
 
@@ -81,11 +81,47 @@ const handleParaglide: Handle = ({ event, resolve }) =>
 		});
 	});
 
+const handleTheme: Handle = async ({ event, resolve }) => {
+	const accept = event.request.headers.get('accept') ?? '';
+	if (event.request.method !== 'GET' || !accept.includes('text/html')) {
+		return resolve(event);
+	}
+
+	let activeTheme = 'default';
+	try {
+		const auth = createAuth(event.locals.db);
+		const session = await auth.api.getSession({
+			headers: event.request.headers
+		});
+		const userId = session?.user.id;
+		if (userId) {
+			const record = await event.locals.db.query.user.findFirst({
+				columns: {
+					activeTheme: true
+				},
+				where: (t, { eq }) => eq(t.id, userId)
+			});
+			if (record?.activeTheme && THEMES.includes(record.activeTheme)) {
+				activeTheme = record.activeTheme;
+			}
+		}
+	} catch {
+		// Keep default theme if anything fails
+	}
+
+	const themeClass = `theme-${activeTheme}`;
+	return resolve(event, {
+		transformPageChunk: ({ html }) =>
+			html.replace('%theme%', activeTheme).replace('%themeClass%', themeClass)
+	});
+};
+
 export const handle = sequence(
 	handleParaglide,
 	sentryHandleConfigured ?? noopHandle,
 	sentryHandle(),
 	preloadFonts,
 	handleDb,
-	handleAuth
+	handleAuth,
+	handleTheme
 );

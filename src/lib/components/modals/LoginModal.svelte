@@ -29,9 +29,9 @@
 							toast.success(m.login_success());
 							loginModalState.setFalse();
 							// if (page.url.pathname === '/password-reset')
-								goto('/subscriptions', {
-									invalidateAll: true
-								});
+							goto('/subscriptions', {
+								invalidateAll: true
+							});
 						}
 					}
 				);

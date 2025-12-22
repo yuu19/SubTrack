@@ -15,6 +15,9 @@ const cycleToMonths = (cycle: string) => {
 
 export const load: PageServerLoad = async ({ locals, request }) => {
 	const form = await superValidate(zod4(subscriptionSchema));
+	if (!form.data.select) {
+		form.data.select = 'monthly';
+	}
 
 	const db = locals.db;
 	if (!db) {

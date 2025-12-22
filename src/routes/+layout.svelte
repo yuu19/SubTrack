@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Toaster } from 'svelte-sonner';
-	import './layout.css';
+	import '../app.css';
 	import NProgress from 'nprogress';
 
 	import { afterNavigate, beforeNavigate } from '$app/navigation';

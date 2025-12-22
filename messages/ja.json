@@ -121,5 +121,10 @@
 	"edit_address_city": "市区町村",
 	"edit_address_phone": "電話",
 	"edit_address_select_country": "国を選択",
-	"edit_address_submit": "住所を更新"
+	"edit_address_submit": "住所を更新",
+	"settings_theme": "テーマ",
+	"settings_theme_title": "テーマを選択",
+	"settings_theme_label": "テーマカラーを選択",
+	"settings_theme_selected_label": "選択中: ",
+	"settings_theme_default": "デフォルト"
 }

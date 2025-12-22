@@ -1,4 +1,4 @@
-import { ROLE, STATUS } from '../../constant';
+import { ROLE, STATUS, THEMES } from '../../constant';
 import { relations, sql } from 'drizzle-orm';
 import { sqliteTable, text, integer, primaryKey, check, index } from 'drizzle-orm/sqlite-core';
 import { nanoid } from 'nanoid';
@@ -34,6 +34,7 @@ export const user = sqliteTable('user', {
 		mode: 'timestamp'
 	}).notNull(),
 	role: text('role', { enum: ROLE }).default('user'),
+	activeTheme: text('activeTheme', { enum: THEMES }).notNull().default('default'),
 	banned: integer('banned', {
 		mode: 'boolean'
 	}),

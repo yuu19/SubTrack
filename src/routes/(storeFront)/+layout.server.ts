@@ -1,4 +1,5 @@
 import { createAuth } from '$lib/auth.js';
+import { userConfigSchema } from '$lib/states/userConfig.svelte';
 
 export const load = async ({ request, locals }) => {
 	const { db } = locals;
@@ -32,7 +33,13 @@ export const load = async ({ request, locals }) => {
 			}
 		}
 	});
+	const parsedConfig = userConfigSchema.safeParse({
+		activeTheme: user?.activeTheme ?? 'default'
+	});
+	const userConfig = parsedConfig.success ? parsedConfig.data : userConfigSchema.parse({});
+
 	return {
-		user
+		user,
+		userConfig
 	};
 };

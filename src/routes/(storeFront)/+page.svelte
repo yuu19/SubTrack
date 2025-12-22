@@ -5,7 +5,6 @@
 	import Autoplay from 'embla-carousel-autoplay';
 	import SearchBar from '$lib/components/SearchBar.svelte';
 	import { m } from '$lib/paraglide/messages.js';
-
 	const carouselPics = ['/hero/hero-1.jpg', '/hero/hero-2.jpg', '/hero/hero-3.jpg'];
 </script>
 
