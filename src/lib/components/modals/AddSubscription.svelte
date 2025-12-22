@@ -93,14 +93,13 @@
 						class="border-input focus-visible:ring-ring focus-visible:border-ring bg-background flex h-10 w-full rounded-md border px-3 text-sm shadow-sm transition"
 						bind:value={$formData.notifyDaysBefore}
 					>
-						<option value={0}>当日</option>
 						<option value={1}>1日前</option>
 						<option value={3}>3日前</option>
 						<option value={7}>7日前</option>
 					</select>
 				{/snippet}
 			</Control>
-			<Description class="text-muted-foreground text-sm">デフォルトは1日前です。</Description>
+			<Description class="text-muted-foreground text-sm">プレミアムプランでは通知日を設定できます</Description>
 			<FieldErrors class="text-destructive text-sm" />
 		</Field>
 
