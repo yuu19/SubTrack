@@ -2,15 +2,20 @@ import type { Actions, PageServerLoad } from './$types';
 import { fail, superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
 import { subscriptionSchema } from '$lib/formSchema';
-import { subscriptionTable } from '$lib/server/db/schema';
-import { desc, eq } from 'drizzle-orm';
+import { pushSubscriptionTable, subscriptionTable } from '$lib/server/db/schema';
+import { and, desc, eq } from 'drizzle-orm';
 import { createAuth } from '$lib/auth';
-import dayjs from 'dayjs';
+import { computeNextBilling } from '$lib/server/subscriptions';
 
-const cycleToMonths = (cycle: string) => {
-	if (cycle === 'yearly') return 12;
-	if (cycle === 'quarterly') return 3;
-	return 1;
+const fetchSubscriptions = async (
+	db: NonNullable<App.Locals['db']>,
+	userId: string
+) => {
+	return db
+		.select()
+		.from(subscriptionTable)
+		.where(eq(subscriptionTable.userId, userId))
+		.orderBy(desc(subscriptionTable.createdAt));
 };
 
 export const load: PageServerLoad = async ({ locals, request }) => {
@@ -19,16 +24,16 @@ export const load: PageServerLoad = async ({ locals, request }) => {
 		form.data.select = 'monthly';
 	}
 
+	const vapidPublicKey = process.env.VAPID_PUBLIC_KEY ?? '';
+
 	const db = locals.db;
 	if (!db) {
-		return { form, subscriptions: [] };
+		return { form, subscriptions: [], vapidPublicKey, hasPushSubscription: false };
 	}
 
 	const auth = createAuth(db);
 	const session = await auth.api.getSession({ headers: request.headers });
 	const userId = session?.user.id;
-
-	const today = dayjs().startOf('day');
 
 	const subscriptions =
 		userId !== undefined
@@ -39,19 +44,37 @@ export const load: PageServerLoad = async ({ locals, request }) => {
 					.orderBy(desc(subscriptionTable.createdAt))
 			: [];
 
-	// refresh days_until_next_billing each load
+	// refresh nextBillingAt/daysUntilNextBilling each load
 	for (const sub of subscriptions) {
-		const days = dayjs(sub.nextBillingAt).startOf('day').diff(today, 'day');
-		if (days !== sub.daysUntilNextBilling) {
+		const computed = computeNextBilling(sub.firstPaymentDate, sub.cycle);
+		if (
+			computed.nextBillingAt !== sub.nextBillingAt ||
+			computed.daysUntilNextBilling !== sub.daysUntilNextBilling
+		) {
 			await db
 				.update(subscriptionTable)
-				.set({ daysUntilNextBilling: days })
+				.set({
+					nextBillingAt: computed.nextBillingAt,
+					daysUntilNextBilling: computed.daysUntilNextBilling
+				})
 				.where(eq(subscriptionTable.id, sub.id));
-			sub.daysUntilNextBilling = days;
+			sub.nextBillingAt = computed.nextBillingAt;
+			sub.daysUntilNextBilling = computed.daysUntilNextBilling;
 		}
 	}
 
-	return { form, subscriptions };
+	const hasPushSubscription =
+		userId !== undefined
+			? (
+					await db
+						.select({ id: pushSubscriptionTable.id })
+						.from(pushSubscriptionTable)
+						.where(eq(pushSubscriptionTable.userId, userId))
+						.limit(1)
+				).length > 0
+			: false;
+
+	return { form, subscriptions, vapidPublicKey, hasPushSubscription };
 };
 
 export const actions: Actions = {
@@ -75,16 +98,10 @@ export const actions: Actions = {
 		}
 
 		try {
-			const today = dayjs().startOf('day');
-			const first = dayjs(form.data.datepicker);
-			const monthsToAdd = cycleToMonths(form.data.select);
-
-			let next = first;
-			while (next.isBefore(today, 'day')) {
-				next = next.add(monthsToAdd, 'month');
-			}
-
-			const daysUntil = next.diff(today, 'day');
+			const { nextBillingAt, daysUntilNextBilling } = computeNextBilling(
+				form.data.datepicker,
+				form.data.select
+			);
 
 			await db.insert(subscriptionTable).values({
 				userId,
@@ -92,24 +109,104 @@ export const actions: Actions = {
 				cycle: form.data.select,
 				amount: form.data.number,
 				firstPaymentDate: form.data.datepicker,
-				nextBillingAt: next.toISOString(),
-				daysUntilNextBilling: daysUntil,
+				nextBillingAt,
+				daysUntilNextBilling,
 				notifyDaysBefore: form.data.notifyDaysBefore ?? 1,
 				tags: form.data.tagsinput
 			});
 
 			form.message = { type: 'success', text: 'Subscription saved.' };
 
-			const subscriptions = await db
-				.select()
-				.from(subscriptionTable)
-				.where(eq(subscriptionTable.userId, userId))
-				.orderBy(desc(subscriptionTable.createdAt));
+			const subscriptions = await fetchSubscriptions(db, userId);
 
 			return { form, subscriptions };
 		} catch (error) {
 			console.error('Failed to save subscription', error);
 			return fail(500, { form, error: 'Failed to save subscription' });
+		}
+	},
+	update: async ({ request, locals }) => {
+		const formData = await request.formData();
+		const form = await superValidate(formData, zod4(subscriptionSchema));
+		if (!form.valid) {
+			return fail(400, { form });
+		}
+
+		const id = Number(formData.get('id'));
+		if (!Number.isFinite(id)) {
+			return fail(400, { form, error: 'Invalid subscription id' });
+		}
+
+		const db = locals.db;
+		if (!db) {
+			return fail(500, { form, error: 'Database not available' });
+		}
+
+		const auth = createAuth(db);
+		const session = await auth.api.getSession({ headers: request.headers });
+		const userId = session?.user.id;
+
+		if (!userId) {
+			return fail(401, { form, error: 'ログインしてください。' });
+		}
+
+		try {
+			const { nextBillingAt, daysUntilNextBilling } = computeNextBilling(
+				form.data.datepicker,
+				form.data.select
+			);
+
+			await db
+				.update(subscriptionTable)
+				.set({
+					serviceName: form.data.text,
+					cycle: form.data.select,
+					amount: form.data.number,
+					firstPaymentDate: form.data.datepicker,
+					nextBillingAt,
+					daysUntilNextBilling,
+					notifyDaysBefore: form.data.notifyDaysBefore ?? 1,
+					tags: form.data.tagsinput
+				})
+				.where(and(eq(subscriptionTable.id, id), eq(subscriptionTable.userId, userId)));
+
+			const subscriptions = await fetchSubscriptions(db, userId);
+			return { form, subscriptions };
+		} catch (error) {
+			console.error('Failed to update subscription', error);
+			return fail(500, { form, error: 'Failed to update subscription' });
+		}
+	},
+	delete: async ({ request, locals }) => {
+		const formData = await request.formData();
+		const id = Number(formData.get('id'));
+		if (!Number.isFinite(id)) {
+			return fail(400, { error: 'Invalid subscription id' });
+		}
+
+		const db = locals.db;
+		if (!db) {
+			return fail(500, { error: 'Database not available' });
+		}
+
+		const auth = createAuth(db);
+		const session = await auth.api.getSession({ headers: request.headers });
+		const userId = session?.user.id;
+
+		if (!userId) {
+			return fail(401, { error: 'ログインしてください。' });
+		}
+
+		try {
+			await db
+				.delete(subscriptionTable)
+				.where(and(eq(subscriptionTable.id, id), eq(subscriptionTable.userId, userId)));
+
+			const subscriptions = await fetchSubscriptions(db, userId);
+			return { subscriptions };
+		} catch (error) {
+			console.error('Failed to delete subscription', error);
+			return fail(500, { error: 'Failed to delete subscription' });
 		}
 	}
 };

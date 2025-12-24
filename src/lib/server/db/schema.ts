@@ -287,6 +287,27 @@ export const subscriptionTable = sqliteTable('subscription', {
 	nextBillingAt: text('next_billing_at').notNull(),
 	daysUntilNextBilling: integer('days_until_next_billing').notNull(),
 	notifyDaysBefore: integer('notify_days_before').notNull().default(1),
+	lastNotifiedAt: integer('last_notified_at', { mode: 'timestamp' }),
 	tags: array<string>('tags').notNull(),
 	...timestamps
 });
+
+export const pushSubscriptionTable = sqliteTable(
+	'push_subscription',
+	{
+		id: integer('id').primaryKey(),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id, { onDelete: 'cascade' }),
+		endpoint: text('endpoint').notNull(),
+		p256dh: text('p256dh').notNull(),
+		auth: text('auth').notNull(),
+		expirationTime: integer('expiration_time'),
+		userAgent: text('user_agent'),
+		...timestamps
+	},
+	(t) => ({
+		userIdx: index('push_subscription_user_idx').on(t.userId),
+		endpointIdx: index('push_subscription_endpoint_idx').on(t.endpoint)
+	})
+);

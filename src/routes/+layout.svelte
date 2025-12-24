@@ -18,6 +18,12 @@
 	});
 </script>
 
+<svelte:head>
+	<link rel="manifest" href="/manifest.webmanifest" />
+	<link rel="apple-touch-icon" href="/favicon.png" />
+	<meta name="theme-color" content="#ffffff" />
+</svelte:head>
+
 <Toaster closeButton richColors />
 
 {@render children()}

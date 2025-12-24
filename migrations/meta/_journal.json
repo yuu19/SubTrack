@@ -36,6 +36,13 @@
       "when": 1766332356175,
       "tag": "0004_chief_christian_walker",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1766575289332,
+      "tag": "0005_late_living_tribunal",
+      "breakpoints": true
     }
   ]
 }

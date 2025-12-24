@@ -1,15 +1,12 @@
 <script lang="ts">
-	import { fieldProxy, superForm } from 'sveltekit-superforms';
+	import { defaults, fieldProxy, superForm } from 'sveltekit-superforms';
 	import { zod4Client } from 'sveltekit-superforms/adapters';
 	import { subscriptionSchema } from '$lib/formSchema';
-	import { untrack } from 'svelte';
 	import { fromAction } from 'svelte/attachments';
 	import { Field, Control, Label, Description, FieldErrors } from 'formsnap';
 	import Button from '$lib/components/ui/button/button.svelte';
 	import Input from '$lib/components/ui/input/input.svelte';
 	import TagsInput from '$lib/components/ui/tags-input/tags-input.svelte';
-	import { payloadFromFormData } from '$lib/offline/subscriptions';
-	import { addSubscriptionModalState } from '$lib/states/modalState.svelte';
 
 	const cycleOptions = [
 		{ value: 'monthly', label: '毎月' },
@@ -17,14 +14,29 @@
 		{ value: 'yearly', label: '毎年' }
 	];
 
-	let { data, onOfflineSubmit, onServerResult } = $props();
+	let { subscription, onServerResult, onClose } = $props();
 
-	const form = superForm(
-		untrack(() => data.form),
-		{
-			validators: zod4Client(subscriptionSchema)
+const initialData = subscription
+	? {
+			text: subscription.serviceName ?? '',
+			select: subscription.cycle ?? 'monthly',
+			number: subscription.amount ?? 0,
+			datepicker: subscription.firstPaymentDate ?? '',
+			notifyDaysBefore: subscription.notifyDaysBefore ?? 1,
+			tagsinput: Array.isArray(subscription.tags) ? subscription.tags : []
 		}
-	);
+	: {
+			text: '',
+			select: 'monthly',
+			number: 0,
+			datepicker: '',
+			notifyDaysBefore: 1,
+			tagsinput: []
+		};
+
+const form = superForm(defaults(initialData, zod4Client(subscriptionSchema)), {
+	validators: zod4Client(subscriptionSchema)
+});
 
 	const { enhance } = form;
 
@@ -36,31 +48,27 @@
 	const tagsField = fieldProxy(form, 'tagsinput');
 
 	const enhanceEvents = {
-		onSubmit: async (input) => {
-			if (typeof navigator === 'undefined' || navigator.onLine) return;
-			input.cancel();
-			const payload = payloadFromFormData(input.formData);
-			if (onOfflineSubmit) {
-				await onOfflineSubmit(payload);
-				form.reset();
-				addSubscriptionModalState.setFalse();
-			}
-		},
 		onResult: async (event) => {
 			const result = event?.result as { data?: { subscriptions?: unknown } } | undefined;
 			const subscriptions = result?.data?.subscriptions;
 			if (subscriptions && Array.isArray(subscriptions)) {
 				await onServerResult?.(subscriptions);
-				addSubscriptionModalState.setFalse();
+				onClose?.();
 			}
 		}
 	};
 
 </script>
 
-<div class="space-y-6 p-6">
-	<h2 class="text-2xl font-bold">サブスクを追加</h2>
-	<form method="post" class="space-y-4" {@attach fromAction(enhance, () => enhanceEvents)}>
+{#if subscription}
+	<form
+		method="post"
+		action="?/update"
+		class="space-y-4"
+		{@attach fromAction(enhance, () => enhanceEvents)}
+	>
+		<input type="hidden" name="id" value={subscription.id} />
+
 		<Field {form} name="text">
 			<Control>
 				{#snippet children({ props })}
@@ -121,9 +129,6 @@
 						placeholder="1000"
 						bind:value={$numberField}
 					/>
-					<Description class="text-muted-foreground text-xs">
-						税込の支払額を入力してください。
-					</Description>
 				{/snippet}
 			</Control>
 			<FieldErrors class="text-destructive text-sm" />
@@ -152,6 +157,8 @@
 			<FieldErrors class="text-destructive text-sm" />
 		</Field>
 
-		<Button size="sm" type="submit" class="w-full">保存する</Button>
+		<Button size="sm" type="submit" class="w-full">更新する</Button>
 	</form>
-</div>
+{:else}
+	<div class="text-muted-foreground text-sm">編集するサブスクを選択してください。</div>
+{/if}

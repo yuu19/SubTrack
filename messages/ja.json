@@ -2,7 +2,8 @@
 	"$schema": "https://inlang.com/schema/inlang-message-format",
 	"hello_world": "Hello, {name} from ja!",
 	"nav_my_account": "マイアカウント",
-	"nav_profile": "プロフィール",
+	"nav_profile": 
+	"プロフィール",
 	"nav_order_history": "注文履歴",
 	"nav_addresses": "住所",
 	"nav_settings": "設定",
