@@ -1,16 +1,16 @@
 export const load = async ({ locals: { db }, params }) => {
 	const { code } = params;
-	const order = await db.query.orderTable.findFirst({
+	const subscription = await db.query.subscriptionTable.findFirst({
 		where: (t, { eq }) => eq(t.code, code),
 		with: {
-			orderProducts: {
+			subscriptionPlans: {
 				with: {
-					product: true
+					plan: true
 				}
 			}
 		}
 	});
 	return {
-		order
+		subscription
 	};
 };

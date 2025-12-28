@@ -1,43 +1,43 @@
 import type { DrizzleD1Database } from 'drizzle-orm/d1';
 import * as schema from './db/schema';
 
-export async function getProducts({
+export async function getPlans({
 	db,
 	term,
-	categoryId,
-	subCategories
+	planGroupId,
+	billingIntervals
 }: {
 	db: DrizzleD1Database<typeof schema>;
 	term: string;
-	categoryId?: number;
-	subCategories?: string[];
+	planGroupId?: number;
+	billingIntervals?: string[];
 }) {
 	// Normalize and defensively bound the search term to avoid pathological LIKE patterns
 	const normalizedTerm = (term ?? '').trim().slice(0, 100);
 	const likeTerm = normalizedTerm ? `%${normalizedTerm}%` : undefined;
 
 	try {
-		const products = await db.query.productTable.findMany({
+		const plans = await db.query.planTable.findMany({
 			with: {
-				category: true
+				planGroup: true
 			},
-			orderBy: (product, { desc }) => desc(product.createdAt),
+			orderBy: (plan, { desc }) => desc(plan.createdAt),
 			where: (t, { like, or, and, eq, inArray }) =>
 				and(
 					likeTerm ? or(like(t.name, likeTerm), like(t.description, likeTerm)) : undefined,
-					categoryId ? eq(t.categoryId, categoryId) : undefined,
-					subCategories && subCategories.length > 0
-						? inArray(t.subCategory, subCategories)
+					planGroupId ? eq(t.planGroupId, planGroupId) : undefined,
+					billingIntervals && billingIntervals.length > 0
+						? inArray(t.billingInterval, billingIntervals)
 						: undefined
 				)
 		});
-		const categories = Array.from(
-			new Map(products.map((item) => [item.category.id, item.category])).values()
+		const planGroups = Array.from(
+			new Map(plans.map((item) => [item.planGroup.id, item.planGroup])).values()
 		);
-		return { products, categories };
+		return { plans, planGroups };
 	} catch (error) {
-		console.error('getProducts failed', { term: normalizedTerm, error });
-		return { products: [], categories: [] };
+		console.error('getPlans failed', { term: normalizedTerm, error });
+		return { plans: [], planGroups: [] };
 	}
 }
 

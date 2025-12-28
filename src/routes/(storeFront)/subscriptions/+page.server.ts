@@ -2,7 +2,7 @@ import type { Actions, PageServerLoad } from './$types';
 import { fail, superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
 import { subscriptionSchema } from '$lib/formSchema';
-import { pushSubscriptionTable, subscriptionTable } from '$lib/server/db/schema';
+import { pushSubscriptionTable, trackedSubscriptionTable } from '$lib/server/db/schema';
 import { and, desc, eq } from 'drizzle-orm';
 import { createAuth } from '$lib/auth';
 import { computeNextBilling } from '$lib/server/subscriptions';
@@ -13,9 +13,9 @@ const fetchSubscriptions = async (
 ) => {
 	return db
 		.select()
-		.from(subscriptionTable)
-		.where(eq(subscriptionTable.userId, userId))
-		.orderBy(desc(subscriptionTable.createdAt));
+		.from(trackedSubscriptionTable)
+		.where(eq(trackedSubscriptionTable.userId, userId))
+		.orderBy(desc(trackedSubscriptionTable.createdAt));
 };
 
 export const load: PageServerLoad = async ({ locals, request }) => {
@@ -39,9 +39,9 @@ export const load: PageServerLoad = async ({ locals, request }) => {
 		userId !== undefined
 			? await db
 					.select()
-					.from(subscriptionTable)
-					.where(eq(subscriptionTable.userId, userId))
-					.orderBy(desc(subscriptionTable.createdAt))
+					.from(trackedSubscriptionTable)
+					.where(eq(trackedSubscriptionTable.userId, userId))
+					.orderBy(desc(trackedSubscriptionTable.createdAt))
 			: [];
 
 	// refresh nextBillingAt/daysUntilNextBilling each load
@@ -52,12 +52,12 @@ export const load: PageServerLoad = async ({ locals, request }) => {
 			computed.daysUntilNextBilling !== sub.daysUntilNextBilling
 		) {
 			await db
-				.update(subscriptionTable)
+				.update(trackedSubscriptionTable)
 				.set({
 					nextBillingAt: computed.nextBillingAt,
 					daysUntilNextBilling: computed.daysUntilNextBilling
 				})
-				.where(eq(subscriptionTable.id, sub.id));
+				.where(eq(trackedSubscriptionTable.id, sub.id));
 			sub.nextBillingAt = computed.nextBillingAt;
 			sub.daysUntilNextBilling = computed.daysUntilNextBilling;
 		}
@@ -78,7 +78,7 @@ export const load: PageServerLoad = async ({ locals, request }) => {
 };
 
 export const actions: Actions = {
-	default: async ({ request, locals }) => {
+	create: async ({ request, locals }) => {
 		const form = await superValidate(request, zod4(subscriptionSchema));
 		if (!form.valid) {
 			return fail(400, { form });
@@ -103,7 +103,7 @@ export const actions: Actions = {
 				form.data.select
 			);
 
-			await db.insert(subscriptionTable).values({
+			await db.insert(trackedSubscriptionTable).values({
 				userId,
 				serviceName: form.data.text,
 				cycle: form.data.select,
@@ -157,7 +157,7 @@ export const actions: Actions = {
 			);
 
 			await db
-				.update(subscriptionTable)
+				.update(trackedSubscriptionTable)
 				.set({
 					serviceName: form.data.text,
 					cycle: form.data.select,
@@ -168,7 +168,7 @@ export const actions: Actions = {
 					notifyDaysBefore: form.data.notifyDaysBefore ?? 1,
 					tags: form.data.tagsinput
 				})
-				.where(and(eq(subscriptionTable.id, id), eq(subscriptionTable.userId, userId)));
+				.where(and(eq(trackedSubscriptionTable.id, id), eq(trackedSubscriptionTable.userId, userId)));
 
 			const subscriptions = await fetchSubscriptions(db, userId);
 			return { form, subscriptions };
@@ -199,8 +199,8 @@ export const actions: Actions = {
 
 		try {
 			await db
-				.delete(subscriptionTable)
-				.where(and(eq(subscriptionTable.id, id), eq(subscriptionTable.userId, userId)));
+				.delete(trackedSubscriptionTable)
+				.where(and(eq(trackedSubscriptionTable.id, id), eq(trackedSubscriptionTable.userId, userId)));
 
 			const subscriptions = await fetchSubscriptions(db, userId);
 			return { subscriptions };

@@ -28,9 +28,9 @@
 	import { fromAction } from 'svelte/attachments';
 	import { Bell, CalendarDays, Repeat } from 'lucide-svelte';
 	import { onMount } from 'svelte';
-	import type { subscriptionTable } from '$lib/server/db/schema';
+	import type { trackedSubscriptionTable } from '$lib/server/db/schema';
 
-	type Subscription = typeof subscriptionTable.$inferSelect;
+	type Subscription = typeof trackedSubscriptionTable.$inferSelect;
 	type SubscriptionView = Omit<Subscription, 'id'> & {
 		id: number | string;
 		_pending?: boolean;
@@ -120,7 +120,7 @@
 		isSyncing = true;
 		syncError = null;
 		try {
-			const result = await syncPendingSubscriptions(`${base}/subscriptions`);
+			const result = await syncPendingSubscriptions(`${base}/subscriptions?/create`);
 			subscriptions = result.subscriptions as SubscriptionView[];
 			if (result.failed > 0) {
 				syncError = '同期に失敗しました。オンライン状態を確認してください。';

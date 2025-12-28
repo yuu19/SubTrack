@@ -15,7 +15,7 @@
 </script>
 
 <div class="grid gap-4 py-4">
-	{#each cartItems as { product: { name, description, images, id, stock, price }, quantity, productId, cartId } (id)}
+	{#each cartItems as { plan: { name, description, images, id, seatLimit, price }, quantity, planId, cartId } (id)}
 		<form
 			method="post"
 			use:enhance={() => {
@@ -62,7 +62,7 @@
 				</div>
 				<div class="flex items-center gap-2">
 					<Button
-						formaction={`/?/decrementInCart&productId=${productId}&cartId=${cartId}`}
+						formaction={`/?/decrementInCart&planId=${planId}&cartId=${cartId}`}
 						type="submit"
 						size="icon"><Minus /></Button
 					>
@@ -72,7 +72,7 @@
 						{quantity}
 					</button>
 					<Button
-						formaction={`/?/incrementInCart&productId=${productId}&cartId=${cartId}&stock=${stock}`}
+						formaction={`/?/incrementInCart&planId=${planId}&cartId=${cartId}&seatLimit=${seatLimit}`}
 						type="submit"
 						size="icon"><Plus /></Button
 					>
@@ -82,7 +82,7 @@
 				variant="outline"
 				size="sm"
 				class="border-destructive bg-destructive/5 text-destructive hover:bg-destructive/5 hover:text-destructive w-fit"
-				formaction={`/?/deleteFromCart&productId=${productId}&cartId=${cartId}`}
+				formaction={`/?/deleteFromCart&planId=${planId}&cartId=${cartId}`}
 				type="submit"
 			>
 				<Trash class="mr-3 size-4 " />

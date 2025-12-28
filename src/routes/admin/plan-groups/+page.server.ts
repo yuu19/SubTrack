@@ -1,19 +1,19 @@
 import { createAuth } from '$lib/auth.js';
-import { categoryTable, productTable } from '$lib/server/db/schema.js';
+import { planGroupTable } from '$lib/server/db/schema.js';
 import { fail, redirect } from '@sveltejs/kit';
 import { eq } from 'drizzle-orm';
 
 export const load = async ({ locals }) => {
 	const { db } = locals;
 
-	const categories = await db.query.categoryTable.findMany();
+	const planGroups = await db.query.planGroupTable.findMany();
 	return {
-		categories
+		planGroups
 	};
 };
 
 export const actions = {
-	deleteCategory: async ({ request, locals }) => {
+	deletePlanGroup: async ({ request, locals }) => {
 		const { db } = locals;
 		const auth = createAuth(db);
 		const formData = await request.formData();
@@ -27,9 +27,9 @@ export const actions = {
 			return fail(400, { message: 'Invalid id' });
 		}
 
-		await db.delete(categoryTable).where(eq(categoryTable.id, id));
+		await db.delete(planGroupTable).where(eq(planGroupTable.id, id));
 		return {
-			message: 'deleted category with all the related products'
+			message: 'Deleted plan group and related plans'
 		};
 	}
 };

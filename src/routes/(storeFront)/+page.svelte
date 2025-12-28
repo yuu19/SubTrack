@@ -37,11 +37,4 @@
 		<SearchBar />
 	</Carousel.Root>
 
-	<section class="mt-20">
-		<h2 class="text-2xl font-bold md:text-4xl">{m.offer_title()}</h2>
-		<p class="text-muted-foreground mt-2 text-sm md:mt-3 md:text-base">
-			{m.offer_body()}
-		</p>
-		<Button href="/search" class="my-4 md:my-7">{m.cta_explore_products()}</Button>
-	</section>
 </div>

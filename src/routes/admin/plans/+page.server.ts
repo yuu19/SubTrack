@@ -1,33 +1,33 @@
-import { productTable } from '$lib/server/db/schema.js';
+import { planTable } from '$lib/server/db/schema.js';
 import { fail } from '@sveltejs/kit';
 import { eq } from 'drizzle-orm';
 
 export const load = async ({ locals: { db }, url }) => {
 	const term = url.searchParams.get('term') || '';
-	const products = await db.query.productTable.findMany({
+	const plans = await db.query.planTable.findMany({
 		with: {
-			category: true
+			planGroup: true
 		},
-		orderBy: (product, { desc }) => desc(product.createdAt),
+		orderBy: (plan, { desc }) => desc(plan.createdAt),
 		where: (t, { like, or }) => or(like(t.name, `%${term}%`), like(t.description, `%${term}%`))
 	});
 
 	return {
-		products
+		plans
 	};
 };
 
 export const actions = {
-	deleteProduct: async ({ locals: { db, bucket }, request }) => {
+	deletePlan: async ({ locals: { db, bucket }, request }) => {
 		const data = await request.formData();
 
 		const id = data.get('id') as unknown as number;
 		try {
 			// Your deletion logic here
-			const res = await db.delete(productTable).where(eq(productTable.id, id)).returning().get();
+			const res = await db.delete(planTable).where(eq(planTable.id, id)).returning().get();
 			if (!res) {
 				return fail(400, {
-					message: 'Failed to delete product. Please try again.'
+					message: 'Failed to delete plan. Please try again.'
 				});
 			}
 			const keys = res.images.map((image) => {
@@ -36,12 +36,12 @@ export const actions = {
 			await bucket.delete(keys);
 			// Return a success message
 			return {
-				message: 'Product successfully deleted!'
+				message: 'Plan successfully deleted!'
 			};
 		} catch {
 			// Return an error message
 			return fail(400, {
-				message: 'Failed to delete product. Please try again.'
+				message: 'Failed to delete plan. Please try again.'
 			});
 		}
 	}

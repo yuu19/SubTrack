@@ -37,11 +37,7 @@
 		},
 		{
 			title: () => m.nav_order_history(),
-			href: '/me/order-history'
-		},
-		{
-			title: () => m.nav_addresses(),
-			href: '/me/addresses'
+			href: '/me/subscriptions'
 		},
 		{
 			title: () => m.nav_settings(),
@@ -118,8 +114,8 @@
 				<Menu class="size-6 " />
 			</button>
 		{/if}
-
-		<LanguageSwitcher />
+<!-- todo 将来的に多言語対応を整備する -->
+		<!-- <LanguageSwitcher /> -->
 
 		{#if page.data?.user?.cart?.cartItems}
 			<button onclick={() => cartSheetState.setTrue()} class="relative inline-block h-fit w-fit">

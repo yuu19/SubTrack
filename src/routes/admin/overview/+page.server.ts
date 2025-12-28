@@ -4,12 +4,12 @@ export const load = async ({ locals: { db } }) => {
 	const sixtyDaysAgo = new Date(currentDate.getTime() - 60 * 24 * 60 * 60 * 1000);
 
 	const batch = await db.batch([
-		// Recent orders
-		db.query.orderTable.findMany({
+		// Recent subscriptions
+		db.query.subscriptionTable.findMany({
 			with: {
-				orderProducts: {
+				subscriptionPlans: {
 					with: {
-						product: true
+						plan: true
 					}
 				},
 				user: true
@@ -26,22 +26,23 @@ export const load = async ({ locals: { db } }) => {
 			where: (t, { and, gt, lt }) =>
 				and(gt(t.createdAt, sixtyDaysAgo), lt(t.createdAt, thirtyDaysAgo))
 		}),
-		// Orders from last 30 days
-		db.query.orderTable.findMany({
+		// Subscriptions from last 30 days
+		db.query.subscriptionTable.findMany({
 			where: (t, { gt }) => gt(t.createdAt, thirtyDaysAgo)
 		}),
-		// Orders from previous 30 days
-		db.query.orderTable.findMany({
+		// Subscriptions from previous 30 days
+		db.query.subscriptionTable.findMany({
 			where: (t, { and, gt, lt }) =>
 				and(gt(t.createdAt, sixtyDaysAgo), lt(t.createdAt, thirtyDaysAgo))
 		})
-		// Top selling product
+		// Top selling plan
 	]);
 
-	const [recentOrders, thisMonthUsers, lastMonthUsers, thisMonthOrders, lastMonthOrders] = batch;
+	const [recentSubscriptions, thisMonthUsers, lastMonthUsers, thisMonthSubscriptions, lastMonthSubscriptions] =
+		batch;
 
-	const thisMonthRevenue = thisMonthOrders.reduce((total, item) => total + item.amount, 0);
-	const lastMonthRevenue = lastMonthOrders.reduce((total, item) => total + item.amount, 0);
+	const thisMonthRevenue = thisMonthSubscriptions.reduce((total, item) => total + item.amount, 0);
+	const lastMonthRevenue = lastMonthSubscriptions.reduce((total, item) => total + item.amount, 0);
 
 	const userGrowthPercentage =
 		lastMonthUsers.length === 0
@@ -52,7 +53,7 @@ export const load = async ({ locals: { db } }) => {
 		lastMonthRevenue === 0 ? 100 : ((thisMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100;
 
 	return {
-		order: recentOrders,
+		subscriptions: recentSubscriptions,
 		totalRevenue: thisMonthRevenue,
 		newCustomers: thisMonthUsers.length,
 		userGrowth: userGrowthPercentage.toFixed(1),

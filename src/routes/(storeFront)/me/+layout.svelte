@@ -11,11 +11,7 @@
 		},
 
 		{
-			link: 'addresses',
-			txt: () => m.nav_addresses()
-		},
-		{
-			link: 'order-history',
+			link: 'subscriptions',
 			txt: () => m.nav_order_history()
 		},
 

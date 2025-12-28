@@ -86,18 +86,18 @@ export const guestInformationSchema = z.object({
 });
 
 // Schema for inserting a user - can be used to validate API requests
-export const categorySchema = z.object({
+export const planGroupSchema = z.object({
 	name: z.string().min(1),
 	description: z.string(),
-	subCategories: z.string().array().min(1)
+	billingIntervals: z.string().array().min(1)
 });
-export const productSchema = z.object({
+export const planSchema = z.object({
 	name: z.string().min(1),
 	description: z.string().min(3),
-	category: z.number().positive(),
-	subCategory: z.string().min(1),
+	planGroupId: z.number().positive(),
+	billingInterval: z.string().min(1),
 	price: z.number().positive(),
-	stock: z.number().nonnegative(),
+	seatLimit: z.number().nonnegative(),
 	images: z
 		.instanceof(File, { message: 'Please upload a file.' })
 		.refine((f) => f.size < 100_000, 'Max 100 kB upload size.')

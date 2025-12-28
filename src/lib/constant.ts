@@ -1,4 +1,4 @@
-export const STATUS = ['shipped', 'processing', 'delivered'] as const;
+export const SUBSCRIPTION_STATUS = ['trialing', 'active', 'canceled'] as const;
 export const ROLE = ['admin', 'user'] as const;
 export const SHIPPING_FEE = 5 as const;
 

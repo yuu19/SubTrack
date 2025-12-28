@@ -1,28 +1,18 @@
 import { SECRET_STRIPE_KEY } from '$env/static/private';
-import { createAuth } from '$lib/auth.js';
 import { SHIPPING_FEE } from '$lib/constant.js';
 import { redirect } from '@sveltejs/kit';
 import Stripe from 'stripe';
 
 const stripe = new Stripe(SECRET_STRIPE_KEY);
-export const load = async ({ parent, locals: { db }, request }) => {
-	const auth = createAuth(db);
-	const session = await auth.api.getSession({
-		headers: request.headers
-	});
-
+export const load = async ({ parent }) => {
 	const { user } = await parent();
-	const DefaultAddress = user?.addresses.find((i) => i.isDefaultShipping === true);
 	if (!user || !user.cart) {
 		redirect(303, '/');
-	}
-	if (!DefaultAddress) {
-		redirect(303, '/checkout');
 	}
 
 	const totalAmount =
 		user.cart.cartItems.reduce(
-			(total, item) => total + item.quantity * item.product.price * 100,
+			(total, item) => total + item.quantity * item.plan.price * 100,
 			0
 		) +
 		SHIPPING_FEE * 100;

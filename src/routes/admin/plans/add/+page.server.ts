@@ -1,7 +1,7 @@
 import { dev } from '$app/environment';
 import { createAuth } from '$lib/auth.js';
-import { productSchema } from '$lib/formSchema.js';
-import { productTable } from '$lib/server/db/schema.js';
+import { planSchema } from '$lib/formSchema.js';
+import { planTable } from '$lib/server/db/schema.js';
 import { redirect } from '@sveltejs/kit';
 import { nanoid } from 'nanoid';
 import { fail, superValidate } from 'sveltekit-superforms';
@@ -26,10 +26,10 @@ const uploadFiles = async (files: File[], bucket: R2Bucket) => {
 };
 export const load = async ({ locals }) => {
 	const { db } = locals;
-	const categories = await db.query.categoryTable.findMany();
+	const planGroups = await db.query.planGroupTable.findMany();
 
-	const form = await superValidate(zod4(productSchema));
-	return { form, categories };
+	const form = await superValidate(zod4(planSchema));
+	return { form, planGroups };
 };
 
 export const actions = {
@@ -42,24 +42,24 @@ export const actions = {
 		if (session === null || session?.user.role !== 'admin') {
 			redirect(308, '/');
 		}
-		const form = await superValidate(request, zod4(productSchema));
+		const form = await superValidate(request, zod4(planSchema));
 		if (!form.valid) {
 			return fail(400, { form });
 		}
-		const { category, description, images, name, price, stock, subCategory } = form.data;
+		const { planGroupId, description, images, name, price, seatLimit, billingInterval } = form.data;
 		// Upload files
 		const uploadResults = await uploadFiles(images, bucket);
 
 		const slug = name.toLowerCase().replaceAll(' ', '-') + '-' + nanoid(5);
 		try {
-			await db.insert(productTable).values({
-				categoryId: category,
+			await db.insert(planTable).values({
+				planGroupId,
 				description,
 				images: uploadResults,
 				name,
 				price,
-				stock,
-				subCategory,
+				seatLimit,
+				billingInterval,
 				slug,
 				adminId: session?.user.id || ''
 			});
@@ -67,6 +67,6 @@ export const actions = {
 			console.log('🚀 ~ default: ~ e:', e);
 		}
 
-		redirect(303, '/admin/products');
+		redirect(303, '/admin/plans');
 	}
 };

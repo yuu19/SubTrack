@@ -9,11 +9,11 @@
 	let { data } = $props();
 	// Dummy data
 
-	let orders = $derived(data.user?.orders ?? []);
+	let subscriptions = $derived(data.user?.subscriptions ?? []);
 </script>
 
-{#if orders?.length > 0}
-	{#each orders ?? [] as { createdAt, amount, code, status, orderProducts } (code)}
+{#if subscriptions?.length > 0}
+	{#each subscriptions ?? [] as { createdAt, amount, code, status, subscriptionPlans } (code)}
 		<Collapsible.Root class=" mb-2">
 			<div class="bg-muted flex items-center justify-between rounded-md p-5">
 				<div class="flex flex-wrap items-center justify-between gap-3 md:gap-10">
@@ -43,10 +43,9 @@
 							class={cn(
 								'inline-flex items-center justify-center rounded-full border px-2 py-1 text-xs font-medium',
 								{
-									'border-yellow-200 bg-yellow-100 text-yellow-800': status === 'processing',
-									'border-green-200 bg-green-100 text-green-800': ['shipped', 'delivered'].includes(
-										status
-									)
+									'border-yellow-200 bg-yellow-100 text-yellow-800': status === 'trialing',
+									'border-green-200 bg-green-100 text-green-800': status === 'active',
+									'border-red-200 bg-red-100 text-red-800': status === 'canceled'
 								}
 							)}
 						>
@@ -74,7 +73,7 @@
 						</Table.Row>
 					</Table.Header>
 					<Table.Body class="text-xs">
-						{#each orderProducts as { product: { images, name, sku, price }, quantity } (`${sku}-${price}-${quantity}`)}
+						{#each subscriptionPlans as { plan: { images, name, sku, price }, quantity } (`${sku}-${price}-${quantity}`)}
 							<Table.Row>
 								<Table.Cell class="font-medium">
 									<img src={images[0].fileUrl} class="size-16 rounded-lg" alt="" />

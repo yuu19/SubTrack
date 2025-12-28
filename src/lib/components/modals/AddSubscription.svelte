@@ -60,7 +60,7 @@
 
 <div class="space-y-6 p-6">
 	<h2 class="text-2xl font-bold">サブスクを追加</h2>
-	<form method="post" class="space-y-4" {@attach fromAction(enhance, () => enhanceEvents)}>
+	<form method="post" action="?/create" class="space-y-4" {@attach fromAction(enhance, () => enhanceEvents)}>
 		<Field {form} name="text">
 			<Control>
 				{#snippet children({ props })}

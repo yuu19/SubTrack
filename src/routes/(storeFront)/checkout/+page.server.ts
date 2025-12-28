@@ -18,7 +18,7 @@ export const actions = {
 		const cartItems = await db.query.cartItemTable.findMany({
 			where: (cartItemTable, { eq }) => eq(cartItemTable.cartId, cartId),
 			with: {
-				product: true
+				plan: true
 			}
 		});
 		const totalAmount = cartItems.reduce(

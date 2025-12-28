@@ -8,7 +8,7 @@
 
 	// Dummy data
 	let { data } = $props();
-	let subTotal = data?.order?.amount || 0;
+	let subTotal = data?.subscription?.amount || 0;
 </script>
 
 <div
@@ -50,13 +50,13 @@
 <div class=" mx-auto max-w-4xl px-3">
 	<h1 class="flex items-center gap-5 text-center text-4xl font-bold capitalize">
 		<CheckCircle2 class="size-16 text-green-500" />
-		Order summary
+		Subscription summary
 	</h1>
 	<p class="mt-5 mb-10 text-2xl">
-		Your order has been received! <span class="font-medium">{data.order?.code}</span>
+		Your subscription has been received! <span class="font-medium">{data.subscription?.code}</span>
 	</p>
 	<div class="space-y-3 divide-y">
-		{#each data.order?.orderProducts ?? [] as { product: { images, sku, stock, name, price }, quantity }}
+		{#each data.subscription?.subscriptionPlans ?? [] as { plan: { images, sku, name, price, id }, quantity } (id)}
 			<div
 				class="flex justify-between gap-5 rounded-lg px-1 py-3 transition-colors hover:bg-slate-50"
 			>
@@ -83,7 +83,7 @@
 				<p>{formatCurrency(subTotal - SHIPPING_FEE)}</p>
 			</div>
 			<div class="flex items-center justify-between">
-				<p>Shipping</p>
+				<p>Setup fee</p>
 				<p>{formatCurrency(SHIPPING_FEE)}</p>
 			</div>
 		</div>

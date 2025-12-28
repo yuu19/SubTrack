@@ -1,24 +1,14 @@
 <script lang="ts">
 	import { Button } from '$lib/components/ui/button';
-	import { Bike, ChevronRight, CreditCard, Loader2, Minus, Plus } from 'lucide-svelte';
 	import { formatCurrency } from '$lib/utils';
 	import OrderList from '$lib/components/OrderList.svelte';
 	import { page } from '$app/state';
 	import { SHIPPING_FEE } from '$lib/constant';
-	import SuperDebug from 'sveltekit-superforms/SuperDebug.svelte';
-	const defaultAddress = $derived(
-		page.data.user.addresses.find((a) => {
-			return a.isDefaultShipping === true;
-		})
-	);
 
 	let cartItems = $derived(page.data.user?.cart?.cartItems ?? []);
-	let totalPrice = $derived(
-		cartItems.reduce((total, item) => total + item.quantity * item.product.price, 0)
-	);
+	let totalPrice = $derived(cartItems.reduce((total, item) => total + item.quantity * item.plan.price, 0));
 </script>
 
-<SuperDebug data={defaultAddress} />
 <main>
 	<div
 		class="relative flex h-[400px] w-full flex-col border-b-2 bg-[url('/hero/hero-3.jpg')] bg-cover bg-fixed bg-no-repeat"
@@ -31,7 +21,7 @@
 				class="  z-10 my-0 flex w-full max-w-md flex-col justify-center gap-7 border border-white/20 bg-white/20 px-4 py-3 text-white shadow-md drop-shadow-md backdrop-blur sm:rounded-r-md md:max-w-3xl md:gap-10 md:px-10"
 			>
 				<div class="drop-shadow-md">
-					<h2 class="font-display text-3xl font-bold md:text-6xl">Checkout</h2>
+					<h2 class="font-display text-3xl font-bold md:text-6xl">Subscribe</h2>
 				</div>
 			</div>
 		</div>
@@ -41,43 +31,14 @@
 		class="m-auto my-0 flex h-full w-full max-w-6xl flex-col gap-5 px-2 py-5 sm:px-4 md:px-10 md:py-20 lg:flex-row lg:justify-between xl:px-0"
 	>
 		<div class="flex w-full flex-col gap-10 md:gap-10 lg:gap-20">
-			<div class="flex flex-col gap-4">
-				<h4
-					class="font-display text-lg leading-loose font-semibold tracking-wide md:text-2xl lg:text-3xl"
-				>
-					Delivery method
-				</h4>
-				<ul class="flex flex-col gap-1">
-					<a
-						href="/me/addresses"
-						class="flex h-[auto] w-full cursor-pointer items-center justify-between rounded border-b py-5 transition-[shadow] md:border md:border-[#2021251f] md:px-4 md:hover:shadow lg:max-w-[600px]"
-					>
-						<div class="flex items-center gap-3">
-							<Bike />
-							<p class="text-sm font-normal md:text-base">
-								{#if defaultAddress}
-									This delivery would be made to <span
-										class="text-muted-foreground font-medium capitalize"
-										>{defaultAddress.label}</span
-									> , (change it)
-								{:else}
-									Please add a delivery address or set one as your default
-								{/if}
-							</p>
-						</div>
-						<ChevronRight />
-					</a>
-				</ul>
-			</div>
-
 			<div class="flex h-[auto] w-full flex-col gap-4 py-4 lg:max-w-[600px]">
 				<h4 class="font-display text-lg font-semibold tracking-wide md:text-2xl lg:text-3xl">
-					Selected items
+					Selected plans
 				</h4>
 
 				<OrderList />
 				<div>
-					<Button variant="secondary" href="/search">Add more items</Button>
+					<Button variant="secondary" href="/search">Add more plans</Button>
 				</div>
 			</div>
 		</div>
@@ -88,11 +49,11 @@
 					class="bg-card flex flex-col gap-4 rounded-2xl border border-[#2021251f] p-3 lg:p-[1.5rem] lg:shadow-lg"
 				>
 					<div class="flex items-center justify-between">
-						<p class="text-lg font-semibold lg:text-2xl">Prices incl. taxes</p>
+						<p class="text-lg font-semibold lg:text-2xl">Subscription summary</p>
 					</div>
 					<ul class="flex flex-col gap-3 border-b pt-2 pb-5">
 						<li class="flex items-center justify-between">
-							<p class="text-sm font-medium lg:text-base">Items subtotal</p>
+							<p class="text-sm font-medium lg:text-base">Plans subtotal</p>
 							<span
 								class="bg-primary/20 text-primary rounded-md px-2 py-1 text-sm font-medium lg:text-base"
 							>
@@ -100,7 +61,7 @@
 							</span>
 						</li>
 						<li class="flex items-center justify-between">
-							<p class="text-sm font-medium lg:text-base">Delivery (Standard shipping)</p>
+							<p class="text-sm font-medium lg:text-base">Setup fee</p>
 							<span
 								class="bg-primary/20 text-primary rounded-md px-2 py-1 text-sm font-medium lg:text-base"
 							>
@@ -116,9 +77,7 @@
 							{formatCurrency(totalPrice + SHIPPING_FEE)}
 						</span>
 					</div>
-					<Button class="w-full" disabled={!defaultAddress} href="/checkout/payment"
-						>Proceed To Make Payment</Button
-					>
+					<Button class="w-full" href="/checkout/payment">Confirm subscription</Button>
 				</div>
 			</div>
 		</div>

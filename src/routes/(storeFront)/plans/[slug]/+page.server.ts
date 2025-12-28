@@ -5,19 +5,19 @@ import { sql, and, eq } from 'drizzle-orm';
 
 export const load = async ({ locals: { db }, params }) => {
 	const { slug } = params;
-	const product = await db.query.productTable.findFirst({
-		where: (product, { eq }) => eq(product.slug, slug)
+	const plan = await db.query.planTable.findFirst({
+		where: (plan, { eq }) => eq(plan.slug, slug)
 	});
-	if (!product) {
+	if (!plan) {
 		error(404);
 	}
 	return {
-		product
+		plan
 	};
 };
 
 export const actions = {
-	addToOrder: async ({ locals: { db }, request, params }) => {
+	addToSubscription: async ({ locals: { db }, request, params }) => {
 		const { slug } = params;
 
 		const auth = createAuth(db);
@@ -33,18 +33,18 @@ export const actions = {
 		}
 
 		const userId = session.user.id;
-		const product = await db.query.productTable.findFirst({
-			where: (product, { eq }) => eq(product.slug, slug),
+		const plan = await db.query.planTable.findFirst({
+			where: (plan, { eq }) => eq(plan.slug, slug),
 			columns: {
 				id: true,
 				price: true,
 				name: true,
-				stock: true
+				seatLimit: true
 			}
 		});
 
-		if (!product) {
-			throw error(404, 'Product not found');
+		if (!plan) {
+			throw error(404, 'Plan not found');
 		}
 
 		// First, check if user has an existing cart
@@ -63,22 +63,22 @@ export const actions = {
 				.get();
 		}
 
-		// Check if the product is already in the user's cart
+		// Check if the plan is already in the user's cart
 		const existingCartItem = await db.query.cartItemTable.findFirst({
 			where: (cartItem, { eq, and }) =>
-				and(eq(cartItem.cartId, cart.id), eq(cartItem.productId, product.id)),
+				and(eq(cartItem.cartId, cart.id), eq(cartItem.planId, plan.id)),
 			columns: {
 				quantity: true
 			}
 		});
 
 		const alreadyInCart = existingCartItem?.quantity || 0;
-		const availableStock = product.stock - alreadyInCart;
-		const quantityToAdd = Math.min(quantity, availableStock);
+		const availableSeats = plan.seatLimit - alreadyInCart;
+		const quantityToAdd = Math.min(quantity, availableSeats);
 
 		if (quantityToAdd === 0) {
 			return fail(400, {
-				message: `Sorry ${product.name} isn't available.`
+				message: `Sorry ${plan.name} isn't available.`
 			});
 		}
 
@@ -86,22 +86,22 @@ export const actions = {
 			.insert(cartItemTable)
 			.values({
 				cartId: cart.id,
-				productId: product.id,
-				priceAtTimeOfAddition: product.price,
+				planId: plan.id,
+				priceAtTimeOfAddition: plan.price,
 				quantity: quantityToAdd
 			})
 			.onConflictDoUpdate({
-				target: [cartItemTable.cartId, cartItemTable.productId],
+				target: [cartItemTable.cartId, cartItemTable.planId],
 				set: {
 					quantity: sql`${cartItemTable.quantity} + ${quantityToAdd}`,
-					priceAtTimeOfAddition: product.price
+					priceAtTimeOfAddition: plan.price
 				}
 			});
 
 		const message =
 			quantityToAdd < quantity
-				? `Only ${quantityToAdd} of ${product.name} could be added to your cart due to stock limitations.`
-				: `${quantityToAdd} ${product.name} added to cart.`;
+				? `Only ${quantityToAdd} of ${plan.name} could be added to your cart due to seat limitations.`
+				: `${quantityToAdd} ${plan.name} added to cart.`;
 
 		return {
 			message

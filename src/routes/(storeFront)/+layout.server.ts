@@ -11,21 +11,20 @@ export const load = async ({ request, locals }) => {
 	const user = await db.query.user.findFirst({
 		where: (user, { eq }) => eq(user.id, id),
 		with: {
-			addresses: true,
 			cart: {
 				with: {
 					cartItems: {
 						with: {
-							product: true
+							plan: true
 						}
 					}
 				}
 			},
-			orders: {
+			subscriptions: {
 				with: {
-					orderProducts: {
+					subscriptionPlans: {
 						with: {
-							product: true
+							plan: true
 						}
 					}
 				},

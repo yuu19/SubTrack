@@ -1,6 +1,6 @@
 <div class="mx-auto max-w-6xl px-4">
 	<h2 class="my-8 text-3xl font-light tracking-tight text-gray-900 sm:text-5xl">
-		Product not found!
+		Plan not found!
 	</h2>
 	<div class="mt-4 md:mt-12 lg:grid lg:grid-cols-2 lg:items-start lg:gap-x-8">
 		<!-- Image gallery -->
@@ -12,9 +12,9 @@
 			</span>
 		</div>
 
-		<!-- Product info -->
+		<!-- Plan info -->
 		<div class="mt-10 px-4 sm:mt-16 sm:px-0 lg:mt-0">
-			<div class="">We couldn't find any product at that address!</div>
+			<div class="">We couldn't find any plan at that address!</div>
 			<div class="flex-1 space-y-3 py-1">
 				<div class="h-2 rounded bg-slate-200"></div>
 				<div class="space-y-3">

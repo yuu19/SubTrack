@@ -1,29 +1,5 @@
 <script lang="ts">
-	import { page } from '$app/state';
-
-	// import { BellIcon, Package2Icon } from '@radix-ui/react-icons'
-	import {
-		BellIcon,
-		Blocks,
-		Box,
-		Boxes,
-		Group,
-		Home,
-		Layers,
-		Layers2,
-		Package2Icon,
-		Truck,
-		User
-	} from 'lucide-svelte';
-	import { Button } from '$lib/components/ui/button';
-	import { Input } from '$lib/components/ui/input';
-	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
-	import Calendar from 'lucide-svelte/icons/calendar';
-	import House from 'lucide-svelte/icons/house';
-	import Inbox from 'lucide-svelte/icons/inbox';
-	import Search from 'lucide-svelte/icons/search';
-	import Settings from 'lucide-svelte/icons/settings';
-	import { LayoutDashboard } from 'lucide-svelte';
+	import { Home, LayoutDashboard, Layers2, RefreshCcw, Tags, User, Users } from 'lucide-svelte';
 	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
 
 	// Menu items.
@@ -34,27 +10,32 @@
 			icon: LayoutDashboard
 		},
 		{
-			title: 'Products',
-			url: 'products',
-			icon: Box
+			title: 'Plans',
+			url: 'plans',
+			icon: Layers2
 		},
 		{
-			title: 'users',
+			title: 'Subscriptions',
+			url: 'subscriptions',
+			icon: RefreshCcw
+		},
+		{
+			title: 'Subscribers',
+			url: 'customers',
+			icon: Users
+		},
+		{
+			title: 'Plan Groups',
+			url: 'plan-groups',
+			icon: Tags
+		},
+		{
+			title: 'Team',
 			url: 'users',
 			icon: User
 		},
 		{
-			title: 'Orders',
-			url: 'order',
-			icon: Truck
-		},
-		{
-			title: 'Categories',
-			url: 'categories',
-			icon: Blocks
-		},
-		{
-			title: 'Store front',
+			title: 'Customer Portal',
 			url: '../',
 			icon: Home
 		}

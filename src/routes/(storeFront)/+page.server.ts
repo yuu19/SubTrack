@@ -7,7 +7,7 @@ export const actions = {
 	deleteFromCart: async ({ request, locals: { db }, url }) => {
 		const auth = createAuth(db);
 		const cartId = url.searchParams.get('cartId') as unknown as number;
-		const productId = url.searchParams.get('productId') as unknown as number;
+		const planId = url.searchParams.get('planId') as unknown as number;
 
 		const session = await auth.api.getSession({
 			headers: request.headers
@@ -20,7 +20,7 @@ export const actions = {
 		try {
 			await db
 				.delete(cartItemTable)
-				.where(and(eq(cartItemTable.cartId, cartId), eq(cartItemTable.productId, productId)))
+				.where(and(eq(cartItemTable.cartId, cartId), eq(cartItemTable.planId, planId)))
 				.returning()
 				.get();
 			return {
@@ -32,8 +32,8 @@ export const actions = {
 	},
 	incrementInCart: async ({ locals: { db }, request, url }) => {
 		const cartId = url.searchParams.get('cartId') as unknown as number;
-		const productId = url.searchParams.get('productId') as unknown as number;
-		const stock = url.searchParams.get('stock') as unknown as number;
+		const planId = url.searchParams.get('planId') as unknown as number;
+		const seatLimit = url.searchParams.get('seatLimit') as unknown as number;
 
 		const auth = createAuth(db);
 		const session = await auth.api.getSession({
@@ -46,16 +46,16 @@ export const actions = {
 		}
 		const existingCartItem = await db.query.cartItemTable.findFirst({
 			where: (cartItem, { eq, and }) =>
-				and(eq(cartItem.cartId, cartId), eq(cartItem.productId, productId)),
+				and(eq(cartItem.cartId, cartId), eq(cartItem.planId, planId)),
 			columns: {
 				quantity: true
 			}
 		});
 		const alreadyInCart = existingCartItem?.quantity || 0;
-		const availableStock = stock - alreadyInCart;
-		if (availableStock < 1) {
+		const availableSeats = seatLimit - alreadyInCart;
+		if (availableSeats < 1) {
 			return fail(400, {
-				message: 'could not be added to your cart due to stock limitations.'
+				message: 'could not be added to your cart due to seat limitations.'
 			});
 		}
 
@@ -64,7 +64,7 @@ export const actions = {
 			.set({
 				quantity: sql`${cartItemTable.quantity} + 1`
 			})
-			.where(and(eq(cartItemTable.cartId, cartId), eq(cartItemTable.productId, productId)));
+			.where(and(eq(cartItemTable.cartId, cartId), eq(cartItemTable.planId, planId)));
 
 		return {
 			message: `incremented successfully`
@@ -72,8 +72,7 @@ export const actions = {
 	},
 	decrementInCart: async ({ locals: { db }, request, url }) => {
 		const cartId = url.searchParams.get('cartId') as unknown as number;
-		const productId = url.searchParams.get('productId') as unknown as number;
-		const stock = url.searchParams.get('stock') as unknown as number;
+		const planId = url.searchParams.get('planId') as unknown as number;
 
 		const auth = createAuth(db);
 		const session = await auth.api.getSession({
@@ -86,7 +85,7 @@ export const actions = {
 		}
 		const existingCartItem = await db.query.cartItemTable.findFirst({
 			where: (cartItem, { eq, and }) =>
-				and(eq(cartItem.cartId, cartId), eq(cartItem.productId, productId)),
+				and(eq(cartItem.cartId, cartId), eq(cartItem.planId, planId)),
 			columns: {
 				quantity: true
 			}
@@ -95,7 +94,7 @@ export const actions = {
 		if (lastItem) {
 			await db
 				.delete(cartItemTable)
-				.where(and(eq(cartItemTable.cartId, cartId), eq(cartItemTable.productId, productId)));
+				.where(and(eq(cartItemTable.cartId, cartId), eq(cartItemTable.planId, planId)));
 			return {
 				message: `deleted successfully`
 			};
@@ -106,7 +105,7 @@ export const actions = {
 			.set({
 				quantity: sql`${cartItemTable.quantity} - 1`
 			})
-			.where(and(eq(cartItemTable.cartId, cartId), eq(cartItemTable.productId, productId)));
+			.where(and(eq(cartItemTable.cartId, cartId), eq(cartItemTable.planId, planId)));
 
 		return {
 			message: `decremented successfully`

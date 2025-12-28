@@ -1,4 +1,4 @@
-import { getProducts } from '$lib/server/queries.js';
+import { getPlans } from '$lib/server/queries.js';
 import type { DrizzleD1Database } from 'drizzle-orm/d1';
 import * as schema from '$lib/server/db/schema';
 
@@ -6,33 +6,35 @@ export const load = async ({ locals: { db }, url, platform }) => {
 	const kv = platform?.env.kv;
 	const dbForQueries = db as DrizzleD1Database<typeof schema>;
 	const term = url.searchParams.get('term') || '';
-	const categoryId = url.searchParams.get('categoryId') as unknown as number;
-	const subCategoriesParam = url.searchParams.get('subCategories');
-	let subCategories: string[] = [];
+	const planGroupId = url.searchParams.get('planGroupId') as unknown as number;
+	const billingIntervalsParam = url.searchParams.get('billingIntervals');
+	let billingIntervals: string[] = [];
 
-	if (subCategoriesParam) {
+	if (billingIntervalsParam) {
 		try {
-			subCategories = JSON.parse(subCategoriesParam) as string[];
+			billingIntervals = JSON.parse(billingIntervalsParam) as string[];
 		} catch (error) {
-			console.error('Failed to parse subCategories:', error);
+			console.error('Failed to parse billingIntervals:', error);
 		}
 	}
 
-	const validSubCategories = subCategories.filter((subCategory) => subCategory.trim() !== '');
+	const validBillingIntervals = billingIntervals.filter(
+		(billingInterval) => billingInterval.trim() !== ''
+	);
 
 	// If KV unavailable, skip caching
 	if (!kv) {
-		const { products, categories } = await getProducts({
+		const { plans, planGroups } = await getPlans({
 			term,
 			db: dbForQueries,
-			categoryId,
-			subCategories: validSubCategories
+			planGroupId,
+			billingIntervals: validBillingIntervals
 		});
-		return { products, categories };
+		return { plans, planGroups };
 	}
 
 	// Generate a unique cache key based on the search parameters
-	const cacheKey = `search:${term}:${categoryId ?? 'none'}:${validSubCategories.sort().join(',')}`;
+	const cacheKey = `search:${term}:${planGroupId ?? 'none'}:${validBillingIntervals.sort().join(',')}`;
 
 	// Try to get the cached data
 	const cachedData = await kv.get(cacheKey);
@@ -41,19 +43,19 @@ export const load = async ({ locals: { db }, url, platform }) => {
 	}
 
 	// If not cached, fetch the data and cache it
-	const { products, categories } = await getProducts({
+	const { plans, planGroups } = await getPlans({
 		term,
 		db: dbForQueries,
-		categoryId,
-		subCategories: validSubCategories
+		planGroupId,
+		billingIntervals: validBillingIntervals
 	});
 
 	// Cache the result
-	await kv.put(cacheKey, JSON.stringify({ products, categories }), { expirationTtl: 3600 }); // Cache for 1 hour
+	await kv.put(cacheKey, JSON.stringify({ plans, planGroups }), { expirationTtl: 3600 }); // Cache for 1 hour
 
 	// Return the fetched data
 	return {
-		products,
-		categories
+		plans,
+		planGroups
 	};
 };

@@ -11,7 +11,7 @@
 
 	const totalPrice = $derived(
 		page.data.user.cart?.cartItems?.reduce(
-			(total, item) => total + item.quantity * item.product.price,
+			(total, item) => total + item.quantity * item.plan.price,
 			0
 		) || 0
 	);

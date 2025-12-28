@@ -1,7 +1,7 @@
 import type { PageServerLoad } from './$types';
 import { desc, eq } from 'drizzle-orm';
 import { createAuth } from '$lib/auth';
-import { subscriptionTable } from '$lib/server/db/schema';
+import { trackedSubscriptionTable } from '$lib/server/db/schema';
 
 export const load: PageServerLoad = async ({ locals, request }) => {
 	const db = locals.db;
@@ -17,9 +17,9 @@ export const load: PageServerLoad = async ({ locals, request }) => {
 		userId !== undefined
 			? await db
 					.select()
-					.from(subscriptionTable)
-					.where(eq(subscriptionTable.userId, userId))
-					.orderBy(desc(subscriptionTable.createdAt))
+				.from(trackedSubscriptionTable)
+				.where(eq(trackedSubscriptionTable.userId, userId))
+				.orderBy(desc(trackedSubscriptionTable.createdAt))
 			: [];
 
 	return { subscriptions };

@@ -10,34 +10,34 @@
 
 <div class="flex-1 space-y-4 p-8 pt-6">
 	<div class="flex items-center justify-between space-y-2">
-		<h2 class="text-3xl font-bold tracking-tight">Categories</h2>
+		<h2 class="text-3xl font-bold tracking-tight">Plan Groups</h2>
 		<div class="flex items-center space-x-2">
-			<Input class="w-[150px] lg:w-[250px]" placeholder="Search categories..." />
-			<Button href="categories/add">Add new Category</Button>
+			<Input class="w-[150px] lg:w-[250px]" placeholder="Search plan groups..." />
+			<Button href="/admin/plan-groups/add">Add Plan Group</Button>
 		</div>
 	</div>
 	<Table.Root>
 		<Table.Header>
 			<Table.Row>
-				<Table.Head class="w-[100px]">ID</Table.Head>
-				<Table.Head>Name</Table.Head>
-				<Table.Head>number of subcategories</Table.Head>
-				<Table.Head>description</Table.Head>
+				<Table.Head class="w-[120px]">Group ID</Table.Head>
+				<Table.Head>Group</Table.Head>
+				<Table.Head>Billing intervals</Table.Head>
+				<Table.Head>Description</Table.Head>
 
 				<Table.Head class="text-right">Actions</Table.Head>
 			</Table.Row>
 		</Table.Header>
 		<Table.Body>
-			{#each data.categories as category}
+			{#each data.planGroups as planGroup (planGroup.id)}
 				<Table.Row>
-					<Table.Cell class="font-medium">{category.id}</Table.Cell>
-					<Table.Cell>{category.name}</Table.Cell>
-					<Table.Cell>{category.subCategories.length}</Table.Cell>
-					<Table.Cell>{category.description || 'no description'}</Table.Cell>
+					<Table.Cell class="font-medium">{planGroup.id}</Table.Cell>
+					<Table.Cell>{planGroup.name}</Table.Cell>
+					<Table.Cell>{planGroup.billingIntervals.length}</Table.Cell>
+					<Table.Cell>{planGroup.description || 'no description'}</Table.Cell>
 
 					<Table.Cell class="text-right">
 						<form
-							action="?/deleteCategory"
+							action="?/deletePlanGroup"
 							method="POST"
 							class="inline"
 							use:enhance={({}) => {
@@ -57,7 +57,7 @@
 								};
 							}}
 						>
-							<input type="text" name="id" value={category.id} hidden />
+							<input type="text" name="id" value={planGroup.id} hidden />
 							<Button type="submit" variant="outline" size="sm">Delete</Button>
 						</form>
 					</Table.Cell>

@@ -17,22 +17,22 @@
 	</div>
 	<section class="  flex w-full flex-col justify-between gap-6 lg:flex-row">
 		{#if data}
-			{#if data.products.length > 0}
+			{#if data.plans.length > 0}
 				<div class="relative hidden basis-[200px] lg:inline-flex">
 					<div class="sticky top-[5rem] left-0 flex flex-col gap-5">
-						<FilterDesktop categories={data.categories} />
+						<FilterDesktop planGroups={data.planGroups} />
 					</div>
 				</div>
 				<div class="flex flex-1 flex-col gap-5">
 					<div class="category-section space-y-3 md:space-y-5">
-						{#each data.products as product}
+						{#each data.plans as plan (plan.id)}
 							<div class="grid grid-cols-1 gap-4">
 								<ProductCard
-									name={product.name}
-									preview={product.images[0].fileUrl}
-									description={product.description}
-									price={product.price}
-									slug={product.slug}
+									name={plan.name}
+									preview={plan.images[0].fileUrl}
+									description={plan.description}
+									price={plan.price}
+									slug={plan.slug}
 								/>
 							</div>
 						{/each}
@@ -41,7 +41,7 @@
 			{:else}
 				<div class="grid h-[400px] w-full place-content-center place-items-center">
 					<p class="text-muted-foreground text-center text-xl font-medium">
-						No Product Found in the store
+						No plan found in the catalog
 					</p>
 				</div>
 			{/if}

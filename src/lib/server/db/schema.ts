@@ -1,4 +1,4 @@
-import { ROLE, STATUS, THEMES } from '../../constant';
+import { ROLE, SUBSCRIPTION_STATUS, THEMES } from '../../constant';
 import { relations, sql } from 'drizzle-orm';
 import { sqliteTable, text, integer, primaryKey, check, index } from 'drizzle-orm/sqlite-core';
 import { nanoid } from 'nanoid';
@@ -105,26 +105,26 @@ export const verification = sqliteTable('verification', {
 	})
 });
 
-export const categoryTable = sqliteTable('category', {
+export const planGroupTable = sqliteTable('plan_group', {
 	id: integer('id').primaryKey(),
 	name: text('name').notNull(),
 	description: text('description'),
-	subCategories: array<string>('sub_categories').notNull(),
+	billingIntervals: array<string>('billing_intervals').notNull(),
 	...timestamps
 });
 
-export const productTable = sqliteTable(
-	'product',
+export const planTable = sqliteTable(
+	'plan',
 	{
 		id: integer('id').primaryKey(),
 		name: text('name').notNull(),
 		description: text('description').notNull(),
-		categoryId: integer('category_id')
+		planGroupId: integer('plan_group_id')
 			.notNull()
-			.references(() => categoryTable.id, { onDelete: 'cascade' }),
-		subCategory: text('sub_category').notNull(),
+			.references(() => planGroupTable.id, { onDelete: 'cascade' }),
+		billingInterval: text('billing_interval').notNull(),
 		price: integer('price').notNull(),
-		stock: integer('stock').notNull(),
+		seatLimit: integer('seat_limit').notNull(),
 		images: array<{ fileUrl: string; key: string }>('images').notNull(),
 		slug: text('slug').unique().notNull(),
 		sku: text('sku').$default(() => `SKU-${nanoid(8)}`),
@@ -166,86 +166,84 @@ export const cartItemTable = sqliteTable(
 		cartId: integer('cart_id')
 			.notNull()
 			.references(() => cartTable.id, { onDelete: 'cascade' }),
-		productId: integer('product_id')
+		planId: integer('plan_id')
 			.notNull()
-			.references(() => productTable.id, { onDelete: 'cascade' }),
+			.references(() => planTable.id, { onDelete: 'cascade' }),
 		quantity: integer('quantity').notNull().default(1),
 
 		priceAtTimeOfAddition: integer('price_at_addition').notNull(),
 		...timestamps
 	},
 	(table) => ({
-		// Ensure unique combination of cart and product to prevent duplicate entries
-		pk: primaryKey({ columns: [table.cartId, table.productId] })
+		// Ensure unique combination of cart and plan to prevent duplicate entries
+		pk: primaryKey({ columns: [table.cartId, table.planId] })
 	})
 );
 
-export const orderTable = sqliteTable('order', {
+export const subscriptionTable = sqliteTable('subscription', {
 	id: integer('id').primaryKey(),
 	userId: text('user_id')
 		.notNull()
 		.references(() => user.id, { onDelete: 'cascade' }),
-	status: text('status', { enum: STATUS }).notNull(),
+	status: text('status', { enum: SUBSCRIPTION_STATUS }).notNull(),
 	amount: integer('amount').notNull(),
-	addressId: integer('address_id')
-		.references(() => addressTable.id)
-		.notNull(),
+	addressId: integer('address_id').references(() => addressTable.id),
 	code: text('code')
 		.notNull()
 		.$default(() => nanoid(8)),
 
 	...timestamps
 });
-// Order to Product junction table
-export const orderProductTable = sqliteTable(
-	'order_product',
+// Subscription to Plan junction table
+export const subscriptionPlanTable = sqliteTable(
+	'subscription_plan',
 	{
-		orderId: integer('order_id')
+		subscriptionId: integer('subscription_id')
 			.notNull()
-			.references(() => orderTable.id, { onDelete: 'cascade' }),
-		productId: integer('product_id')
+			.references(() => subscriptionTable.id, { onDelete: 'cascade' }),
+		planId: integer('plan_id')
 			.notNull()
-			.references(() => productTable.id, { onDelete: 'cascade' }),
+			.references(() => planTable.id, { onDelete: 'cascade' }),
 		quantity: integer('quantity').notNull().default(1),
-		// Optional: Add any additional fields specific to this order-product relationship
+		// Optional: Add any additional fields specific to this subscription-plan relationship
 		...timestamps
 	},
 	(t) => ({
-		pk: primaryKey({ columns: [t.orderId, t.productId] })
+		pk: primaryKey({ columns: [t.subscriptionId, t.planId] })
 	})
 );
 
 // Relationships
-export const orderRelations = relations(orderTable, ({ many, one }) => ({
+export const subscriptionRelations = relations(subscriptionTable, ({ many, one }) => ({
 	user: one(user, {
-		fields: [orderTable.userId],
+		fields: [subscriptionTable.userId],
 		references: [user.id]
 	}),
-	orderProducts: many(orderProductTable)
+	subscriptionPlans: many(subscriptionPlanTable)
 }));
 
-export const productRelations = relations(productTable, ({ many, one }) => ({
-	orderProducts: many(orderProductTable),
-	category: one(categoryTable, {
-		fields: [productTable.categoryId],
-		references: [categoryTable.id]
+export const planRelations = relations(planTable, ({ many, one }) => ({
+	subscriptionPlans: many(subscriptionPlanTable),
+	planGroup: one(planGroupTable, {
+		fields: [planTable.planGroupId],
+		references: [planGroupTable.id]
 	})
 }));
 
-export const orderProductRelations = relations(orderProductTable, ({ one }) => ({
-	order: one(orderTable, {
-		fields: [orderProductTable.orderId],
-		references: [orderTable.id]
+export const subscriptionPlanRelations = relations(subscriptionPlanTable, ({ one }) => ({
+	subscription: one(subscriptionTable, {
+		fields: [subscriptionPlanTable.subscriptionId],
+		references: [subscriptionTable.id]
 	}),
-	product: one(productTable, {
-		fields: [orderProductTable.productId],
-		references: [productTable.id]
+	plan: one(planTable, {
+		fields: [subscriptionPlanTable.planId],
+		references: [planTable.id]
 	})
 }));
 export const userRelation = relations(user, ({ many, one }) => ({
 	addresses: many(addressTable),
 	cart: one(cartTable),
-	orders: many(orderTable)
+	subscriptions: many(subscriptionTable)
 }));
 
 export const addressRelations = relations(addressTable, ({ one }) => ({
@@ -267,17 +265,17 @@ export const cartItemRelations = relations(cartItemTable, ({ one }) => ({
 		fields: [cartItemTable.cartId],
 		references: [cartTable.id]
 	}),
-	product: one(productTable, {
-		fields: [cartItemTable.productId],
-		references: [productTable.id]
+	plan: one(planTable, {
+		fields: [cartItemTable.planId],
+		references: [planTable.id]
 	})
 }));
 
-export const categoryRelations = relations(categoryTable, ({ many }) => ({
-	products: many(productTable)
+export const planGroupRelations = relations(planGroupTable, ({ many }) => ({
+	plans: many(planTable)
 }));
 
-export const subscriptionTable = sqliteTable('subscription', {
+export const trackedSubscriptionTable = sqliteTable('tracked_subscription', {
 	id: integer('id').primaryKey(),
 	userId: text('user_id').references(() => user.id, { onDelete: 'set null' }),
 	serviceName: text('service_name').notNull(),

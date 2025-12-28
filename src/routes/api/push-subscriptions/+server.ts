@@ -26,9 +26,9 @@ export const POST = async ({ request, locals: { db } }) => {
 	const payload = parsePayload(await request.json().catch(() => null));
 	const endpoint = payload?.endpoint;
 	const p256dh = payload?.keys?.p256dh;
-	const auth = payload?.keys?.auth;
+	const authKey = payload?.keys?.auth;
 
-	if (typeof endpoint !== 'string' || typeof p256dh !== 'string' || typeof auth !== 'string') {
+	if (typeof endpoint !== 'string' || typeof p256dh !== 'string' || typeof authKey !== 'string') {
 		error(400, 'invalid subscription payload');
 	}
 
@@ -46,7 +46,7 @@ export const POST = async ({ request, locals: { db } }) => {
 			.update(pushSubscriptionTable)
 			.set({
 				p256dh,
-				auth,
+				auth: authKey,
 				expirationTime,
 				userAgent: request.headers.get('user-agent') ?? null
 			})
@@ -56,7 +56,7 @@ export const POST = async ({ request, locals: { db } }) => {
 			userId,
 			endpoint,
 			p256dh,
-			auth,
+			auth: authKey,
 			expirationTime,
 			userAgent: request.headers.get('user-agent') ?? null
 		});

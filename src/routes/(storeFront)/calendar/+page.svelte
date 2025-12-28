@@ -4,11 +4,11 @@
   import CalendarHeader from '$lib/components/calendar/CalendarHeader.svelte';
   import CalendarGrid from '$lib/components/calendar/CalendarGrid.svelte';
   import EventDetailModal from '$lib/components/calendar/EventDetailModal.svelte';
-  import type { subscriptionTable } from '$lib/server/db/schema';
+  import type { trackedSubscriptionTable } from '$lib/server/db/schema';
   
   dayjs.locale('ja');
   
-  type Subscription = typeof subscriptionTable.$inferSelect;
+  type Subscription = typeof trackedSubscriptionTable.$inferSelect;
   const colorPalette = ['blue', 'green', 'red', 'yellow', 'purple', 'orange'] as const;
   type EventColor = (typeof colorPalette)[number];
   const cycleToMonths: Record<string, number> = {

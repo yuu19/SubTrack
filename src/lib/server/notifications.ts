@@ -1,6 +1,6 @@
 import dayjs from 'dayjs';
 import { eq, inArray } from 'drizzle-orm';
-import { pushSubscriptionTable, subscriptionTable } from '$lib/server/db/schema';
+import { pushSubscriptionTable, trackedSubscriptionTable } from '$lib/server/db/schema';
 import { computeNextBilling } from '$lib/server/subscriptions';
 import { sendWebPush } from '$lib/server/push';
 
@@ -13,7 +13,7 @@ export type NotificationDispatchResult = {
 	updated: number;
 };
 
-const buildPayload = (subscription: typeof subscriptionTable.$inferSelect) => {
+const buildPayload = (subscription: typeof trackedSubscriptionTable.$inferSelect) => {
 	const notifyDays = subscription.notifyDaysBefore ?? 0;
 	const when =
 		notifyDays === 0 ? '今日が支払い日です。' : `支払いまであと${notifyDays}日です。`;
@@ -34,10 +34,10 @@ export const dispatchSubscriptionNotifications = async (
 	db: NonNullable<App.Locals['db']>
 ): Promise<NotificationDispatchResult> => {
 	const today = dayjs().startOf('day');
-	const subscriptions = await db.select().from(subscriptionTable);
+	const subscriptions = await db.select().from(trackedSubscriptionTable);
 	let updated = 0;
 
-	const dueSubscriptions: typeof subscriptionTable.$inferSelect[] = [];
+	const dueSubscriptions: typeof trackedSubscriptionTable.$inferSelect[] = [];
 
 	for (const sub of subscriptions) {
 		if (!sub.userId) continue;
@@ -48,12 +48,12 @@ export const dispatchSubscriptionNotifications = async (
 			computed.daysUntilNextBilling !== sub.daysUntilNextBilling
 		) {
 			await db
-				.update(subscriptionTable)
+				.update(trackedSubscriptionTable)
 				.set({
 					nextBillingAt: computed.nextBillingAt,
 					daysUntilNextBilling: computed.daysUntilNextBilling
 				})
-				.where(eq(subscriptionTable.id, sub.id));
+				.where(eq(trackedSubscriptionTable.id, sub.id));
 			sub.nextBillingAt = computed.nextBillingAt;
 			sub.daysUntilNextBilling = computed.daysUntilNextBilling;
 			updated += 1;
@@ -139,9 +139,9 @@ export const dispatchSubscriptionNotifications = async (
 		}
 
 		await db
-			.update(subscriptionTable)
-			.set({ lastNotifiedAt: new Date() })
-			.where(eq(subscriptionTable.id, sub.id));
+		.update(trackedSubscriptionTable)
+		.set({ lastNotifiedAt: new Date() })
+		.where(eq(trackedSubscriptionTable.id, sub.id));
 	}
 
 	return {

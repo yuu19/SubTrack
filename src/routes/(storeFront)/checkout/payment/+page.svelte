@@ -22,9 +22,7 @@
 		stripe = await loadStripe(PUBLIC_STRIPE_KEY);
 	});
 	let cartItems = $derived(page.data.user?.cart?.cartItems ?? []);
-	let totalAmount = $derived(
-		cartItems.reduce((acc, item) => acc + item.product.price * item.quantity, 0)
-	);
+	let totalAmount = $derived(cartItems.reduce((acc, item) => acc + item.plan.price * item.quantity, 0));
 	async function submit(e) {
 		e.preventDefault();
 		if (!stripe || !elements || processing) {
@@ -52,7 +50,7 @@
 			error = result.error.message;
 			processing = false;
 		} else {
-			const res = await fetch('/api/order', {
+			const res = await fetch('/api/subscriptions', {
 				method: 'POST',
 				body: JSON.stringify({ cartId: page.data.user.cart?.id })
 			});
@@ -61,7 +59,7 @@
 			console.log('🚀 ~ submit ~ res:', res);
 			console.log('🚀 ~ submit ~ code:', code);
 
-			goto(`confirmation/${code}`, { invalidateAll: true });
+			goto(`/checkout/confirmation/${code}`, { invalidateAll: true });
 		}
 	}
 </script>
@@ -117,9 +115,9 @@
 	</div>
 
 	<div class="px-10">
-		<h1 class="text-xl font-semibold capitalize">Order Summary</h1>
+		<h1 class="text-xl font-semibold capitalize">Subscription Summary</h1>
 		<div class="space-y-3 divide-y">
-			{#each cartItems as { product: { name, description, images, id, stock, price }, quantity, productId, cartId } (id)}
+			{#each cartItems as { plan: { name, images, id, seatLimit, price }, quantity, planId, cartId } (id)}
 				<div
 					class="flex justify-between gap-5 rounded-lg px-1 py-3 transition-colors hover:bg-slate-50"
 				>
@@ -134,19 +132,19 @@
 					<button class="border-border h-10 w-10 rounded-md border-2"> {quantity} </button>
 				</div>
 			{/each}
-			<div class="space-y-5 py-5">
-				<div class="flex items-center justify-between">
-					<p>Subtotal</p>
-					<p>
-						{formatCurrency(totalAmount)}
-					</p>
-				</div>
-				<div class="flex items-center justify-between">
-					<p>Shipping</p>
-					<p>
-						{formatCurrency(SHIPPING_FEE)}
-					</p>
-				</div>
+				<div class="space-y-5 py-5">
+					<div class="flex items-center justify-between">
+						<p>Subtotal</p>
+						<p>
+							{formatCurrency(totalAmount)}
+						</p>
+					</div>
+					<div class="flex items-center justify-between">
+						<p>Setup fee</p>
+						<p>
+							{formatCurrency(SHIPPING_FEE)}
+						</p>
+					</div>
 			</div>
 			<div class="flex items-center justify-between">
 				<p class="py-5 font-semibold">Total</p>

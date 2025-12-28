@@ -13,10 +13,10 @@
 
 <div class="flex-1 space-y-4 p-8 pt-6">
 	<div class="flex items-center justify-between space-y-2">
-		<h2 class="text-3xl font-bold tracking-tight">Users</h2>
+		<h2 class="text-3xl font-bold tracking-tight">Team Members</h2>
 		<div class="flex items-center space-x-2">
-			<Input class="w-[150px] lg:w-[250px]" placeholder="Search users..." />
-			<Button href="users/add">Add User</Button>
+			<Input class="w-[150px] lg:w-[250px]" placeholder="Search team members..." />
+			<Button href="/admin/users/add">Invite Member</Button>
 		</div>
 	</div>
 	<Table.Root>
@@ -25,9 +25,8 @@
 				<Table.Head>Name</Table.Head>
 				<Table.Head>Email</Table.Head>
 				<Table.Head>Role</Table.Head>
-				<Table.Head>Status</Table.Head>
-				<Table.Head>Join Date</Table.Head>
-				<Table.Head>Total Spent</Table.Head>
+				<Table.Head>Access</Table.Head>
+				<Table.Head>Added</Table.Head>
 				<!-- <Table.Head>Order Count</Table.Head> -->
 				<Table.Head class="text-right">Actions</Table.Head>
 			</Table.Row>
@@ -38,9 +37,8 @@
 					<Table.Cell>{user.name}</Table.Cell>
 					<Table.Cell>{user.email}</Table.Cell>
 					<Table.Cell>{user.role}</Table.Cell>
-					<Table.Cell>{!user.banned ? 'active' : 'banned'}</Table.Cell>
+					<Table.Cell>{!user.banned ? 'active' : 'suspended'}</Table.Cell>
 					<Table.Cell>{user.createdAt}</Table.Cell>
-					<Table.Cell>${100}</Table.Cell>
 					<!-- <Table.Cell>{user.orderCount}</Table.Cell> -->
 					<Table.Cell class="text-right">
 						<DropdownMenu.Root>
@@ -60,10 +58,12 @@
 												toast.error(res.error.message || '');
 												return;
 											}
-											toast.success('user has been unbanned');
+											toast.success('Access restored');
 											invalidateAll();
-										}}>Unban user</DropdownMenu.Item
+										}}
 									>
+										Restore access
+									</DropdownMenu.Item>
 								{:else}
 									<DropdownMenu.Item
 										onclick={async () => {
@@ -74,10 +74,12 @@
 												toast.error(res.error.message || '');
 												return;
 											}
-											toast.success('user has been banned');
+											toast.success('Access suspended');
 											invalidateAll();
-										}}>ban user</DropdownMenu.Item
+										}}
 									>
+										Suspend access
+									</DropdownMenu.Item>
 								{/if}
 							</DropdownMenu.Content>
 						</DropdownMenu.Root>

@@ -43,6 +43,13 @@
       "when": 1766575289332,
       "tag": "0005_late_living_tribunal",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1766670325055,
+      "tag": "0006_round_microchip",
+      "breakpoints": true
     }
   ]
 }

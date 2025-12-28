@@ -11,18 +11,18 @@
 
 	let { data, form } = $props();
 	let quantity = $state(1);
-	let price = $derived(data.product.price * quantity);
+	let price = $derived(data.plan.price * quantity);
 	let loading = $state(false);
-	// Dummy data for product and variants
+	// Dummy data for plan and variants
 </script>
 
 <div class="mx-auto w-full max-w-6xl px-3 xl:px-0">
-	<h1 class=" mt-3 text-2xl font-semibold capitalize md:mt-5 md:text-4xl">{data.product?.name}</h1>
+	<h1 class=" mt-3 text-2xl font-semibold capitalize md:mt-5 md:text-4xl">{data.plan?.name}</h1>
 
 	<div class="mt-5 flex flex-col gap-5 md:mt-10 md:flex-row">
 		<Carousel.Root class="w-full max-w-[600px] ">
 			<Carousel.Content>
-				{#each data.product.images as image}
+				{#each data.plan.images as image (image.id ?? image.key)}
 					<Carousel.Item class="p-  h-[300px] w-full rounded-md md:h-[400px]">
 						<img
 							class="h-full w-full rounded-md object-cover"
@@ -37,13 +37,13 @@
 		<div class="flex-1 space-y-3">
 			<div class="relative h-fit">
 				<p class="text-muted-foreground space-y-3 text-sm leading-7 md:text-base">
-					{data.product?.description}
+					{data.plan?.description}
 				</p>
 			</div>
 
 			<form
 				class="bg-background fixed bottom-0 flex w-full items-center gap-2 border p-1 px-3 py-3 md:static md:border-none md:p-4 md:px-1"
-				action="?/addToOrder"
+				action="?/addToSubscription"
 				method="POST"
 				use:enhance={() => {
 					return async ({ update, result }) => {
@@ -80,7 +80,7 @@
 					</Button>
 					<p class="text-primary text-xl font-normal">{quantity}</p>
 					<Button
-						disabled={!data.product.stock}
+						disabled={data.plan.seatLimit <= 0}
 						onclick={() => quantity++}
 						size="icon"
 						variant="outline"
@@ -92,24 +92,24 @@
 					type="submit"
 					size="lg"
 					class=" flex-1  justify-between py-7  shadow-lg transition-all"
-					disabled={!data.product.stock || loading}
+					disabled={data.plan.seatLimit <= 0 || loading}
 				>
 					{#if loading}
 						<Loader class="size-5 animate-spin" />
 					{:else}
-						<span class="font-bold capitalize">add to order</span>
+						<span class="font-bold capitalize">start subscription</span>
 					{/if}
 					{formatCurrency(price)}
 				</Button>
 			</form>
 			<div class="flex items-center gap-4 text-sm">
 				<p class="text-muted-foreground text-lg">
-					{data.product.sku}
+					{data.plan.sku}
 				</p>
-				{#if data.product.stock === 0}
-					<Badge variant="destructive">Out of Stock</Badge>
+				{#if data.plan.seatLimit === 0}
+					<Badge variant="destructive">No seats available</Badge>
 				{:else}
-					<Badge class="bg-green-500 hover:bg-green-500">In Stock</Badge>
+					<Badge class="bg-green-500 hover:bg-green-500">Seats available</Badge>
 				{/if}
 			</div>
 

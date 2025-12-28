@@ -3,63 +3,63 @@
 	import { page } from '$app/state';
 	import { Checkbox } from '$lib/components/ui/checkbox';
 	import { Label } from '$lib/components/ui/label';
-	import type { TCategories } from '$lib/types';
+	import type { TPlanGroups } from '$lib/types';
 	import { cn } from '$lib/utils';
 	import { queryParam, ssp } from 'sveltekit-search-params';
 
 	type TProps = {
-		categories: TCategories[];
+		planGroups: TPlanGroups[];
 	};
-	let { categories }: TProps = $props();
-	let categoryId = queryParam('categoryId', ssp.number());
-	let selectedSubCategories = queryParam('subCategories', ssp.array(['']), {
+	let { planGroups }: TProps = $props();
+	let planGroupId = queryParam('planGroupId', ssp.number());
+	let selectedBillingIntervals = queryParam('billingIntervals', ssp.array(['']), {
 		showDefaults: false
 	});
 
-	function toggleSubCategory(subCategory: string) {
-		selectedSubCategories.update((currentList) => {
-			if (currentList.includes(subCategory)) {
-				// Remove the subCategory if it's already in the list
-				return currentList.filter((category) => category !== subCategory);
+	function toggleBillingInterval(billingInterval: string) {
+		selectedBillingIntervals.update((currentList) => {
+			if (currentList.includes(billingInterval)) {
+				// Remove the billing interval if it's already in the list
+				return currentList.filter((entry) => entry !== billingInterval);
 			} else {
-				// Add the subCategory if it's not in the list
-				return [...currentList, subCategory];
+				// Add the billing interval if it's not in the list
+				return [...currentList, billingInterval];
 			}
 		});
 	}
 
-	function isSubCategorySelected(subCategory: string): boolean {
-		return $selectedSubCategories.includes(subCategory) || false;
+	function isBillingIntervalSelected(billingInterval: string): boolean {
+		return $selectedBillingIntervals.includes(billingInterval) || false;
 	}
 </script>
 
 <div class="lawal">
-	{#each categories as { name, id, subCategories }}
+	{#each planGroups as { name, id, billingIntervals } (id)}
 		<button
 			class={cn(' mt-5 text-lg font-semibold capitalize', {
-				'activeMenu sideMenu-active': $categoryId === id
+				'activeMenu sideMenu-active': $planGroupId === id
 			})}
 			onclick={() => {
-				$categoryId = id;
+				$planGroupId = id;
 			}}
 		>
 			{name}
 		</button>
 		<div class="mt-7 space-y-5 pl-5">
-			{#each subCategories as subCategory}
+			{#each billingIntervals as billingInterval (billingInterval)}
 				<div class="flex items-center space-x-4">
 					<Checkbox
-						id="term-{subCategory}"
-						checked={isSubCategorySelected(subCategory)}
+						id="term-{billingInterval}"
+						checked={isBillingIntervalSelected(billingInterval)}
 						aria-labelledby="terms-label"
-						onCheckedChange={() => toggleSubCategory(subCategory)}
+						onCheckedChange={() => toggleBillingInterval(billingInterval)}
 					/>
 					<Label
 						id="terms-label"
-						for="term-{subCategory}"
+						for="term-{billingInterval}"
 						class="  cursor-pointer text-sm font-medium"
 					>
-						{subCategory}
+						{billingInterval}
 					</Label>
 				</div>
 			{/each}
@@ -108,17 +108,5 @@
 		100% {
 			width: 100%;
 		}
-	}
-	/* Your existing styles */
-
-	.category-section {
-		scroll-margin-top: 100px; /* Adjusts the scroll position */
-	}
-
-	.category-section h2 {
-		padding-top: 1rem; /* Adds some padding at the top of each category */
-		margin-bottom: 1rem;
-		background-color: rgba(255, 255, 255, 0.9); /* Adjust based on your background color */
-		backdrop-filter: blur(5px);
 	}
 </style>
