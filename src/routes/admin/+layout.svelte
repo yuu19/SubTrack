@@ -1,34 +1,9 @@
 <script lang="ts">
-	import { Home, LayoutDashboard, Layers2, RefreshCcw, Tags, User, Users } from 'lucide-svelte';
+	import { Home, User } from 'lucide-svelte';
 	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
 
 	// Menu items.
 	const items = [
-		{
-			title: 'Overview',
-			url: 'overview',
-			icon: LayoutDashboard
-		},
-		{
-			title: 'Plans',
-			url: 'plans',
-			icon: Layers2
-		},
-		{
-			title: 'Subscriptions',
-			url: 'subscriptions',
-			icon: RefreshCcw
-		},
-		{
-			title: 'Subscribers',
-			url: 'customers',
-			icon: Users
-		},
-		{
-			title: 'Plan Groups',
-			url: 'plan-groups',
-			icon: Tags
-		},
 		{
 			title: 'Team',
 			url: 'users',

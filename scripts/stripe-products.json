@@ -1,0 +1,36 @@
+{
+  "products": [
+    {
+      "name": "Premium",
+      "description": "Premium subscription plan",
+      "metadata": {
+        "plan": "premium",
+        "slug": "premium"
+      },
+      "prices": [
+        {
+          "nickname": "Premium Monthly",
+          "lookup_key": "premium_monthly",
+          "unit_amount": 300,
+          "currency": "jpy",
+          "recurring": { "interval": "month" },
+          "metadata": {
+            "plan": "premium",
+            "interval": "month"
+          }
+        },
+        {
+          "nickname": "Premium Annual",
+          "lookup_key": "premium_annual",
+          "unit_amount": 3000,
+          "currency": "jpy",
+          "recurring": { "interval": "year" },
+          "metadata": {
+            "plan": "premium",
+            "interval": "year"
+          }
+        }
+      ]
+    }
+  ]
+}

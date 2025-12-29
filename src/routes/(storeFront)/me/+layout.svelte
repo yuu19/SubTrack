@@ -9,12 +9,6 @@
 			link: 'personal-info',
 			txt: () => m.nav_profile()
 		},
-
-		{
-			link: 'subscriptions',
-			txt: () => m.nav_order_history()
-		},
-
 		{
 			link: 'settings',
 			txt: () => m.nav_settings()

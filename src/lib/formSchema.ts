@@ -32,24 +32,6 @@ const isValidPhoneNumber = (phone: string): boolean => {
 	const regex = /^([0|+[0-9]{1,5})?([7-9][0-9]{9})$/;
 	return regex.test(phone);
 };
-export const addressSchema = z.object({
-	name: z
-		.string()
-		.min(3, { message: 'Name must be at least 3 characters long' })
-		.max(100, { message: 'Name cannot exceed 100 characters' }),
-
-	address: z
-		.string()
-		.min(1, { message: 'Address is required' })
-		.max(200, { message: 'Address cannot exceed 200 characters' }),
-
-	state: z.string().max(100, { message: 'State name cannot exceed 100 characters' }),
-
-	country: z.string().min(1, { message: 'Country is required' }),
-
-	isDefaultShipping: z.boolean().default(false),
-	isDefaultBilling: z.boolean().default(false)
-});
 
 export const resetPasswordSchema = z
 	.object({
@@ -77,31 +59,6 @@ export const updateNumberSchema = z.object({
 });
 export const updateNameSchema = z.object({
 	name: z.string().min(3)
-});
-
-export const guestInformationSchema = z.object({
-	email: z.email(),
-	firstName: z.string().min(1),
-	lastName: z.string().min(1)
-});
-
-// Schema for inserting a user - can be used to validate API requests
-export const planGroupSchema = z.object({
-	name: z.string().min(1),
-	description: z.string(),
-	billingIntervals: z.string().array().min(1)
-});
-export const planSchema = z.object({
-	name: z.string().min(1),
-	description: z.string().min(3),
-	planGroupId: z.number().positive(),
-	billingInterval: z.string().min(1),
-	price: z.number().positive(),
-	seatLimit: z.number().nonnegative(),
-	images: z
-		.instanceof(File, { message: 'Please upload a file.' })
-		.refine((f) => f.size < 100_000, 'Max 100 kB upload size.')
-		.array()
 });
 
 export const subscriptionSchema = z.object({

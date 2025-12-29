@@ -8,30 +8,11 @@ export const load = async ({ request, locals }) => {
 		headers: request.headers
 	});
 	const id = session?.user.id || '';
-	const user = await db.query.user.findFirst({
-		where: (user, { eq }) => eq(user.id, id),
-		with: {
-			cart: {
-				with: {
-					cartItems: {
-						with: {
-							plan: true
-						}
-					}
-				}
-			},
-			subscriptions: {
-				with: {
-					subscriptionPlans: {
-						with: {
-							plan: true
-						}
-					}
-				},
-				orderBy: (t, { desc }) => desc(t.createdAt)
-			}
-		}
-	});
+	const user = id
+		? await db.query.user.findFirst({
+				where: (user, { eq }) => eq(user.id, id)
+			})
+		: null;
 	const parsedConfig = userConfigSchema.safeParse({
 		activeTheme: user?.activeTheme ?? 'default'
 	});

@@ -4,7 +4,7 @@ export type StoredPushSubscription = {
 	endpoint: string;
 	p256dh: string;
 	auth: string;
-	expirationTime?: number | null;
+	expirationTime?: Date | number | null;
 };
 
 type VapidDetails = {
@@ -29,10 +29,14 @@ export const getVapidPublicKey = () => process.env.VAPID_PUBLIC_KEY ?? '';
 
 export const sendWebPush = async (subscription: StoredPushSubscription, payload: object) => {
 	const vapidDetails = getVapidDetails();
+	const expirationTime =
+		subscription.expirationTime instanceof Date
+			? subscription.expirationTime.getTime()
+			: subscription.expirationTime ?? null;
 	const details = webPush.generateRequestDetails(
 		{
 			endpoint: subscription.endpoint,
-			expirationTime: subscription.expirationTime ?? null,
+			expirationTime,
 			keys: {
 				p256dh: subscription.p256dh,
 				auth: subscription.auth

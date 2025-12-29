@@ -11,8 +11,8 @@
 		<p>Your email has been updated successfully</p>
 
 		<Button href="/me/personal-info" class="shadow-md">Go to your account page</Button>
-		<Button href="/explore/stores" variant="secondary" class="shadow-md"
-			>Explore restaurants and stores</Button
+		<Button href="/subscriptions" variant="secondary" class="shadow-md"
+			>View subscriptions</Button
 		>
 	</div>
 </main>

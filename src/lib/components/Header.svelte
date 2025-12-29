@@ -2,13 +2,12 @@
 	import Button from './ui/button/button.svelte';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
 	import * as Avatar from '$lib/components/ui/avatar';
-	import { ChevronDown, Menu, ShoppingCart } from 'lucide-svelte';
+	import { ChevronDown, Menu } from 'lucide-svelte';
 	import { cn } from '$lib/utils';
 	import { authClient } from '$lib/auth-client';
 	import { invalidateAll } from '$app/navigation';
 
 	import {
-		cartSheetState,
 		loginModalState,
 		mobileAuthState,
 		registerModalState
@@ -17,10 +16,8 @@
 	import RegisterModal from './modals/RegisterModal.svelte';
 	import ConfirmEmailModal from './modals/ConfirmEmailModal.svelte';
 	import ResetPasswordModal from './modals/ResetPasswordModal.svelte';
-	import CartSheet from './modals/CartSheet.svelte';
 	import MobileAuth from './modals/MobileAuth.svelte';
 	import { page } from '$app/state';
-	import LanguageSwitcher from './LanguageSwitcher.svelte';
 	import { m } from '$lib/paraglide/messages.js';
 
 	function getUserInitial(name: string) {
@@ -34,10 +31,6 @@
 		{
 			title: () => m.nav_profile(),
 			href: '/me/personal-info'
-		},
-		{
-			title: () => m.nav_order_history(),
-			href: '/me/subscriptions'
 		},
 		{
 			title: () => m.nav_settings(),
@@ -117,16 +110,6 @@
 <!-- todo 将来的に多言語対応を整備する -->
 		<!-- <LanguageSwitcher /> -->
 
-		{#if page.data?.user?.cart?.cartItems}
-			<button onclick={() => cartSheetState.setTrue()} class="relative inline-block h-fit w-fit">
-				<div
-					class="bg-primary absolute -top-2 -right-2 flex size-5 items-center justify-center rounded-full text-xs text-white"
-				>
-					{page.data.user.cart.cartItems.length}
-				</div>
-				<ShoppingCart class="h-6 w-6" />
-			</button>
-		{/if}
 	</div>
 </header>
 <LoginModal />
@@ -134,8 +117,5 @@
 <ConfirmEmailModal />
 <ResetPasswordModal />
 <MobileAuth />
-{#if page.data.user?.cart?.cartItems}
-	<CartSheet />
-{/if}
 <!-- 
 -->

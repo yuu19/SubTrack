@@ -1,40 +1,19 @@
 <script lang="ts">
 	import Button from '$lib/components/ui/button/button.svelte';
-	import * as Carousel from '$lib/components/ui/carousel';
-	import Fade from 'embla-carousel-fade';
-	import Autoplay from 'embla-carousel-autoplay';
-	import SearchBar from '$lib/components/SearchBar.svelte';
-	import { m } from '$lib/paraglide/messages.js';
-	const carouselPics = ['/hero/hero-1.jpg', '/hero/hero-2.jpg', '/hero/hero-3.jpg'];
 </script>
 
-<div class="mx-auto mt-2 max-w-7xl px-2 md:mt-5 md:px-5">
-	<Carousel.Root
-		opts={{ containScroll: false }}
-		plugins={[Fade(), Autoplay({ stopOnInteraction: false, stopOnMouseEnter: true })]}
-		class="relative w-full max-w-full"
-	>
-		<Carousel.Content>
-			{#each carouselPics as pic (pic)}
-				<Carousel.Item>
-					<div
-						class="relative mx-auto h-[350px] overflow-clip rounded-lg bg-cover bg-center bg-no-repeat p-1 text-white md:h-[480px]"
-						style:background-image="url({pic})"
-					>
-						<div class="absolute inset-0 bg-gradient-to-br from-black/20 to-black/80"></div>
-						<div class="absolute right-0 bottom-0 z-10 mb-14 px-5 md:mb-20 md:px-10">
-							<h1 class="mb-1 text-2xl font-bold text-white md:mb-3 md:text-6xl">
-								{m.hero_title()}
-							</h1>
-							<p class=" mb-2 text-sm md:mb-5 md:text-lg">
-								{m.hero_body()}
-							</p>
-						</div>
-					</div>
-				</Carousel.Item>
-			{/each}
-		</Carousel.Content>
-		<SearchBar />
-	</Carousel.Root>
-
-</div>
+<main class="mx-auto flex min-h-[70vh] max-w-4xl flex-col items-start justify-center gap-6 px-4 py-10">
+	<div class="space-y-3">
+		<p class="text-muted-foreground text-sm uppercase tracking-[0.3em]">SubTrack</p>
+		<h1 class="text-4xl font-semibold leading-tight md:text-6xl">
+			All your subscriptions, one place.
+		</h1>
+		<p class="text-muted-foreground max-w-xl text-base md:text-lg">
+			Track renewals, set reminders, and keep your monthly spending visible at a glance.
+		</p>
+	</div>
+	<div class="flex flex-wrap gap-3">
+		<Button href="/subscriptions">Open subscriptions</Button>
+		<Button href="/calendar" variant="secondary">View calendar</Button>
+	</div>
+</main>

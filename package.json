@@ -74,6 +74,7 @@
 		"zod": "^4.1.13"
 	},
 	"dependencies": {
+		"@better-auth/stripe": "^1.4.9",
 		"@oslojs/crypto": "^1.0.1",
 		"@oslojs/encoding": "^1.1.0",
 		"@sentry/sveltekit": "^10.29.0",

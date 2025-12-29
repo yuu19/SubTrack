@@ -1,4 +1,4 @@
-import type { TCart, TCartItem, TPlan, TSubscription, TSubscriptionPlan, TUser } from '$lib/types';
+import type { TUser } from '$lib/types';
 import type { DrizzleD1Database } from 'drizzle-orm/d1';
 import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 
@@ -21,14 +21,7 @@ declare global {
 			bucket: R2Bucket;
 		}
 		interface PageData {
-			user: TUser & {
-				cart?: TCart & {
-					cartItems?: (TCartItem & { plan: TPlan })[];
-				};
-				subscriptions?: (TSubscription & {
-					subscriptionPlans?: (TSubscriptionPlan & { plan: TPlan })[];
-				})[];
-			};
+			user: TUser;
 		}
 		namespace Superforms {
 			type Message = {

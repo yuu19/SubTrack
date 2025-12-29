@@ -50,6 +50,20 @@
       "when": 1766670325055,
       "tag": "0006_round_microchip",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1766938863126,
+      "tag": "0007_sticky_namorita",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1766943047280,
+      "tag": "0008_majestic_tomorrow_man",
+      "breakpoints": true
     }
   ]
 }

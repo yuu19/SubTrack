@@ -33,7 +33,9 @@ export const POST = async ({ request, locals: { db } }) => {
 	}
 
 	const expirationTime =
-		typeof payload.expirationTime === 'number' ? Math.trunc(payload.expirationTime) : null;
+		typeof payload.expirationTime === 'number'
+			? new Date(Math.trunc(payload.expirationTime))
+			: null;
 
 	const existing = await db
 		.select({ id: pushSubscriptionTable.id })
