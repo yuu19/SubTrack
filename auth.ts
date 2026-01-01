@@ -14,7 +14,7 @@ type Schema = typeof import('./src/lib/server/db/schema');
  * SvelteKit の仮想モジュール ($app/*) に依存しないように分離。
  */
 const PREMIUM_PRICE_ID = {
-	default: 'change_me!'
+	default: 'price_1SjMfPFomgCAvvs0P7MKz8GT'
 } as const;
 
 const stripeSecretKey = process.env.SECRET_STRIPE_KEY ?? 'sk_test_placeholder';

@@ -1,18 +1,2 @@
-ALTER TABLE `subscription` ADD `last_notified_at` integer;
---> statement-breakpoint
-CREATE TABLE `push_subscription` (
-	`id` integer PRIMARY KEY NOT NULL,
-	`user_id` text NOT NULL,
-	`endpoint` text NOT NULL,
-	`p256dh` text NOT NULL,
-	`auth` text NOT NULL,
-	`expiration_time` integer,
-	`user_agent` text,
-	`updated_at` integer NOT NULL,
-	`created_at` integer NOT NULL,
-	FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE cascade
-);
---> statement-breakpoint
-CREATE INDEX `push_subscription_user_idx` ON `push_subscription` (`user_id`);
---> statement-breakpoint
-CREATE INDEX `push_subscription_endpoint_idx` ON `push_subscription` (`endpoint`);
+-- no-op: push_subscription table and last_notified_at were created in 0005_late_living_tribunal.sql
+SELECT 1;

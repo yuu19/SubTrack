@@ -56,5 +56,6 @@
 	"settings_theme_title": "Select theme",
 	"settings_theme_label": "Select theme color",
 	"settings_theme_selected_label": "Selected: ",
-	"settings_theme_default": "Default"
+	"settings_theme_default": "Default",
+	"settings_plan": ""
 }
