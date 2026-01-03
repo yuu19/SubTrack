@@ -16,6 +16,7 @@ type Schema = typeof import('./src/lib/server/db/schema');
 const PREMIUM_PRICE_ID = {
 	default: 'price_1SjMfPFomgCAvvs0P7MKz8GT'
 } as const;
+const TEST_PRICE_LOOKUP_KEY = 'test_daily';
 
 const stripeSecretKey = process.env.SECRET_STRIPE_KEY ?? 'sk_test_placeholder';
 const stripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET ?? 'whsec_placeholder';
@@ -66,6 +67,13 @@ export const auth = betterAuth({
 						priceId: PREMIUM_PRICE_ID.default,
 						freeTrial: {
 							days: 7
+						}
+					},
+					{
+						name: 'Test 1 Day',
+						lookupKey: TEST_PRICE_LOOKUP_KEY,
+						freeTrial: {
+							days: 1
 						}
 					}
 				]

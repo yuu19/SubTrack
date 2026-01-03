@@ -31,6 +31,27 @@
           }
         }
       ]
+    },
+    {
+      "name": "Test 1 Day",
+      "description": "1-day test subscription plan",
+      "metadata": {
+        "plan": "test",
+        "slug": "test-1-day"
+      },
+      "prices": [
+        {
+          "nickname": "Test Daily",
+          "lookup_key": "test_daily",
+          "unit_amount": 100,
+          "currency": "jpy",
+          "recurring": { "interval": "day" },
+          "metadata": {
+            "plan": "test",
+            "interval": "day"
+          }
+        }
+      ]
     }
   ]
 }

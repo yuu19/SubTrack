@@ -26,6 +26,7 @@ const PREMIUM_PRICE_ID = {
 	default: 'price_1SjMfPFomgCAvvs0P7MKz8GT',
 	annual: "price_1SjMfPFomgCAvvs0V4y8b8lG",
 } as const;
+const TEST_PRICE_LOOKUP_KEY = 'test_daily';
 
 const stripeSecretKey = process.env.SECRET_STRIPE_KEY;
 
@@ -127,32 +128,39 @@ export function createAuth(db: DrizzleD1Database<Schema> | BetterSQLite3Database
 		plugins: [
 			admin(),
 			stripe({
- 				stripeClient,
- 				stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET!,
- 				createCustomerOnSignUp: true,
- 				subscription: {
- 					enabled: true,
- 					allowReTrialsForDifferentPlans: true,
- 					plans: [
- 						{
- 							name: 'Free',
- 							// priceId を設定しない = 無料プラン
- 							limits: {
- 								projects: 1,
- 								storage: 1
- 							}
- 						},
- 						{
- 							name: 'Premium',
- 							priceId: PREMIUM_PRICE_ID.default,
- 							annualDiscountPriceId: PREMIUM_PRICE_ID.annual,
- 							freeTrial: {
- 								days: 7
- 							}
- 						}
- 					]
- 				}
- 			}),
+				stripeClient,
+				stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET!,
+				createCustomerOnSignUp: true,
+				subscription: {
+					enabled: true,
+					allowReTrialsForDifferentPlans: true,
+					plans: [
+						{
+							name: 'Free',
+							// priceId を設定しない = 無料プラン
+							limits: {
+								projects: 1,
+								storage: 1
+							}
+						},
+						{
+							name: 'Premium',
+							priceId: PREMIUM_PRICE_ID.default,
+							annualDiscountPriceId: PREMIUM_PRICE_ID.annual,
+							freeTrial: {
+								days: 7
+							}
+						},
+						{
+							name: 'Test 1 Day',
+							lookupKey: TEST_PRICE_LOOKUP_KEY,
+							freeTrial: {
+								days: 1
+							}
+						}
+					]
+				}
+			}),
 			magicLink({
 				sendMagicLink: async (data, request) => {
 					try {
