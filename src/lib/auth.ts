@@ -23,8 +23,8 @@ type Schema = typeof import('./server/db/schema');
  * annualは割引の場合(後で設定するかも)
  */
 const PREMIUM_PRICE_ID = {
-	default: 'change_me!'
-	// annual: "price_1RurxWFomgCAvvs0hMaoC63b",
+	default: 'price_1SjMfPFomgCAvvs0P7MKz8GT',
+	annual: "price_1SjMfPFomgCAvvs0V4y8b8lG",
 } as const;
 
 const stripeSecretKey = process.env.SECRET_STRIPE_KEY;
@@ -145,7 +145,7 @@ export function createAuth(db: DrizzleD1Database<Schema> | BetterSQLite3Database
  						{
  							name: 'Premium',
  							priceId: PREMIUM_PRICE_ID.default,
- 							// annualDiscountPriceId: PLUS_PRICE_ID.annual,
+ 							annualDiscountPriceId: PREMIUM_PRICE_ID.annual,
  							freeTrial: {
  								days: 7
  							}
