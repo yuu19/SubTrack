@@ -1,4 +1,5 @@
 import { betterAuth } from 'better-auth';
+import { verifyPassword as verifyLegacyPassword } from 'better-auth/crypto';
 import { stripe } from '@better-auth/stripe';
 import Stripe from 'stripe';
 import { magicLink } from 'better-auth/plugins';
@@ -32,9 +33,70 @@ const stripeClient = new Stripe(stripeSecretKey!, {
 	apiVersion: '2025-11-17.clover'
 });
 
+const PASSWORD_PREFIX = 'pbkdf2_sha256';
+const PASSWORD_ITERATIONS = 100_000;
+const PASSWORD_SALT_BYTES = 16;
+const PASSWORD_KEY_BYTES = 32;
+const encoder = new TextEncoder();
+
+const bytesToBase64 = (bytes: Uint8Array) => btoa(String.fromCharCode(...bytes));
+const base64ToBytes = (value: string) => Uint8Array.from(atob(value), (c) => c.charCodeAt(0));
+
+const timingSafeEqual = (a: Uint8Array, b: Uint8Array) => {
+	let diff = a.length ^ b.length;
+	const length = Math.max(a.length, b.length);
+	for (let i = 0; i < length; i += 1) {
+		diff |= (a[i] ?? 0) ^ (b[i] ?? 0);
+	}
+	return diff === 0;
+};
+
+const derivePbkdf2Key = async (password: string, salt: Uint8Array, iterations: number) => {
+	const keyMaterial = await crypto.subtle.importKey(
+		'raw',
+		encoder.encode(password),
+		'PBKDF2',
+		false,
+		['deriveBits']
+	);
+	const bits = await crypto.subtle.deriveBits(
+		{
+			name: 'PBKDF2',
+			hash: 'SHA-256',
+			salt,
+			iterations
+		},
+		keyMaterial,
+		PASSWORD_KEY_BYTES * 8
+	);
+	return new Uint8Array(bits);
+};
+
+const hashPasswordPbkdf2 = async (password: string) => {
+	const salt = crypto.getRandomValues(new Uint8Array(PASSWORD_SALT_BYTES));
+	const key = await derivePbkdf2Key(password, salt, PASSWORD_ITERATIONS);
+	return `${PASSWORD_PREFIX}$${PASSWORD_ITERATIONS}$${bytesToBase64(salt)}$${bytesToBase64(key)}`;
+};
+
+const verifyPasswordPbkdf2 = async ({ hash, password }: { hash: string; password: string }) => {
+	if (!hash.startsWith(`${PASSWORD_PREFIX}$`)) {
+		return verifyLegacyPassword({ hash, password });
+	}
+
+	const parts = hash.split('$');
+	if (parts.length !== 4) return false;
+
+	const iterations = Number(parts[1]);
+	if (!Number.isFinite(iterations) || iterations <= 0) return false;
+
+	const salt = base64ToBytes(parts[2]);
+	const expected = base64ToBytes(parts[3]);
+	const derived = await derivePbkdf2Key(password, salt, iterations);
+	return timingSafeEqual(derived, expected);
+};
+
 export function createAuth(db: DrizzleD1Database<Schema> | BetterSQLite3Database<Schema>) {
 	return betterAuth({
-		trustedOrigins: process.env.TRUSTED_ORIGINS?.split(',') ?? [],
 		database: drizzleAdapter(db, {
 			schema,
 			provider: 'sqlite'
@@ -42,7 +104,11 @@ export function createAuth(db: DrizzleD1Database<Schema> | BetterSQLite3Database
 
 		emailAndPassword: {
 			enabled: true,
-			requireEmailVerification: true //メールを検証するまでsigninできない
+			requireEmailVerification: true, //メールを検証するまでsigninできない
+			password: {
+				hash: hashPasswordPbkdf2,
+				verify: verifyPasswordPbkdf2
+			}
 		},
 
 		// メールアドレス検証メール
@@ -116,7 +182,6 @@ export function createAuth(db: DrizzleD1Database<Schema> | BetterSQLite3Database
  * Better Auth CLI を使用したスキーマ生成時のみ使用する
  */
 // export const auth = betterAuth({
-// 	trustedOrigins: process.env.TRUSTED_ORIGINS?.split(',') ?? [],
 // 	database: drizzleAdapter(new Database("./db.sqlite"), {
 // 			schema,
 // 			provider: 'sqlite'

@@ -27,7 +27,6 @@ const stripeClient = new Stripe(stripeSecretKey, {
 const noop = async () => {};
 
 export const auth = betterAuth({
-	trustedOrigins: process.env.TRUSTED_ORIGINS?.split(',') ?? [],
 	database: drizzleAdapter(new Database('./db.sqlite'), {
 		schema,
 		provider: 'sqlite'
