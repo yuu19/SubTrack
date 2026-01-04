@@ -30,6 +30,7 @@ jobs:
       VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
       VAPID_SUBJECT: ${{ secrets.VAPID_SUBJECT }}
       PUSH_CRON_SECRET: ${{ secrets.PUSH_CRON_SECRET }}
+      PUSH_CRON_URL: ${{ secrets.PUSH_CRON_URL }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -67,3 +68,4 @@ jobs:
             SENTRY_DSN
             VAPID_PRIVATE_KEY
             PUSH_CRON_SECRET
+            PUSH_CRON_URL

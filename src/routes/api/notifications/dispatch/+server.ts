@@ -1,4 +1,7 @@
-import { dispatchSubscriptionNotifications } from '$lib/server/notifications';
+import {
+	dispatchSubscriptionNotifications,
+	dispatchTrialEndingEmails
+} from '$lib/server/notifications';
 import { error, json } from '@sveltejs/kit';
 
 const getAuthToken = (request: Request) => {
@@ -26,6 +29,10 @@ export const POST = async ({ request, locals: { db } }) => {
 		error(500, 'Database not available');
 	}
 
-	const result = await dispatchSubscriptionNotifications(db);
-	return json(result);
+	const [pushResult, trialResult] = await Promise.all([
+		dispatchSubscriptionNotifications(db),
+		dispatchTrialEndingEmails(db)
+	]);
+
+	return json({ push: pushResult, trial: trialResult });
 };

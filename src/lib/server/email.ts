@@ -37,6 +37,13 @@ export type SendChangeEmailInput = {
 	token: string;
 };
 
+export type SendTrialEndingInput = {
+	user: { email: string; name?: string | null };
+	endDate: string;
+	manageUrl: string;
+	planName?: string | null;
+};
+
 export async function sendVerificationEmail({ user, url }: SendVerificationInput) {
 	if (!resend) {
 		console.warn('[email] RESEND_API_KEY is not set; skipping verification email');
@@ -101,5 +108,36 @@ export async function sendChangeEmailConfirmation({ user, newEmail, url }: SendC
 			<p>If you didn't request this, you can ignore this email and keep your current address.</p>
 		`,
 		text: `Hi ${recipientName},\nConfirm your new email (${newEmail}) by visiting: ${url}\nIf you didn't request this, ignore this email.`
+	});
+}
+
+export async function sendTrialEndingEmail({
+	user,
+	endDate,
+	manageUrl,
+	planName
+}: SendTrialEndingInput) {
+	if (!resend) {
+		console.warn('[email] RESEND_API_KEY is not set; skipping trial ending email');
+		return;
+	}
+
+	const recipientName = user.name ?? user.email.split('@')[0];
+	const serviceName = planName ?? 'ご利用中のプラン';
+	const envelope = resolveEnvelope(user.email);
+
+	await resend.emails.send({
+		...envelope,
+		subject: `【重要】${serviceName} 自動課金のご案内（3日後）`,
+		html: `
+			<p>${recipientName} 様</p>
+			<p>${serviceName}をご利用いただきありがとうございます。</p>
+			<p>${endDate} より、ご登録プランの自動課金が開始されます。</p>
+			<p>課金を希望されない場合は、終了日までにプランの変更・解約をお願いいたします。</p>
+			<p>▼ プラン管理</p>
+			<p><a href="${manageUrl}">${manageUrl}</a></p>
+			<p>※ 本メールと行き違いで手続き済みの場合はご了承ください。</p>
+		`,
+		text: `${recipientName} 様\n\n${serviceName}をご利用いただきありがとうございます。\n\n${endDate} より、\nご登録プランの自動課金が開始されます。\n\n課金を希望されない場合は、\n終了日までにプランの変更・解約をお願いいたします。\n\n▼ プラン管理\n${manageUrl}\n\n※ 本メールと行き違いで手続き済みの場合はご了承ください。`
 	});
 }

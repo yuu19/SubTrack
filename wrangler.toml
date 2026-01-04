@@ -4,9 +4,9 @@ main = ".svelte-kit/cloudflare/_worker.js"
 compatibility_date = "2025-11-30"
 compatibility_flags = ["nodejs_compat"]
 assets = { binding = "ASSETS", directory = ".svelte-kit/cloudflare" }
-# [triggers]
+[triggers]
 # Cron format is UTC.
-# crons = ["0 * * * *"]
+crons = ["0 * * * *"]
 
 [observability]
 enabled = true
