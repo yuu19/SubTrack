@@ -1,8 +1,16 @@
 import dayjs from 'dayjs';
-import { eq, inArray } from 'drizzle-orm';
-import { pushSubscriptionTable, trackedSubscriptionTable } from '$lib/server/db/schema';
+import { and, eq, gte, inArray, isNotNull, lte } from 'drizzle-orm';
+import {
+	pushSubscriptionTable,
+	trackedSubscriptionTable,
+	subscription as subscriptionTable,
+	user as userTable,
+	verification as verificationTable
+} from '$lib/server/db/schema';
 import { computeNextBilling } from '$lib/server/subscriptions';
 import { sendWebPush } from '$lib/server/push';
+import { sendTrialEndingEmail } from '$lib/server/email';
+import { createBillingPortalUrl } from '$lib/server/stripe';
 
 export type NotificationDispatchResult = {
 	evaluated: number;
@@ -151,5 +159,141 @@ export const dispatchSubscriptionNotifications = async (
 		failed,
 		removed,
 		updated
+	};
+};
+
+export type TrialEndingDispatchResult = {
+	evaluated: number;
+	due: number;
+	sent: number;
+	failed: number;
+	skipped: number;
+};
+
+const resolveReturnUrl = () => {
+	const directBase =
+		process.env.BETTER_AUTH_URL ??
+		process.env.PUBLIC_BETTER_AUTH_URL ??
+		process.env.APP_ORIGIN;
+
+	if (directBase) {
+		return new URL('/me/personal-info', directBase).toString();
+	}
+
+	if (process.env.PUSH_CRON_URL) {
+		try {
+			const origin = new URL(process.env.PUSH_CRON_URL).origin;
+			return new URL('/me/personal-info', origin).toString();
+		} catch {
+			return null;
+		}
+	}
+
+	return null;
+};
+
+export const dispatchTrialEndingEmails = async (
+	db: NonNullable<App.Locals['db']>
+): Promise<TrialEndingDispatchResult> => {
+	const targetDay = dayjs().add(3, 'day');
+	const targetStart = targetDay.startOf('day').valueOf();
+	const targetEnd = targetDay.endOf('day').valueOf();
+	const targetKey = targetDay.format('YYYY-MM-DD');
+
+	const rows = await db
+		.select({ subscription: subscriptionTable, user: userTable })
+		.from(subscriptionTable)
+		.leftJoin(userTable, eq(subscriptionTable.referenceId, userTable.id))
+		.where(
+			and(
+				eq(subscriptionTable.status, 'trialing'),
+				isNotNull(subscriptionTable.trialEnd),
+				gte(subscriptionTable.trialEnd, targetStart),
+				lte(subscriptionTable.trialEnd, targetEnd)
+			)
+		);
+
+	if (rows.length === 0) {
+		return { evaluated: 0, due: 0, sent: 0, failed: 0, skipped: 0 };
+	}
+
+	const identifiers = rows.map(
+		({ subscription }) => `trial-ending:${subscription.id}:${targetKey}`
+	);
+
+	const sentRows = await db
+		.select({ identifier: verificationTable.identifier })
+		.from(verificationTable)
+		.where(inArray(verificationTable.identifier, identifiers));
+
+	const sentIdentifiers = new Set(sentRows.map((row) => row.identifier));
+	const returnUrl = resolveReturnUrl();
+
+	let sent = 0;
+	let failed = 0;
+	let skipped = 0;
+
+	for (const row of rows) {
+		const sub = row.subscription;
+		const user = row.user;
+		const identifier = `trial-ending:${sub.id}:${targetKey}`;
+
+		if (!user || !user.email) {
+			skipped += 1;
+			continue;
+		}
+
+		if (sentIdentifiers.has(identifier)) {
+			skipped += 1;
+			continue;
+		}
+
+		if (!returnUrl) {
+			console.error('[trial-ending] BETTER_AUTH_URL is not configured');
+			failed += 1;
+			continue;
+		}
+
+		const customerId = sub.stripeCustomerId ?? user.stripeCustomerId;
+		if (!customerId) {
+			console.error('[trial-ending] stripe customer id is missing', sub.id);
+			failed += 1;
+			continue;
+		}
+
+		const manageUrl = await createBillingPortalUrl({ customerId, returnUrl });
+		if (!manageUrl) {
+			failed += 1;
+			continue;
+		}
+
+		try {
+			await sendTrialEndingEmail({
+				user: { email: user.email, name: user.name },
+				endDate: dayjs(sub.trialEnd ?? targetStart).format('YYYY-MM-DD'),
+				manageUrl,
+				planName: sub.plan
+			});
+
+			await db.insert(verificationTable).values({
+				id: crypto.randomUUID(),
+				identifier,
+				value: targetKey,
+				expiresAt: targetEnd
+			});
+
+			sent += 1;
+		} catch (error) {
+			console.error('[trial-ending] failed to send email', error);
+			failed += 1;
+		}
+	}
+
+	return {
+		evaluated: rows.length,
+		due: rows.length,
+		sent,
+		failed,
+		skipped
 	};
 };
