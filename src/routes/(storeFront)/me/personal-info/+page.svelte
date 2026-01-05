@@ -10,7 +10,7 @@
 	import { toast } from 'svelte-sonner';
 	import { onMount } from 'svelte';
 
-	let { user, subscription } = $derived(page.data);
+	let { user, subscription, currentPlan } = $derived(page.data);
 
 	type FeatureValue = string | number | boolean;
 
@@ -24,14 +24,19 @@
 		unpaid: '未払い'
 	};
 
-	const planKey = $derived(subscription?.plan?.toLowerCase() ?? '');
-	const isPremium = $derived(planKey.includes('premium'));
+	const isPremium = $derived(currentPlan?.isPremium ?? false);
+	const isPendingCancel = $derived(currentPlan?.isPendingCancel ?? false);
 	const planLabel = $derived(isPremium ? 'プレミアムプラン' : '無料プラン');
 	const statusLabel = $derived(
-		subscription?.status ? (statusLabels[subscription.status] ?? '未設定') : '未設定'
+		isPendingCancel && isPremium
+			? '解約予定'
+			: subscription?.status
+				? (statusLabels[subscription.status] ?? '未設定')
+				: '未設定'
 	);
 	const periodEndLabel = $derived(formatDate(subscription?.periodEnd ?? subscription?.trialEnd));
 	const nextBillingLabel = $derived(formatDate(subscription?.periodEnd ?? subscription?.trialEnd));
+	const hasBillingDate = $derived(Boolean(subscription?.periodEnd ?? subscription?.trialEnd));
 	const billingAmountLabel = $derived(isPremium ? '¥5,000' : '—');
 	const premiumPlanName = 'Premium';
 
@@ -163,6 +168,18 @@
 		</div>
 
 		{#if isPremium}
+			{#if isPendingCancel}
+				<div
+					class="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"
+				>
+					<p class="font-medium">次回更新時に解約予定です。</p>
+					{#if hasBillingDate}
+						<p class="mt-1 text-amber-800">
+							{nextBillingLabel}までプレミアム機能を利用できます。
+						</p>
+					{/if}
+				</div>
+			{/if}
 			<div class="mt-5 divide-y rounded-lg border text-sm">
 				<div class="flex items-center justify-between px-4 py-3">
 					<span class="text-muted-foreground">現在のプラン</span>
@@ -177,7 +194,7 @@
 					<span class="font-medium">{periodEndLabel}</span>
 				</div>
 				<div class="flex items-center justify-between px-4 py-3">
-					<span class="text-muted-foreground">次回の更新日</span>
+					<span class="text-muted-foreground">{isPendingCancel ? '終了日' : '次回の更新日'}</span>
 					<span class="font-medium">{nextBillingLabel}</span>
 				</div>
 				<div class="flex items-center justify-between px-4 py-3">

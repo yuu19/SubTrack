@@ -74,14 +74,14 @@
 		"zod": "^4.1.13"
 	},
 	"dependencies": {
-		"@better-auth/stripe": "^1.4.9",
+		"@better-auth/stripe": "1.4.10",
 		"@oslojs/crypto": "^1.0.1",
 		"@oslojs/encoding": "^1.1.0",
 		"@sentry/sveltekit": "^10.29.0",
 		"@stripe/stripe-js": "^8.5.3",
 		"@tailwindcss/vite": "^4.1.17",
 		"@types/nprogress": "^0.2.3",
-		"better-auth": "1.4.5",
+		"better-auth": "1.4.10",
 		"dayjs": "^1.11.19",
 		"drizzle-orm": "^0.45.0",
 		"drizzle-zod": "^0.8.3",

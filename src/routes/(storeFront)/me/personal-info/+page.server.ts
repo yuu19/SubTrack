@@ -1,19 +1,24 @@
 import type { PageServerLoad } from './$types';
+import { getCurrentPlan } from '$lib/server/plan';
 
 export const load: PageServerLoad = async ({ locals, parent }) => {
 	const { db } = locals;
 	if (!db) {
-		return { subscription: null };
+		const { currentPlan } = getCurrentPlan([]);
+		return { subscription: null, currentPlan };
 	}
 
 	const { user } = await parent();
 	if (!user) {
-		return { subscription: null };
+		const { currentPlan } = getCurrentPlan([]);
+		return { subscription: null, currentPlan };
 	}
 
-	const subscription = await db.query.subscription.findFirst({
+	const subscriptions = await db.query.subscription.findMany({
 		where: (subscription, { eq }) => eq(subscription.referenceId, user.id)
 	});
 
-	return { subscription };
+	const { subscription, currentPlan } = getCurrentPlan(subscriptions);
+
+	return { subscription, currentPlan };
 };
