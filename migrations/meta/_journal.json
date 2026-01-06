@@ -64,6 +64,13 @@
       "when": 1766943047280,
       "tag": "0008_majestic_tomorrow_man",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1767704851512,
+      "tag": "0009_add_subscription_cancellation_columns",
+      "breakpoints": true
     }
   ]
 }
