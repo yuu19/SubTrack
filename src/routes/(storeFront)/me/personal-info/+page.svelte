@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { invalidateAll } from '$app/navigation';
 	import { page } from '$app/state';
 	import { authClient } from '$lib/auth-client';
 	import { Button } from '$lib/components/ui/button';
@@ -52,6 +53,7 @@
 
 	let isPremiumModalOpen = $state(false);
 	let isUpgrading = $state(false);
+	let isRestoringCancel = $state(false);
 
 	onMount(() => {
 		if (!isPremium) {
@@ -98,6 +100,31 @@
 			toast.error('ポータルのURL取得に失敗しました。');
 		} finally {
 			isUpgrading = false;
+		}
+	}
+
+	async function handleRestoreCancel() {
+		if (isRestoringCancel) return;
+		isRestoringCancel = true;
+		try {
+			const payload: { subscriptionId?: string; referenceId?: string } = {};
+			if (subscription?.stripeSubscriptionId) {
+				payload.subscriptionId = subscription.stripeSubscriptionId;
+			}
+			if (user?.id) {
+				payload.referenceId = user.id;
+			}
+
+			const { error } = await authClient.subscription.restore(payload);
+			if (error) {
+				toast.error(error.message ?? error.statusText);
+				return;
+			}
+
+			toast.success('解約のキャンセルを受け付けました。');
+			await invalidateAll();
+		} finally {
+			isRestoringCancel = false;
 		}
 	}
 
@@ -172,7 +199,21 @@
 				<div
 					class="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"
 				>
-					<p class="font-medium">次回更新時に解約予定です。</p>
+					<div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+						<p class="font-medium">次回更新時に解約予定です。</p>
+						<Button
+							variant="outline"
+							size="sm"
+							class="border-amber-200 bg-white text-amber-900 hover:bg-amber-100"
+							onclick={handleRestoreCancel}
+							disabled={isRestoringCancel}
+						>
+							{#if isRestoringCancel}
+								<Loader2 class="size-4 animate-spin" />
+							{/if}
+							解約をキャンセル
+						</Button>
+					</div>
 					{#if hasBillingDate}
 						<p class="mt-1 text-amber-800">
 							{nextBillingLabel}までプレミアム機能を利用できます。
