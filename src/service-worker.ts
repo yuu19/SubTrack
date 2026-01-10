@@ -12,7 +12,15 @@ const ASSETS = [...build, ...files];
 sw.addEventListener('install', (event) => {
 	const addAssets = async () => {
 		const cache = await caches.open(CACHE);
-		await cache.addAll(ASSETS);
+		await Promise.all(
+			ASSETS.map(async (asset) => {
+				try {
+					await cache.add(asset);
+				} catch (error) {
+					console.warn('[service-worker] failed to cache asset', asset, error);
+				}
+			})
+		);
 	};
 
 	event.waitUntil(addAssets());

@@ -200,12 +200,15 @@
 
 	const getServiceWorkerRegistration = async () => {
 		if (!('serviceWorker' in navigator)) return null;
-		const existing = await navigator.serviceWorker.getRegistration();
-		if (existing) return existing;
 		try {
-			return await navigator.serviceWorker.register(`${base}/service-worker.js`, {
-				type: dev ? 'module' : 'classic'
-			});
+			const existing = await navigator.serviceWorker.getRegistration();
+			const registration =
+				existing ??
+				(await navigator.serviceWorker.register(`${base}/service-worker.js`, {
+					type: dev ? 'module' : 'classic'
+				}));
+			const ready = await navigator.serviceWorker.ready;
+			return ready ?? registration;
 		} catch {
 			return null;
 		}
