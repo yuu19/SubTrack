@@ -66,6 +66,7 @@ jobs:
             RESEND_API_KEY
             BETTER_AUTH_SECRET
             SENTRY_DSN
+            VAPID_PUBLIC_KEY
             VAPID_PRIVATE_KEY
             PUSH_CRON_SECRET
             PUSH_CRON_URL
