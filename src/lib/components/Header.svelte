@@ -14,8 +14,6 @@
 	} from '$lib/states/modalState.svelte';
 	import LoginModal from './modals/LoginModal.svelte';
 	import RegisterModal from './modals/RegisterModal.svelte';
-	import ConfirmEmailModal from './modals/ConfirmEmailModal.svelte';
-	import ResetPasswordModal from './modals/ResetPasswordModal.svelte';
 	import MobileAuth from './modals/MobileAuth.svelte';
 	import { page } from '$app/state';
 	import { m } from '$lib/paraglide/messages.js';
@@ -114,8 +112,6 @@
 </header>
 <LoginModal />
 <RegisterModal />
-<ConfirmEmailModal />
-<ResetPasswordModal />
 <MobileAuth />
 <!-- 
 -->

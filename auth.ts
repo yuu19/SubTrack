@@ -1,7 +1,6 @@
 import { betterAuth } from 'better-auth';
 import { stripe } from '@better-auth/stripe';
 import Stripe from 'stripe';
-import { magicLink } from 'better-auth/plugins';
 import { admin } from 'better-auth/plugins';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import Database from 'better-sqlite3';
@@ -20,28 +19,24 @@ const TEST_PRICE_LOOKUP_KEY = 'test_daily';
 
 const stripeSecretKey = process.env.SECRET_STRIPE_KEY ?? 'sk_test_placeholder';
 const stripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET ?? 'whsec_placeholder';
+const authBaseUrl =
+	process.env.BETTER_AUTH_URL ?? process.env.PUBLIC_BETTER_AUTH_URL ?? 'http://localhost:3000';
 
 const stripeClient = new Stripe(stripeSecretKey, {
 	apiVersion: '2025-11-17.clover'
 });
-
-const noop = async () => {};
 
 export const auth = betterAuth({
 	database: drizzleAdapter(new Database('./db.sqlite'), {
 		schema,
 		provider: 'sqlite'
 	}),
-
-	emailAndPassword: {
-		enabled: true,
-		requireEmailVerification: true
-	},
-
-	emailVerification: {
-		sendOnSignUp: true,
-		sendVerificationEmail: async () => {
-			await noop();
+	baseURL: authBaseUrl,
+	socialProviders: {
+		google: {
+			prompt: "select_account", 
+			clientId: process.env.GOOGLE_CLIENT_ID ?? 'google_client_id_placeholder',
+			clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? 'google_client_secret_placeholder'
 		}
 	},
 
@@ -78,22 +73,8 @@ export const auth = betterAuth({
 					}
 				]
 			}
-		}),
-		magicLink({
-			sendMagicLink: async () => {
-				await noop();
-			},
-			expiresIn: 3600
 		})
 	],
 
-	secret: process.env.BETTER_AUTH_SECRET,
-	user: {
-		changeEmail: {
-			enabled: true,
-			sendChangeEmailConfirmation: async () => {
-				await noop();
-			}
-		}
-	}
+	secret: process.env.BETTER_AUTH_SECRET
 });

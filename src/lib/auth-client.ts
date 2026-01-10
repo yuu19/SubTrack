@@ -1,7 +1,6 @@
 import { adminClient } from 'better-auth/client/plugins';
 import { createAuthClient } from 'better-auth/svelte'; // make sure to import from better-auth/svelte
 import { stripeClient } from '@better-auth/stripe/client';
-import { magicLinkClient } from 'better-auth/client/plugins';
 import { toast } from 'svelte-sonner';
 
 export const authClient = createAuthClient({
@@ -9,8 +8,7 @@ export const authClient = createAuthClient({
 		adminClient(),
 		stripeClient({
 			subscription: true
-		}),
-		magicLinkClient()
+		})
 	],
 	fetchOptions: {
 		onError(e) {

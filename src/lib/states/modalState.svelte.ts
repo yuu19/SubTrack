@@ -32,8 +32,6 @@ class ModalState {
 const createModalState = (initial: ModalInitializer = false) => new ModalState(initial);
 
 export const registerModalState = createModalState(false);
-export const confirmEmailModalState = createModalState(false);
 export const loginModalState = createModalState(false);
-export const requestPasswordResetModalState = createModalState(false);
 export const mobileAuthState = createModalState(false);
 export const addSubscriptionModalState = createModalState(false);

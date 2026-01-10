@@ -1,57 +1,11 @@
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
-export const registerSchema = z
-	.object({
-		email: z.email(),
-		name: z.string().min(3).max(20),
-		password: z.string().min(8).max(100),
-		confirmPassword: z.string().min(8).max(100)
-	})
-	.refine((data) => data.password === data.confirmPassword, {
-		message: 'Passwords do not match',
-		path: ['confirmPassword']
-	});
-export type RegisterSchema = typeof registerSchema;
-
-export const loginSchema = z.object({
-	email: z.email(),
-	password: z.string().min(8).max(100)
-});
-
-export type LoginSchema = typeof loginSchema;
-
-export const updateEmailSchema = z.object({
-	email: z.email()
-});
-export const requestPasswordResetSchema = z.object({
-	email: z.email()
-});
-
 const isValidPhoneNumber = (phone: string): boolean => {
 	const regex = /^([0|+[0-9]{1,5})?([7-9][0-9]{9})$/;
 	return regex.test(phone);
 };
 
-export const resetPasswordSchema = z
-	.object({
-		password: z.string().min(8),
-		confirmPassword: z.string().min(8)
-	})
-	.refine((data) => data.password === data.confirmPassword, {
-		message: 'Passwords do not match',
-		path: ['confirmPassword']
-	});
-export const updatePasswordSchema = z
-	.object({
-		currentPassword: z.string().min(8),
-		newPassword: z.string().min(8),
-		confirmNewPassword: z.string().min(8)
-	})
-	.refine((data) => data.newPassword === data.confirmNewPassword, {
-		message: 'Passwords do not match',
-		path: ['confirmNewPassword']
-	});
 export const updateNumberSchema = z.object({
 	number: z.string().refine(isValidPhoneNumber, {
 		message: 'Please enter a valid phone number'
