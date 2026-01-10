@@ -196,8 +196,8 @@ export const dispatchTrialEndingEmails = async (
 	db: NonNullable<App.Locals['db']>
 ): Promise<TrialEndingDispatchResult> => {
 	const targetDay = dayjs().add(3, 'day');
-	const targetStart = targetDay.startOf('day').valueOf();
-	const targetEnd = targetDay.endOf('day').valueOf();
+	const targetStart = targetDay.startOf('day').toDate();
+	const targetEnd = targetDay.endOf('day').toDate();
 	const targetKey = targetDay.format('YYYY-MM-DD');
 
 	const rows = await db
