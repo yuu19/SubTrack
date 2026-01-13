@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { ROLE, THEMES } from '../../constant';
+import { NOTIFICATION_METHODS, ROLE, THEMES } from '../../constant';
 import { sqliteTable, text, integer, index } from 'drizzle-orm/sqlite-core';
 export const timestamps = {
 	updatedAt: integer('updated_at', {
@@ -42,6 +42,9 @@ export const user = sqliteTable('user', {
 	role: text('role', { enum: ROLE }).default('user'),
 	activeTheme: text('active_theme', { enum: THEMES }).notNull().default('default'),
 	defaultNotifyDaysBefore: integer('default_notify_days_before').notNull().default(3),
+	notificationMethod: text('notification_method', { enum: NOTIFICATION_METHODS })
+		.notNull()
+		.default('push'),
 	banned: integer('banned', {
 		mode: 'boolean'
 	}).default(false),

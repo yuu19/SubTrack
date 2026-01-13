@@ -17,7 +17,7 @@ export const POST = async ({ request, locals: { db } }) => {
 	}
 
 	if (!process.env.VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY) {
-		error(500, 'VAPID keys are not configured');
+		console.warn('[notifications] VAPID keys are not configured; push disabled.');
 	}
 
 	const token = getAuthToken(request);

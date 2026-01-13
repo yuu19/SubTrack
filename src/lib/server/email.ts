@@ -44,6 +44,14 @@ export type SendTrialEndingInput = {
 	planName?: string | null;
 };
 
+export type SendSubscriptionReminderInput = {
+	user: { email: string; name?: string | null };
+	serviceName: string;
+	notifyDays: number;
+	billingDate: string;
+	manageUrl?: string | null;
+};
+
 export async function sendVerificationEmail({ user, url }: SendVerificationInput) {
 	if (!resend) {
 		console.warn('[email] RESEND_API_KEY is not set; skipping verification email');
@@ -139,5 +147,44 @@ export async function sendTrialEndingEmail({
 			<p>※ 本メールと行き違いで手続き済みの場合はご了承ください。</p>
 		`,
 		text: `${recipientName} 様\n\n${serviceName}をご利用いただきありがとうございます。\n\n${endDate} より、\nご登録プランの自動課金が開始されます。\n\n課金を希望されない場合は、\n終了日までにプランの変更・解約をお願いいたします。\n\n▼ プラン管理\n${manageUrl}\n\n※ 本メールと行き違いで手続き済みの場合はご了承ください。`
+	});
+}
+
+export async function sendSubscriptionReminderEmail({
+	user,
+	serviceName,
+	notifyDays,
+	billingDate,
+	manageUrl
+}: SendSubscriptionReminderInput) {
+	if (!resend) {
+		console.warn('[email] RESEND_API_KEY is not set; skipping subscription reminder email');
+		return;
+	}
+
+	const recipientName = user.name ?? user.email.split('@')[0];
+	const when =
+		notifyDays === 0 ? '本日が支払い日です。' : `支払いまであと${notifyDays}日です。`;
+	const envelope = resolveEnvelope(user.email);
+	const subject =
+		notifyDays === 0
+			? `【支払い当日】${serviceName}のサブスク通知`
+			: `【支払い通知】${serviceName}の支払いまであと${notifyDays}日`;
+
+	const manageLine = manageUrl
+		? `<p>▼ サブスク一覧</p><p><a href="${manageUrl}">${manageUrl}</a></p>`
+		: '';
+
+	await resend.emails.send({
+		...envelope,
+		subject,
+		html: `
+			<p>${recipientName} 様</p>
+			<p>${serviceName}の支払いについてのお知らせです。</p>
+			<p>${when}</p>
+			<p>支払日: ${billingDate}</p>
+			${manageLine}
+		`,
+		text: `${recipientName} 様\n\n${serviceName}の支払いについてのお知らせです。\n${when}\n支払日: ${billingDate}\n${manageUrl ? `\\n▼ サブスク一覧\\n${manageUrl}` : ''}`
 	});
 }

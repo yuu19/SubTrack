@@ -9,7 +9,7 @@ import {
 } from '$lib/server/db/schema';
 import { computeNextBilling } from '$lib/server/subscriptions';
 import { sendWebPush } from '$lib/server/push';
-import { sendTrialEndingEmail } from '$lib/server/email';
+import { sendSubscriptionReminderEmail, sendTrialEndingEmail } from '$lib/server/email';
 import { createBillingPortalUrl } from '$lib/server/stripe';
 
 export type NotificationDispatchResult = {
@@ -38,10 +38,47 @@ const buildPayload = (subscription: typeof trackedSubscriptionTable.$inferSelect
 	};
 };
 
+const formatBillingDate = (value: string | null | undefined) => {
+	if (!value) return '未設定';
+	const parsed = dayjs(value);
+	return parsed.isValid() ? parsed.format('YYYY-MM-DD') : value;
+};
+
+const resolveSubscriptionUrl = () => {
+	const directBase =
+		process.env.BETTER_AUTH_URL ??
+		process.env.PUBLIC_BETTER_AUTH_URL ??
+		process.env.APP_ORIGIN;
+
+	if (directBase) {
+		return new URL('/subscriptions', directBase).toString();
+	}
+
+	if (process.env.PUSH_CRON_URL) {
+		try {
+			const origin = new URL(process.env.PUSH_CRON_URL).origin;
+			return new URL('/subscriptions', origin).toString();
+		} catch {
+			return null;
+		}
+	}
+
+	return null;
+};
+
 export const dispatchSubscriptionNotifications = async (
 	db: NonNullable<App.Locals['db']>
 ): Promise<NotificationDispatchResult> => {
 	const today = dayjs().startOf('day');
+	const pushEnabled = Boolean(process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY);
+	const emailEnabled = Boolean(process.env.RESEND_API_KEY);
+
+	if (!pushEnabled) {
+		console.warn('[subscription-notify] VAPID keys are not configured; push disabled.');
+	}
+	if (!emailEnabled) {
+		console.warn('[subscription-notify] RESEND_API_KEY is not configured; email disabled.');
+	}
 	const subscriptions = await db.select().from(trackedSubscriptionTable);
 	let updated = 0;
 
@@ -93,6 +130,18 @@ export const dispatchSubscriptionNotifications = async (
 		new Set(dueSubscriptions.map((sub) => sub.userId).filter(Boolean))
 	) as string[];
 
+	const users = await db
+		.select({
+			id: userTable.id,
+			email: userTable.email,
+			name: userTable.name,
+			notificationMethod: userTable.notificationMethod
+		})
+		.from(userTable)
+		.where(inArray(userTable.id, userIds));
+
+	const userById = new Map(users.map((user) => [user.id, user]));
+
 	const pushSubscriptions = await db
 		.select()
 		.from(pushSubscriptionTable)
@@ -108,48 +157,85 @@ export const dispatchSubscriptionNotifications = async (
 	let sent = 0;
 	let failed = 0;
 	let removed = 0;
+	const subscriptionUrl = resolveSubscriptionUrl();
 
 	for (const sub of dueSubscriptions) {
-		const userPushSubscriptions = pushByUser.get(sub.userId ?? '') ?? [];
-		if (userPushSubscriptions.length === 0) continue;
+		const userId = sub.userId ?? '';
+		const user = userById.get(userId);
+		if (!user) continue;
 
-		const payload = buildPayload(sub);
+		const method = user.notificationMethod ?? 'push';
+		const shouldPush = method === 'push' || method === 'both';
+		const shouldEmail = method === 'email' || method === 'both';
+		let attempted = false;
 
-		for (const pushSub of userPushSubscriptions) {
-			try {
-				const response = await sendWebPush(
-					{
-						endpoint: pushSub.endpoint,
-						p256dh: pushSub.p256dh,
-						auth: pushSub.auth,
-						expirationTime: pushSub.expirationTime ?? null
-					},
-					payload
-				);
+		if (shouldPush && pushEnabled) {
+			const userPushSubscriptions = pushByUser.get(userId) ?? [];
+			if (userPushSubscriptions.length > 0) {
+				attempted = true;
+				const payload = buildPayload(sub);
 
-				if (response.status === 404 || response.status === 410) {
-					await db
-						.delete(pushSubscriptionTable)
-						.where(eq(pushSubscriptionTable.id, pushSub.id));
-					removed += 1;
-					continue;
+				for (const pushSub of userPushSubscriptions) {
+					try {
+						const response = await sendWebPush(
+							{
+								endpoint: pushSub.endpoint,
+								p256dh: pushSub.p256dh,
+								auth: pushSub.auth,
+								expirationTime: pushSub.expirationTime ?? null
+							},
+							payload
+						);
+
+						if (response.status === 404 || response.status === 410) {
+							await db
+								.delete(pushSubscriptionTable)
+								.where(eq(pushSubscriptionTable.id, pushSub.id));
+							removed += 1;
+							continue;
+						}
+
+						if (response.ok) {
+							sent += 1;
+						} else {
+							failed += 1;
+						}
+					} catch (error) {
+						console.error('Failed to send push notification', error);
+						failed += 1;
+					}
 				}
-
-				if (response.ok) {
-					sent += 1;
-				} else {
-					failed += 1;
-				}
-			} catch (error) {
-				console.error('Failed to send push notification', error);
-				failed += 1;
 			}
 		}
 
-		await db
-		.update(trackedSubscriptionTable)
-		.set({ lastNotifiedAt: new Date() })
-		.where(eq(trackedSubscriptionTable.id, sub.id));
+		if (shouldEmail && user.email && emailEnabled) {
+			if (!subscriptionUrl) {
+				console.error('[subscription-notify] APP_ORIGIN is not configured');
+				failed += 1;
+			} else {
+				attempted = true;
+				try {
+					await sendSubscriptionReminderEmail({
+						user: { email: user.email, name: user.name },
+						serviceName: sub.serviceName,
+						notifyDays: Number(sub.notifyDaysBefore ?? 0),
+						billingDate: formatBillingDate(sub.nextBillingAt),
+						manageUrl: subscriptionUrl
+					});
+					sent += 1;
+				} catch (error) {
+					console.error('[subscription-notify] failed to send email', error);
+					failed += 1;
+				}
+			}
+		}
+
+		if (attempted) {
+			await db
+				.update(trackedSubscriptionTable)
+				.set({ lastNotifiedAt: new Date() })
+				.where(eq(trackedSubscriptionTable.id, sub.id));
+		}
 	}
 
 	return {

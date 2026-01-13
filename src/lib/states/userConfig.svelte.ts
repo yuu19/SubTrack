@@ -1,20 +1,23 @@
-import { THEMES } from '$lib/constant';
+import { NOTIFICATION_METHODS, THEMES } from '$lib/constant';
 import { Context } from 'runed';
 import { z } from 'zod/v4';
 
 const activeTheme = z.enum(THEMES).default('default');
 const defaultNotifyDaysBefore = z.number().int().min(0).max(365).default(3);
+const notificationMethod = z.enum(NOTIFICATION_METHODS).default('push');
 
 export type ActiveTheme = z.infer<typeof activeTheme>;
 
 export const userConfigSchema = z
 	.object({
 		activeTheme: activeTheme,
-		defaultNotifyDaysBefore: defaultNotifyDaysBefore
+		defaultNotifyDaysBefore: defaultNotifyDaysBefore,
+		notificationMethod: notificationMethod
 	})
 	.default({
 		activeTheme: 'default',
-		defaultNotifyDaysBefore: 3
+		defaultNotifyDaysBefore: 3,
+		notificationMethod: 'push'
 	});
 
 export type UserConfigType = z.infer<typeof userConfigSchema>;
@@ -43,7 +46,8 @@ export class UserConfig {
 				},
 				body: JSON.stringify({
 					activeTheme: this.#config.activeTheme,
-					defaultNotifyDaysBefore: this.#config.defaultNotifyDaysBefore
+					defaultNotifyDaysBefore: this.#config.defaultNotifyDaysBefore,
+					notificationMethod: this.#config.notificationMethod
 				})
 			});
 		}

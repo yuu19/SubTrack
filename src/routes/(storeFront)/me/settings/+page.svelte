@@ -2,6 +2,7 @@
 	import { invalidateAll } from '$app/navigation';
 	import { authClient } from '$lib/auth-client';
 	import DefaultNotifyModal from '$lib/components/modals/DefaultNotifyModal.svelte';
+	import NotificationMethodModal from '$lib/components/modals/NotificationMethodModal.svelte';
 	import UpdateNameModal from '$lib/components/modals/UpdateNameModal.svelte';
 	import ThemeSelectModal from '$lib/components/modals/ThemeSelectModal.svelte';
 	import { Button } from '$lib/components/ui/button';
@@ -22,6 +23,11 @@
 	<div class="flex w-full justify-between gap-5 border-b pb-3">
 		<p class="text-base font-semibold md:text-lg">デフォルト通知日</p>
 		<DefaultNotifyModal />
+	</div>
+
+	<div class="flex w-full justify-between gap-5 border-b pb-3">
+		<p class="text-base font-semibold md:text-lg">通知方法</p>
+		<NotificationMethodModal />
 	</div>
 
 	<div class="flex w-full justify-between gap-5 border-b pb-3">
