@@ -1,6 +1,9 @@
 <script lang="ts">
 	import Button from '$lib/components/ui/button/button.svelte';
+	import GoogleAuthButton from '$lib/components/GoogleAuthButton.svelte';
 	import { m } from '$lib/paraglide/messages.js';
+
+	let { data } = $props();
 </script>
 
 <main class="mx-auto flex min-h-[70vh] max-w-4xl flex-col items-start justify-center gap-6 px-4 py-10">
@@ -14,7 +17,11 @@
 		</p>
 	</div>
 	<div class="flex flex-wrap gap-3">
-		<Button href="/subscriptions">{m.hero_cta_subscriptions()}</Button>
-		<Button href="/calendar" variant="secondary">{m.hero_cta_calendar()}</Button>
+		{#if data.user}
+			<Button href="/subscriptions">{m.hero_cta_subscriptions()}</Button>
+			<Button href="/calendar" variant="secondary">{m.hero_cta_calendar()}</Button>
+		{:else}
+			<GoogleAuthButton label={m.hero_cta_login_register()} />
+		{/if}
 	</div>
 </main>

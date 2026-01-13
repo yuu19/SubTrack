@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { authClient } from '$lib/auth-client';
 	import { toast } from 'svelte-sonner';
+	import { base } from '$app/paths';
 
 	let { label = 'Sign in with Google', disabled = false } = $props<{
 		label?: string;
@@ -8,8 +9,11 @@
 	}>();
 
 	const handleClick = async () => {
+		const callbackURL = `${base}/subscriptions`;
 		const { error } = await authClient.signIn.social({
-			provider: 'google'
+			provider: 'google',
+			callbackURL,
+			newUserCallbackURL: callbackURL
 		});
 
 		if (error) {
