@@ -49,7 +49,7 @@
 	"addresses_delete_cancel": "キャンセル",
 	"addresses_delete_confirm": "住所を削除",
 	"settings_email": "メール",
-	"settings_name": "名前",
+	"settings_name": "ユーザー名",
 	"settings_password": "パスワード",
 	"settings_logout_label": "ストアからログアウト",
 	"settings_logout_button": "ログアウト",
@@ -129,5 +129,10 @@
 	"settings_theme_title": "テーマを選択",
 	"settings_theme_label": "テーマカラーを選択",
 	"settings_theme_selected_label": "選択中: ",
-	"settings_theme_default": "デフォルト"
+	"settings_theme_default": "デフォルト",
+	"brand_primary": "Svelte",
+	"brand_suffix": "デモアプリ\n\n",
+	"cta_explore_products": "プランを今すぐ探す",
+	"offer_body": "迅速で信頼性の高い配送サービスで、お気に入りの商品をご自宅までお届けします。今すぐショッピングを始めて、オンライン購入の便利さを体験してください。",
+	"settings_plan": "プラン"
 }
