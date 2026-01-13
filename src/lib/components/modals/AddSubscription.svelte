@@ -10,6 +10,7 @@
 	import TagsInput from '$lib/components/ui/tags-input/tags-input.svelte';
 	import { payloadFromFormData } from '$lib/offline/subscriptions';
 	import { addSubscriptionModalState } from '$lib/states/modalState.svelte';
+	import { UserConfigContext } from '$lib/states/userConfig.svelte';
 
 	const cycleOptions = [
 		{ value: 'monthly', label: '毎月' },
@@ -18,6 +19,10 @@
 	];
 
 	let { data, onOfflineSubmit, onServerResult } = $props();
+	const userConfig = UserConfigContext.get();
+
+	const defaultNotifyDaysBefore = $derived(userConfig.current.defaultNotifyDaysBefore ?? 3);
+	let wasOpen = false;
 
 	const form = superForm(
 		untrack(() => data.form),
@@ -55,6 +60,14 @@
 			}
 		}
 	};
+
+	$effect(() => {
+		const isOpen = addSubscriptionModalState.value;
+		if (isOpen && !wasOpen) {
+			$notifyDaysBeforeField = defaultNotifyDaysBefore;
+		}
+		wasOpen = isOpen;
+	});
 
 </script>
 
@@ -105,7 +118,6 @@
 					</select>
 				{/snippet}
 			</Control>
-			<Description class="text-muted-foreground text-sm">プレミアムプランでは通知日を設定できます</Description>
 			<FieldErrors class="text-destructive text-sm" />
 		</Field>
 

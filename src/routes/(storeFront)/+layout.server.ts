@@ -14,7 +14,8 @@ export const load = async ({ request, locals }) => {
 			})
 		: null;
 	const parsedConfig = userConfigSchema.safeParse({
-		activeTheme: user?.activeTheme ?? 'default'
+		activeTheme: user?.activeTheme ?? 'default',
+		defaultNotifyDaysBefore: user?.defaultNotifyDaysBefore ?? 3
 	});
 	const userConfig = parsedConfig.success ? parsedConfig.data : userConfigSchema.parse({});
 

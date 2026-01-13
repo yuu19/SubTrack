@@ -41,6 +41,7 @@ export const user = sqliteTable('user', {
 		.notNull(),
 	role: text('role', { enum: ROLE }).default('user'),
 	activeTheme: text('active_theme', { enum: THEMES }).notNull().default('default'),
+	defaultNotifyDaysBefore: integer('default_notify_days_before').notNull().default(3),
 	banned: integer('banned', {
 		mode: 'boolean'
 	}).default(false),

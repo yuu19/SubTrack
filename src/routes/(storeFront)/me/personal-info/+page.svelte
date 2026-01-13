@@ -42,7 +42,7 @@
 	const premiumPlanName = 'Premium';
 
 	const premiumFeatures: { label: string; free: FeatureValue; premium: FeatureValue }[] = [
-		{ label: 'サブスクリプション登録数', free: '8', premium: '∞' },
+		{ label: 'サブスクリプション登録数', free: '5', premium: '∞' },
 		{ label: 'カテゴリー登録数', free: '3', premium: '∞' },
 		{ label: '支払い方法登録数', free: '3', premium: '∞' },
 		{ label: '全広告の非表示', free: false, premium: true },
@@ -189,7 +189,7 @@
 				{#if isPremium}
 					プレミアムプランをご利用中です。
 				{:else}
-					無料プランをご利用中です。
+					無料プランをご利用中です。サブスクリプションは最大5件まで登録できます。
 				{/if}
 			</p>
 		</div>

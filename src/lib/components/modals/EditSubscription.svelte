@@ -7,6 +7,7 @@
 	import Button from '$lib/components/ui/button/button.svelte';
 	import Input from '$lib/components/ui/input/input.svelte';
 	import TagsInput from '$lib/components/ui/tags-input/tags-input.svelte';
+	import { UserConfigContext } from '$lib/states/userConfig.svelte';
 
 	const cycleOptions = [
 		{ value: 'monthly', label: '毎月' },
@@ -15,6 +16,12 @@
 	];
 
 	let { subscription, onServerResult, onClose } = $props();
+	const userConfig = UserConfigContext.get();
+
+	const defaultNotifyDaysBefore = $derived(userConfig.current.defaultNotifyDaysBefore ?? 3);
+	const defaultNotifyLabel = $derived(
+		defaultNotifyDaysBefore === 0 ? '当日' : `${defaultNotifyDaysBefore}日前`
+	);
 
 const initialData = subscription
 	? {
@@ -101,19 +108,22 @@ const form = superForm(defaults(initialData, zod4Client(subscriptionSchema)), {
 		<Field {form} name="notifyDaysBefore">
 			<Control>
 				{#snippet children({ props })}
-					<Label class="font-medium">何日前に通知しますか？</Label>
+					<Label class="font-medium">通知日を個別に設定（任意）</Label>
 					<select
 						{...props}
 						class="border-input focus-visible:ring-ring focus-visible:border-ring bg-background flex h-10 w-full rounded-md border px-3 text-sm shadow-sm transition"
 						bind:value={$notifyDaysBeforeField}
 					>
+						<option value={0}>当日</option>
 						<option value={1}>1日前</option>
 						<option value={3}>3日前</option>
 						<option value={7}>7日前</option>
 					</select>
 				{/snippet}
 			</Control>
-			<Description class="text-muted-foreground text-sm">プレミアムプランでは通知日を設定できます</Description>
+			<Description class="text-muted-foreground text-sm">
+				設定しなければデフォルト（{defaultNotifyLabel}）が適用されます。
+			</Description>
 			<FieldErrors class="text-destructive text-sm" />
 		</Field>
 

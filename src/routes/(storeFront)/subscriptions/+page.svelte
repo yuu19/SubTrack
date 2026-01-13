@@ -28,6 +28,7 @@
 	import { fromAction } from 'svelte/attachments';
 	import { Bell, CalendarDays, Repeat } from 'lucide-svelte';
 	import { onMount } from 'svelte';
+	import { toast } from 'svelte-sonner';
 	import type { trackedSubscriptionTable } from '$lib/server/db/schema';
 
 	type Subscription = typeof trackedSubscriptionTable.$inferSelect;
@@ -149,6 +150,16 @@
 		}
 	};
 
+	const handleCreateResult = async (serverSubscriptions: Subscription[]) => {
+		await handleServerResult(serverSubscriptions);
+		toast.success('サブスクを追加しました。');
+	};
+
+	const handleUpdateResult = async (serverSubscriptions: Subscription[]) => {
+		await handleServerResult(serverSubscriptions);
+		toast.success('サブスクを更新しました。');
+	};
+
 	const openDetail = (subscription: SubscriptionView) => {
 		selectedSubscription = subscription;
 		detailOpen = true;
@@ -178,6 +189,7 @@
 			if (data?.subscriptions) {
 				await handleServerResult(data.subscriptions);
 			}
+			toast.success('サブスクを削除しました。');
 			deleteOpen = false;
 			detailOpen = false;
 			editOpen = false;
@@ -551,7 +563,7 @@
 			{#key selectedSubscription?.id}
 				<EditSubscription
 					subscription={selectedSubscription}
-					onServerResult={handleServerResult}
+					onServerResult={handleUpdateResult}
 					onClose={closeEdit}
 				/>
 			{/key}
@@ -584,6 +596,10 @@
 
 <Dialog.Root bind:open={addSubscriptionModalState.value}>
 	<Dialog.Content class="max-h-[90vh] w-full max-w-3xl overflow-y-auto p-0">
-		<AddSubscription {data} onOfflineSubmit={handleOfflineSubmit} onServerResult={handleServerResult} />
+		<AddSubscription
+			{data}
+			onOfflineSubmit={handleOfflineSubmit}
+			onServerResult={handleCreateResult}
+		/>
 	</Dialog.Content>
 </Dialog.Root>

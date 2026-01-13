@@ -3,15 +3,18 @@ import { Context } from 'runed';
 import { z } from 'zod/v4';
 
 const activeTheme = z.enum(THEMES).default('default');
+const defaultNotifyDaysBefore = z.number().int().min(0).max(365).default(3);
 
 export type ActiveTheme = z.infer<typeof activeTheme>;
 
 export const userConfigSchema = z
 	.object({
-		activeTheme: activeTheme
+		activeTheme: activeTheme,
+		defaultNotifyDaysBefore: defaultNotifyDaysBefore
 	})
 	.default({
-		activeTheme: 'default'
+		activeTheme: 'default',
+		defaultNotifyDaysBefore: 3
 	});
 
 export type UserConfigType = z.infer<typeof userConfigSchema>;
@@ -32,13 +35,16 @@ export class UserConfig {
 
 	setConfig(config: Partial<UserConfigType>): void {
 		this.#config = { ...this.#config, ...config };
-		if (typeof window !== 'undefined' && config.activeTheme) {
+		if (typeof window !== 'undefined') {
 			void fetch('/api/user-config', {
 				method: 'POST',
 				headers: {
 					'content-type': 'application/json'
 				},
-				body: JSON.stringify({ activeTheme: this.#config.activeTheme })
+				body: JSON.stringify({
+					activeTheme: this.#config.activeTheme,
+					defaultNotifyDaysBefore: this.#config.defaultNotifyDaysBefore
+				})
 			});
 		}
 	}

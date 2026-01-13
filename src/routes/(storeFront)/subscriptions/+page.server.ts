@@ -6,6 +6,7 @@ import { pushSubscriptionTable, trackedSubscriptionTable } from '$lib/server/db/
 import { and, desc, eq } from 'drizzle-orm';
 import { createAuth } from '$lib/auth';
 import { computeNextBilling } from '$lib/server/subscriptions';
+import { getCurrentPlan } from '$lib/server/plan';
 
 const fetchSubscriptions = async (
 	db: NonNullable<App.Locals['db']>,
@@ -18,11 +19,26 @@ const fetchSubscriptions = async (
 		.orderBy(desc(trackedSubscriptionTable.createdAt));
 };
 
+const resolveDefaultNotifyDaysBefore = async (
+	db: NonNullable<App.Locals['db']>,
+	userId?: string
+) => {
+	if (!userId) return 3;
+	const userRecord = await db.query.user.findFirst({
+		where: (user, { eq }) => eq(user.id, userId),
+		columns: {
+			defaultNotifyDaysBefore: true
+		}
+	});
+	return userRecord?.defaultNotifyDaysBefore ?? 3;
+};
+
 export const load: PageServerLoad = async ({ locals, request }) => {
 	const form = await superValidate(zod4(subscriptionSchema));
 	if (!form.data.select) {
 		form.data.select = 'monthly';
 	}
+	form.data.notifyDaysBefore = 3;
 
 	const vapidPublicKey = process.env.VAPID_PUBLIC_KEY ?? '';
 
@@ -34,6 +50,7 @@ export const load: PageServerLoad = async ({ locals, request }) => {
 	const auth = createAuth(db);
 	const session = await auth.api.getSession({ headers: request.headers });
 	const userId = session?.user.id;
+	form.data.notifyDaysBefore = await resolveDefaultNotifyDaysBefore(db, userId);
 
 	const subscriptions =
 		userId !== undefined
@@ -98,6 +115,27 @@ export const actions: Actions = {
 		}
 
 		try {
+			const defaultNotifyDaysBefore = await resolveDefaultNotifyDaysBefore(db, userId);
+			const billingSubscriptions = await db.query.subscription.findMany({
+				where: (subscription, { eq }) => eq(subscription.referenceId, userId)
+			});
+			const { currentPlan } = getCurrentPlan(billingSubscriptions);
+
+			if (!currentPlan.isPremium) {
+				const existingSubscriptions = await db
+					.select({ id: trackedSubscriptionTable.id })
+					.from(trackedSubscriptionTable)
+					.where(eq(trackedSubscriptionTable.userId, userId))
+					.limit(5);
+
+				if (existingSubscriptions.length >= 5) {
+					return fail(403, {
+						form,
+						error: '無料プランはサブスクリプションを最大5件まで登録できます。'
+					});
+				}
+			}
+
 			const { nextBillingAt, daysUntilNextBilling } = computeNextBilling(
 				form.data.datepicker,
 				form.data.select
@@ -111,7 +149,7 @@ export const actions: Actions = {
 				firstPaymentDate: form.data.datepicker,
 				nextBillingAt,
 				daysUntilNextBilling,
-				notifyDaysBefore: form.data.notifyDaysBefore ?? 1,
+				notifyDaysBefore: form.data.notifyDaysBefore ?? defaultNotifyDaysBefore,
 				tags: form.data.tagsinput
 			});
 
@@ -151,6 +189,7 @@ export const actions: Actions = {
 		}
 
 		try {
+			const defaultNotifyDaysBefore = await resolveDefaultNotifyDaysBefore(db, userId);
 			const { nextBillingAt, daysUntilNextBilling } = computeNextBilling(
 				form.data.datepicker,
 				form.data.select
@@ -165,7 +204,7 @@ export const actions: Actions = {
 					firstPaymentDate: form.data.datepicker,
 					nextBillingAt,
 					daysUntilNextBilling,
-					notifyDaysBefore: form.data.notifyDaysBefore ?? 1,
+					notifyDaysBefore: form.data.notifyDaysBefore ?? defaultNotifyDaysBefore,
 					tags: form.data.tagsinput
 				})
 				.where(and(eq(trackedSubscriptionTable.id, id), eq(trackedSubscriptionTable.userId, userId)));
