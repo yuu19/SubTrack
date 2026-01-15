@@ -79,7 +79,10 @@ export const dispatchSubscriptionNotifications = async (
 	if (!emailEnabled) {
 		console.warn('[subscription-notify] RESEND_API_KEY is not configured; email disabled.');
 	}
-	const subscriptions = await db.select().from(trackedSubscriptionTable);
+	const subscriptions = await db
+		.select()
+		.from(trackedSubscriptionTable)
+		.where(eq(trackedSubscriptionTable.isSample, false));
 	let updated = 0;
 
 	const dueSubscriptions: typeof trackedSubscriptionTable.$inferSelect[] = [];

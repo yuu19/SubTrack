@@ -136,6 +136,15 @@ export const actions: Actions = {
 				}
 			}
 
+			await db
+				.delete(trackedSubscriptionTable)
+				.where(
+					and(
+						eq(trackedSubscriptionTable.userId, userId),
+						eq(trackedSubscriptionTable.isSample, true)
+					)
+				);
+
 			const { nextBillingAt, daysUntilNextBilling } = computeNextBilling(
 				form.data.datepicker,
 				form.data.select

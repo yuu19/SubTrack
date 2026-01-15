@@ -29,6 +29,7 @@ export type SubscriptionRecord = {
 	createdAt?: Date | string | number | null;
 	updatedAt?: Date | string | number | null;
 	lastNotifiedAt?: Date | string | number | null;
+	isSample?: boolean;
 	_pending?: boolean;
 	_clientId?: string;
 };

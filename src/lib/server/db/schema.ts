@@ -50,6 +50,11 @@ export const user = sqliteTable('user', {
 	})
 		.notNull()
 		.default(false),
+	sampleDataSeeded: integer('sample_data_seeded', {
+		mode: 'boolean'
+	})
+		.notNull()
+		.default(false),
 	banned: integer('banned', {
 		mode: 'boolean'
 	}).default(false),
@@ -179,6 +184,7 @@ export const trackedSubscriptionTable = sqliteTable('tracked_subscription', {
 	notifyDaysBefore: integer('notify_days_before').notNull().default(1),
 	lastNotifiedAt: integer('last_notified_at', { mode: 'timestamp_ms' }),
 	tags: array<string>('tags').notNull(),
+	isSample: integer('is_sample', { mode: 'boolean' }).notNull().default(false),
 	...timestamps
 });
 
