@@ -15,6 +15,9 @@
 		activeTheme === 'default' ? m.settings_theme_default() : activeTheme
 	);
 
+	const resolveThemeLabel = (theme: Theme) =>
+		theme === 'default' ? m.settings_theme_default() : theme;
+
 	function selectTheme(theme: Theme) {
 		userConfig.setConfig({ activeTheme: theme });
 		setTheme(theme);
@@ -39,12 +42,12 @@
 						onclick={() => selectTheme(theme)}
 						class="group relative flex h-10 w-10 items-center justify-center rounded-full transition-transform hover:scale-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
 						style="background-color: {THEME_COLORS[theme]}"
-						title={theme}
+						title={resolveThemeLabel(theme)}
 					>
 						{#if activeTheme === theme}
 							<Check class="h-5 w-5 text-white drop-shadow-md" />
 						{/if}
-						<span class="sr-only">{theme}</span>
+						<span class="sr-only">{resolveThemeLabel(theme)}</span>
 					</button>
 				{/each}
 			</div>

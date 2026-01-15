@@ -129,7 +129,7 @@
 	"settings_theme_title": "テーマを選択",
 	"settings_theme_label": "テーマカラーを選択",
 	"settings_theme_selected_label": "選択中: ",
-	"settings_theme_default": "デフォルト",
+	"settings_theme_default": "ブラック",
 	"brand_primary": "Svelte",
 	"brand_suffix": "デモアプリ\n\n",
 	"cta_explore_products": "プランを今すぐ探す",
