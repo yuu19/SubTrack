@@ -78,7 +78,7 @@ export const load = async ({ request, locals }) => {
 		user.sampleDataSeeded = true;
 	}
 	const parsedConfig = userConfigSchema.safeParse({
-		activeTheme: user?.activeTheme ?? 'default',
+		activeTheme: user?.activeTheme ?? 'rose',
 		defaultNotifyDaysBefore: user?.defaultNotifyDaysBefore ?? 3,
 		notificationMethod: user?.notificationMethod ?? 'push'
 	});

@@ -87,7 +87,7 @@ const handleTheme: Handle = async ({ event, resolve }) => {
 		return resolve(event);
 	}
 
-	let activeTheme = 'default';
+	let activeTheme = 'rose';
 	try {
 		const auth = createAuth(event.locals.db);
 		const session = await auth.api.getSession({

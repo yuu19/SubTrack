@@ -40,7 +40,7 @@ export const user = sqliteTable('user', {
 		.$onUpdate(() => new Date())
 		.notNull(),
 	role: text('role', { enum: ROLE }).default('user'),
-	activeTheme: text('active_theme', { enum: THEMES }).notNull().default('default'),
+	activeTheme: text('active_theme', { enum: THEMES }).notNull().default('rose'),
 	defaultNotifyDaysBefore: integer('default_notify_days_before').notNull().default(3),
 	notificationMethod: text('notification_method', { enum: NOTIFICATION_METHODS })
 		.notNull()

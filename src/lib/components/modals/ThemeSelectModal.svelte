@@ -10,7 +10,7 @@
 	let modalState = $state(false);
 	const userConfig = UserConfigContext.get();
 
-	const activeTheme = $derived((userConfig.current.activeTheme ?? 'default') as Theme);
+	const activeTheme = $derived((userConfig.current.activeTheme ?? 'rose') as Theme);
 	const themeLabel = $derived(
 		activeTheme === 'default' ? m.settings_theme_default() : activeTheme
 	);

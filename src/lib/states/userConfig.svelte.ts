@@ -2,7 +2,7 @@ import { NOTIFICATION_METHODS, THEMES } from '$lib/constant';
 import { Context } from 'runed';
 import { z } from 'zod/v4';
 
-const activeTheme = z.enum(THEMES).default('default');
+const activeTheme = z.enum(THEMES).default('rose');
 const defaultNotifyDaysBefore = z.number().int().min(0).max(365).default(3);
 const notificationMethod = z.enum(NOTIFICATION_METHODS).default('push');
 
@@ -15,7 +15,7 @@ export const userConfigSchema = z
 		notificationMethod: notificationMethod
 	})
 	.default({
-		activeTheme: 'default',
+		activeTheme: 'rose',
 		defaultNotifyDaysBefore: 3,
 		notificationMethod: 'push'
 	});
