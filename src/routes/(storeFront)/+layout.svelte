@@ -3,6 +3,7 @@
 	import { UserConfig, UserConfigContext } from '$lib/states/userConfig.svelte';
 	import { ModeWatcher, setTheme } from 'mode-watcher';
 	import Header from '$lib/components/Header.svelte';
+	import OnboardingDialog from '$lib/components/onboarding/OnboardingDialog.svelte';
 
 	let { children, data } = $props();
 	// todo: この部分について修正する必要があるか確認する
@@ -30,4 +31,10 @@
 />
 
 <Header />
+{#if data.user}
+	<OnboardingDialog
+		userId={data.user.id}
+		onboardingCompleted={data.user.onboardingCompleted ?? true}
+	/>
+{/if}
 {@render children()}

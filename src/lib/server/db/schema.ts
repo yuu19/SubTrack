@@ -45,6 +45,11 @@ export const user = sqliteTable('user', {
 	notificationMethod: text('notification_method', { enum: NOTIFICATION_METHODS })
 		.notNull()
 		.default('push'),
+	onboardingCompleted: integer('onboarding_completed', {
+		mode: 'boolean'
+	})
+		.notNull()
+		.default(false),
 	banned: integer('banned', {
 		mode: 'boolean'
 	}).default(false),
