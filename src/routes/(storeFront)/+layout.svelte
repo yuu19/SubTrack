@@ -4,6 +4,7 @@
 	import { ModeWatcher, setTheme } from 'mode-watcher';
 	import Header from '$lib/components/Header.svelte';
 	import OnboardingDialog from '$lib/components/onboarding/OnboardingDialog.svelte';
+	import MobileBottomNav from '$lib/components/MobileBottomNav.svelte';
 
 	let { children, data } = $props();
 	// todo: この部分について修正する必要があるか確認する
@@ -37,4 +38,11 @@
 		onboardingCompleted={data.user.onboardingCompleted ?? true}
 	/>
 {/if}
-{@render children()}
+{#if data.user}
+	<div class="pb-[calc(env(safe-area-inset-bottom)+6rem)] md:pb-0">
+		{@render children()}
+	</div>
+	<MobileBottomNav />
+{:else}
+	{@render children()}
+{/if}
