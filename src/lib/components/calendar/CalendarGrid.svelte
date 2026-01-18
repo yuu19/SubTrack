@@ -1,7 +1,14 @@
 <script>
   import dayjs from 'dayjs';
   
-  let { currentDate, events, onDateClick, onEventClick } = $props();
+  let {
+    currentDate,
+    events,
+    onDateClick,
+    onEventClick,
+    onPrevMonth = () => {},
+    onNextMonth = () => {}
+  } = $props();
   
   const weekDays = ['日', '月', '火', '水', '木', '金', '土'];
   
@@ -65,9 +72,48 @@
     purple: 'color-mix(in oklch, var(--primary) 70%, var(--background) 30%)',
     orange: 'color-mix(in oklch, var(--primary) 65%, var(--background) 35%)'
   };
+
+  let touchStartX = 0;
+  let touchStartY = 0;
+  let hasTouch = false;
+  const swipeThreshold = 40;
+
+  function handleTouchStart(event) {
+    const touch = event.touches[0];
+    if (!touch) return;
+    touchStartX = touch.clientX;
+    touchStartY = touch.clientY;
+    hasTouch = true;
+  }
+
+  function handleTouchEnd(event) {
+    if (!hasTouch) return;
+    hasTouch = false;
+    const touch = event.changedTouches[0];
+    if (!touch) return;
+    const deltaX = touch.clientX - touchStartX;
+    const deltaY = touch.clientY - touchStartY;
+    if (Math.abs(deltaX) < swipeThreshold || Math.abs(deltaX) < Math.abs(deltaY)) {
+      return;
+    }
+    if (deltaX > 0) {
+      onPrevMonth();
+    } else {
+      onNextMonth();
+    }
+  }
+
+  function handleTouchCancel() {
+    hasTouch = false;
+  }
 </script>
 
-<div class="flex-1 flex flex-col">
+<div
+  class="flex-1 flex flex-col"
+  ontouchstart={handleTouchStart}
+  ontouchend={handleTouchEnd}
+  ontouchcancel={handleTouchCancel}
+>
   <!-- Week day headers -->
   <div class="grid grid-cols-7 border-b border-border">
     {#each weekDays as day, index (day)}

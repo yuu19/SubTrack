@@ -131,6 +131,8 @@
     {events}
     onDateClick={handleDateClick}
     onEventClick={handleEventClick}
+    onPrevMonth={goToPrevMonth}
+    onNextMonth={goToNextMonth}
   />
   
   <EventDetailModal
