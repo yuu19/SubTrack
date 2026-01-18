@@ -30,7 +30,7 @@ export const subscriptionSchema = z.object({
 	text: z
 		.string({ error: 'Please enter the service name.' })
 		.min(1, { error: 'Please enter the service name.' }),
-	tagsinput: z.string().array().min(1, { error: 'Please add at least one tag.' }),
+	tagsinput: z.string().array().default([]),
 	notifyDaysBefore: z
 		.number({ error: 'Please select notify days.' })
 		.int()
