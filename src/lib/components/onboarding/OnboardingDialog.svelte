@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { fade, fly } from 'svelte/transition';
+	import { cubicIn, cubicOut } from 'svelte/easing';
+	import { prefersReducedMotion } from 'svelte/motion';
+	import { fly } from 'svelte/transition';
 	import * as Dialog from '$lib/components/ui/dialog';
 	import Button from '$lib/components/ui/button/button.svelte';
 	import { cn } from '$lib/utils';
@@ -100,8 +102,14 @@
 	let open = $state(false);
 	let stepIndex = $state(0);
 	let hasOpened = false;
+	let direction = $state(1);
 
 	const step = $derived(steps[stepIndex]);
+	const motion = $derived({
+		duration: prefersReducedMotion.current ? 0 : 240,
+		outDuration: prefersReducedMotion.current ? 0 : 200,
+		offset: prefersReducedMotion.current ? 0 : 18
+	});
 
 	onMount(() => {
 		if (!userId) return;
@@ -133,6 +141,7 @@
 
 	const handleNext = () => {
 		if (stepIndex < steps.length - 1) {
+			direction = 1;
 			stepIndex += 1;
 			return;
 		}
@@ -144,14 +153,15 @@
 			setOpen(false);
 			return;
 		}
+		direction = -1;
 		stepIndex -= 1;
 	};
 </script>
 
 <Dialog.Root bind:open={() => open, setOpen}>
 	<Dialog.Content showCloseButton={false} class="max-w-4xl overflow-hidden p-0">
-		<div class="grid gap-0 md:grid-cols-[1.1fr_0.9fr]">
-			<section class="space-y-6 p-6 md:p-8">
+		<div class="grid gap-0 md:min-h-[520px] md:grid-cols-[1.1fr_0.9fr]">
+			<section class="flex flex-col gap-6 p-6 md:p-8">
 				<div class="flex items-center gap-3 text-xs uppercase tracking-[0.3em] text-muted-foreground">
 					<span
 						class="rounded-full border bg-primary/10 px-3 py-1 text-[10px] font-semibold text-primary"
@@ -162,7 +172,11 @@
 				</div>
 
 				{#key stepIndex}
-					<div in:fade={{ duration: 180 }} out:fade={{ duration: 120 }} class="space-y-3">
+					<div
+						in:fly={{ x: direction * motion.offset, duration: motion.duration, easing: cubicOut }}
+						out:fly={{ x: -direction * motion.offset, duration: motion.outDuration, easing: cubicIn }}
+						class="space-y-3"
+					>
 						<Dialog.Title class="font-display text-2xl font-semibold md:text-3xl">
 							{step.title}
 						</Dialog.Title>
@@ -173,7 +187,11 @@
 				{/key}
 
 				{#if stepIndex === steps.length - 1}
-					<div class="rounded-2xl border bg-muted/30 p-4 text-sm leading-relaxed text-muted-foreground">
+					<div
+						in:fly={{ y: 8, duration: motion.duration, easing: cubicOut }}
+						out:fly={{ y: 8, duration: motion.outDuration, easing: cubicIn }}
+						class="rounded-2xl border bg-muted/30 p-4 text-sm leading-relaxed text-muted-foreground"
+					>
 						<p class="font-semibold text-foreground">PWAとPush通知について</p>
 						<p class="mt-2">
 							PWAは、ホーム画面に追加してアプリのように素早く開ける仕組みです。
@@ -184,15 +202,15 @@
 					</div>
 				{/if}
 
-				<div class="flex flex-wrap items-center justify-between gap-3">
+				<div class="mt-auto grid gap-4 sm:grid-cols-[auto_1fr_auto] sm:items-center">
 					<Button variant="ghost" onclick={handleBack}>
 						{stepIndex === 0 ? '閉じる' : '戻る'}
 					</Button>
-					<div class="flex items-center gap-2">
-					{#each steps as _, index (index)}
-						<span
-							class={cn(
-								'h-2 w-2 rounded-full transition-colors',
+					<div class="flex items-center justify-center gap-2">
+						{#each steps as _, index (index)}
+							<span
+								class={cn(
+									'h-2 w-2 rounded-full transition-colors',
 									index === stepIndex ? 'bg-primary' : 'bg-muted'
 								)}
 							></span>
@@ -214,7 +232,11 @@
 					</div>
 
 					{#key stepIndex}
-						<div in:fly={{ y: 12, duration: 220 }} out:fade={{ duration: 120 }} class="mt-6 space-y-4">
+						<div
+							in:fly={{ x: direction * motion.offset, duration: motion.duration, easing: cubicOut }}
+							out:fly={{ x: -direction * motion.offset, duration: motion.outDuration, easing: cubicIn }}
+							class="mt-6 space-y-4"
+						>
 							{#if stepIndex === 0}
 								<div class="space-y-3">
 									{#each subscriptionRows as row (row.name)}
