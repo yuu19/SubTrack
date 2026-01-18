@@ -4,6 +4,7 @@ import Stripe from 'stripe';
 import { admin } from 'better-auth/plugins';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import Database from 'better-sqlite3';
+import { parseAdminUserIds } from './src/lib/server/admin';
 import * as schema from './src/lib/server/db/schema';
 
 type Schema = typeof import('./src/lib/server/db/schema');
@@ -21,6 +22,7 @@ const stripeSecretKey = process.env.SECRET_STRIPE_KEY ?? 'sk_test_placeholder';
 const stripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET ?? 'whsec_placeholder';
 const authBaseUrl =
 	process.env.BETTER_AUTH_URL ?? process.env.PUBLIC_BETTER_AUTH_URL ?? 'http://localhost:3000';
+const adminUserIds = parseAdminUserIds(process.env.ADMIN_USER_IDS);
 
 const stripeClient = new Stripe(stripeSecretKey, {
 	apiVersion: '2025-11-17.clover'
@@ -41,7 +43,9 @@ export const auth = betterAuth({
 	},
 
 	plugins: [
-		admin(),
+		admin({
+			adminUserIds: adminUserIds.length ? adminUserIds : undefined
+		}),
 		stripe({
 			stripeClient,
 			stripeWebhookSecret,

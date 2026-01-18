@@ -9,9 +9,10 @@
 	type Props = {
 		userId: string | null;
 		onboardingCompleted?: boolean;
+		alwaysShow?: boolean;
 	};
 
-	let { userId = null, onboardingCompleted = true }: Props = $props();
+	let { userId = null, onboardingCompleted = true, alwaysShow = false }: Props = $props();
 
 	const steps = [
 		{
@@ -103,12 +104,13 @@
 	const step = $derived(steps[stepIndex]);
 
 	onMount(() => {
-		if (!userId || onboardingCompleted) return;
+		if (!userId) return;
+		if (!alwaysShow && onboardingCompleted) return;
 		setOpen(true);
 	});
 
 	const markCompleted = async () => {
-		if (!userId) return;
+		if (!userId || alwaysShow) return;
 		await fetch('/api/onboarding', {
 			method: 'POST',
 			headers: {

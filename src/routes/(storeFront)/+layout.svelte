@@ -36,6 +36,7 @@
 	<OnboardingDialog
 		userId={data.user.id}
 		onboardingCompleted={data.user.onboardingCompleted ?? true}
+		alwaysShow={data.isAdmin}
 	/>
 {/if}
 {#if data.user}

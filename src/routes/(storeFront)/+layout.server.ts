@@ -2,6 +2,7 @@ import { createAuth } from '$lib/auth.js';
 import { userConfigSchema } from '$lib/states/userConfig.svelte';
 import { trackedSubscriptionTable, user as userTable } from '$lib/server/db/schema';
 import { computeNextBilling } from '$lib/server/subscriptions';
+import { isAdminUser, parseAdminUserIds } from '$lib/server/admin';
 import { eq } from 'drizzle-orm';
 
 export const load = async ({ request, locals }) => {
@@ -10,12 +11,14 @@ export const load = async ({ request, locals }) => {
 	const session = await auth.api.getSession({
 		headers: request.headers
 	});
+	const adminUserIds = parseAdminUserIds(process.env.ADMIN_USER_IDS);
 	const id = session?.user.id || '';
 	const user = id
 		? await db.query.user.findFirst({
 				where: (user, { eq }) => eq(user.id, id)
 			})
 		: null;
+	const isAdmin = isAdminUser(user, adminUserIds);
 
 	if (user && !user.sampleDataSeeded) {
 		const existing = await db
@@ -86,6 +89,7 @@ export const load = async ({ request, locals }) => {
 
 	return {
 		user,
-		userConfig
+		userConfig,
+		isAdmin
 	};
 };

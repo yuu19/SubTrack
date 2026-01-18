@@ -7,6 +7,7 @@ import type { DrizzleD1Database } from 'drizzle-orm/d1';
 import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 import { sveltekitCookies } from 'better-auth/svelte-kit';
 import { getRequestEvent } from '$app/server';
+import { parseAdminUserIds } from '$lib/server/admin';
 import * as schema from './server/db/schema';
 type Schema = typeof import('./server/db/schema');
 
@@ -23,6 +24,7 @@ const TEST_PRICE_LOOKUP_KEY = 'test_daily';
 const stripeSecretKey = process.env.SECRET_STRIPE_KEY;
 const authBaseUrl =
 	process.env.BETTER_AUTH_URL ?? process.env.PUBLIC_BETTER_AUTH_URL ?? process.env.APP_ORIGIN;
+const adminUserIds = parseAdminUserIds(process.env.ADMIN_USER_IDS);
 
 const stripeClient = new Stripe(stripeSecretKey!, {
 	apiVersion: '2025-11-17.clover'
@@ -44,7 +46,9 @@ export function createAuth(db: DrizzleD1Database<Schema> | BetterSQLite3Database
 		},
 
 		plugins: [
-			admin(),
+			admin({
+				adminUserIds: adminUserIds.length ? adminUserIds : undefined
+			}),
 			stripe({
 				stripeClient,
 				stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET!,

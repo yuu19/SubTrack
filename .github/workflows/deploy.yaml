@@ -25,6 +25,7 @@ jobs:
       RESEND_FROM: ${{ secrets.RESEND_FROM }}
       BETTER_AUTH_URL: ${{ secrets.BETTER_AUTH_URL }}
       BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
+      ADMIN_USER_IDS: ${{ secrets.ADMIN_USER_IDS }}
       GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
       GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
       SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
@@ -68,6 +69,7 @@ jobs:
             STRIPE_WEBHOOK_SECRET
             RESEND_API_KEY
             BETTER_AUTH_SECRET
+            ADMIN_USER_IDS
             GOOGLE_CLIENT_ID
             GOOGLE_CLIENT_SECRET
             SENTRY_DSN
