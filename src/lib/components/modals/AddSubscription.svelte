@@ -164,6 +164,6 @@
 			<FieldErrors class="text-destructive text-sm" />
 		</Field>
 
-		<Button size="sm" type="submit" class="w-full">保存する</Button>
+		<Button type="submit" class="w-full h-12 text-base sm:h-10 sm:text-sm">保存する</Button>
 	</form>
 </div>

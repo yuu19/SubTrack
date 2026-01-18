@@ -167,7 +167,7 @@ const form = superForm(defaults(initialData, zod4Client(subscriptionSchema)), {
 			<FieldErrors class="text-destructive text-sm" />
 		</Field>
 
-		<Button size="sm" type="submit" class="w-full">更新する</Button>
+		<Button type="submit" class="w-full h-12 text-base sm:h-10 sm:text-sm">更新する</Button>
 	</form>
 {:else}
 	<div class="text-muted-foreground text-sm">編集するサブスクを選択してください。</div>

@@ -530,11 +530,12 @@
 					</p>
 				{/if}
 
-				<div class="flex flex-col gap-2">
+				<div class="flex flex-col gap-3">
 					<Button
 						variant="outline"
 						disabled={!canMutateSelected}
 						onclick={openEdit}
+						class="w-full h-12 text-base sm:h-10 sm:text-sm"
 					>
 						編集する
 					</Button>
@@ -542,6 +543,7 @@
 						variant="destructive"
 						disabled={!canMutateSelected}
 						onclick={openDelete}
+						class="w-full h-12 text-base sm:h-10 sm:text-sm"
 					>
 						削除する
 					</Button>

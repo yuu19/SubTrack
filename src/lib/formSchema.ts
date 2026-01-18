@@ -22,8 +22,8 @@ export const subscriptionSchema = z.object({
 	number: z
 		.number({ error: 'Please enter a valid number.' })
 		.int({ error: 'Please enter a whole number.' })
-		.min(1, { error: 'Value must be at least 1.' })
-		.max(100000, { error: 'Value must not exceed 100000.' }),
+		.min(0, { error: 'Value must be at least 0.' })
+		.max(1000000, { error: 'Value must not exceed 1000000.' }),
 	datepicker: z
 		.string({ error: 'Please select a date.' })
 		.refine((v) => v, { error: 'Please select a date.' }),
