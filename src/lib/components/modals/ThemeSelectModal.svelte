@@ -1,6 +1,5 @@
 <script lang="ts">
 	import * as Dialog from '$lib/components/ui/dialog';
-	import { buttonVariants } from '$lib/components/ui/button';
 	import { THEMES, THEME_COLORS, type Theme } from '$lib/themes';
 	import { UserConfigContext } from '$lib/states/userConfig.svelte';
 	import { setTheme } from 'mode-watcher';
@@ -25,7 +24,15 @@
 </script>
 
 <Dialog.Root bind:open={modalState}>
-	<Dialog.Trigger class={buttonVariants({ variant: 'link' })}>{themeLabel}</Dialog.Trigger>
+	<Dialog.Trigger
+		class="group relative inline-flex h-9 w-9 items-center justify-center rounded-full border border-border shadow-sm transition-transform hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+		style="background-color: {THEME_COLORS[activeTheme]}"
+		aria-label={themeLabel}
+		title={themeLabel}
+	>
+		<Check class="h-4 w-4 text-white drop-shadow-md" />
+		<span class="sr-only">{themeLabel}</span>
+	</Dialog.Trigger>
 	<Dialog.Content class="w-full p-3 sm:p-5">
 		<Dialog.Header class="mt-10">
 			<Dialog.Title class="font-display text-lg sm:text-xl md:text-3xl">

@@ -22,6 +22,10 @@
 	const userConfig = UserConfigContext.get();
 
 	const defaultNotifyDaysBefore = $derived(userConfig.current.defaultNotifyDaysBefore ?? 3);
+	const now = new Date();
+	const todayISO = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(
+		now.getDate()
+	).padStart(2, '0')}`;
 	let wasOpen = false;
 
 	const form = superForm(
@@ -65,6 +69,9 @@
 		const isOpen = addSubscriptionModalState.value;
 		if (isOpen && !wasOpen) {
 			$notifyDaysBeforeField = defaultNotifyDaysBefore;
+			if (!$datepickerField) {
+				$datepickerField = todayISO;
+			}
 		}
 		wasOpen = isOpen;
 	});

@@ -3,16 +3,19 @@
 	import { cubicIn, cubicOut } from 'svelte/easing';
 	import { prefersReducedMotion } from 'svelte/motion';
 	import { fly } from 'svelte/transition';
+	import { resolve } from '$app/paths';
 	import * as Dialog from '$lib/components/ui/dialog';
 	import Button from '$lib/components/ui/button/button.svelte';
 	import { cn } from '$lib/utils';
-	import { BellRing, CalendarDays, Download, Sparkles } from 'lucide-svelte';
+	import { BellRing, CalendarDays, Check, Download, Sparkles, X } from 'lucide-svelte';
 
 	type Props = {
 		userId: string | null;
 		onboardingCompleted?: boolean;
 		alwaysShow?: boolean;
 	};
+
+	type FeatureValue = string | number | boolean;
 
 	let { userId = null, onboardingCompleted = true, alwaysShow = false }: Props = $props();
 
@@ -99,7 +102,22 @@
 		'アイコン名を確認して追加'
 	];
 
+	const premiumFeatures: { label: string; free: FeatureValue; premium: FeatureValue }[] = [
+		{ label: 'サブスクリプション登録数', free: '5', premium: '∞' },
+		{ label: 'カテゴリー登録数', free: '3', premium: '∞' },
+		{ label: '支払い方法登録数', free: '3', premium: '∞' },
+		{ label: '全広告の非表示', free: false, premium: true },
+		{ label: '画像の登録', free: false, premium: true },
+		{ label: '支払い日前通知を個別に設定可能', free: false, premium: true },
+		{ label: 'データのCSVエクスポート', free: false, premium: true }
+	];
+	const premiumFeatureColumns = [
+		premiumFeatures.slice(0, Math.ceil(premiumFeatures.length / 2)),
+		premiumFeatures.slice(Math.ceil(premiumFeatures.length / 2))
+	];
+
 	let open = $state(false);
+	let planOpen = $state(false);
 	let stepIndex = $state(0);
 	let hasOpened = false;
 	let direction = $state(1);
@@ -146,6 +164,7 @@
 			return;
 		}
 		setOpen(false);
+		planOpen = true;
 	};
 
 	const handleBack = () => {
@@ -159,7 +178,7 @@
 </script>
 
 <Dialog.Root bind:open={() => open, setOpen}>
-	<Dialog.Content showCloseButton={false} class="max-w-4xl overflow-hidden p-0">
+	<Dialog.Content showCloseButton={false} class="max-w-4xl overflow-hidden p-0 pb-24 sm:pb-0">
 		<div class="grid gap-0 md:min-h-[520px] md:grid-cols-[1.1fr_0.9fr]">
 			<section class="flex flex-col gap-6 p-6 md:p-8">
 				<div class="flex items-center gap-3 text-xs uppercase tracking-[0.3em] text-muted-foreground">
@@ -174,7 +193,6 @@
 				{#key stepIndex}
 					<div
 						in:fly={{ x: direction * motion.offset, duration: motion.duration, easing: cubicOut }}
-						out:fly={{ x: -direction * motion.offset, duration: motion.outDuration, easing: cubicIn }}
 						class="space-y-3"
 					>
 						<Dialog.Title class="font-display text-2xl font-semibold md:text-3xl">
@@ -202,7 +220,7 @@
 					</div>
 				{/if}
 
-				<div class="mt-auto grid gap-4 sm:grid-cols-[auto_1fr_auto] sm:items-center">
+				<div class="mt-auto hidden gap-4 sm:grid sm:grid-cols-[auto_1fr_auto] sm:items-center">
 					<Button variant="ghost" onclick={handleBack}>
 						{stepIndex === 0 ? '閉じる' : '戻る'}
 					</Button>
@@ -234,7 +252,6 @@
 					{#key stepIndex}
 						<div
 							in:fly={{ x: direction * motion.offset, duration: motion.duration, easing: cubicOut }}
-							out:fly={{ x: -direction * motion.offset, duration: motion.outDuration, easing: cubicIn }}
 							class="mt-6 space-y-4"
 						>
 							{#if stepIndex === 0}
@@ -322,6 +339,121 @@
 					></div>
 				</div>
 			</section>
+		</div>
+		<div
+			class="fixed bottom-0 left-1/2 z-50 w-[calc(100%-2rem)] -translate-x-1/2 border-t bg-background/95 px-4 py-3 shadow-[0_-8px_30px_-20px_rgba(0,0,0,0.45)] backdrop-blur sm:hidden"
+		>
+			<div class="flex items-center justify-between gap-3">
+				<Button variant="ghost" size="sm" onclick={handleBack}>
+					{stepIndex === 0 ? '閉じる' : '戻る'}
+				</Button>
+				<div class="flex items-center justify-center gap-2">
+					{#each steps as _, index (index)}
+						<span
+							class={cn(
+								'h-2 w-2 rounded-full transition-colors',
+								index === stepIndex ? 'bg-primary' : 'bg-muted'
+							)}
+						></span>
+					{/each}
+				</div>
+				<Button size="sm" onclick={handleNext}>
+					{stepIndex === steps.length - 1 ? 'はじめる' : '続ける'}
+				</Button>
+			</div>
+		</div>
+	</Dialog.Content>
+</Dialog.Root>
+
+<Dialog.Root bind:open={planOpen}>
+	<Dialog.Content class="w-full max-w-[560px] p-0 sm:max-w-[760px]">
+		<div class="max-h-[90vh] overflow-y-auto">
+			<div class="space-y-3 p-4 sm:p-5">
+				<div class="flex flex-col items-center gap-1.5 text-center sm:items-start sm:text-left">
+					<span class="rounded-full bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-600">
+						プレミアムのご案内
+					</span>
+					<h3 class="text-base font-semibold sm:text-lg">サブスク管理 プレミアム</h3>
+					<p class="text-[11px] text-muted-foreground sm:text-xs">
+						広告を非表示にして、登録数や通知の制限なくサブスク管理を続けられます。
+					</p>
+				</div>
+
+				<div class="grid gap-3 sm:grid-cols-[1.35fr_1fr]">
+					<div class="rounded-lg border bg-muted/30 p-3 text-[11px]">
+						<div class="flex items-center justify-between pb-2 font-semibold text-muted-foreground">
+							<span>機能</span>
+							<div class="flex items-center gap-3">
+								<span class="rounded-full bg-muted px-2 py-0.5 text-[10px]">無料</span>
+								<span class="rounded-full bg-primary px-2 py-0.5 text-[10px] text-primary-foreground">
+									プレミアム
+								</span>
+							</div>
+						</div>
+						<div class="grid gap-2 sm:grid-cols-2 sm:gap-3">
+							{#each premiumFeatureColumns as column, columnIndex (columnIndex)}
+								<div class={cn('divide-y', columnIndex === 0 ? '' : 'sm:border-l sm:pl-3')}>
+									{#each column as feature (feature.label)}
+										<div class="flex items-center justify-between gap-2 py-1">
+											<span class="text-foreground">{feature.label}</span>
+											<div class="flex items-center gap-3">
+												<span class="flex w-9 items-center justify-center text-muted-foreground">
+													{#if typeof feature.free === 'boolean'}
+														{#if feature.free}
+															<Check class="h-3.5 w-3.5 text-emerald-500" />
+														{:else}
+															<X class="h-3.5 w-3.5 text-muted-foreground" />
+														{/if}
+													{:else}
+														{feature.free}
+													{/if}
+												</span>
+												<span class="flex w-9 items-center justify-center">
+													{#if typeof feature.premium === 'boolean'}
+														{#if feature.premium}
+															<Check class="h-3.5 w-3.5 text-emerald-500" />
+														{:else}
+															<X class="h-3.5 w-3.5 text-muted-foreground" />
+														{/if}
+													{:else}
+														{feature.premium}
+													{/if}
+												</span>
+											</div>
+										</div>
+									{/each}
+								</div>
+							{/each}
+						</div>
+					</div>
+
+					<div class="space-y-3">
+						<div class="rounded-lg border bg-background/80 p-3 text-[11px] text-muted-foreground">
+							<ul class="space-y-1.5">
+								<li class="flex items-start gap-2">
+									<span class="mt-1 h-1.5 w-1.5 rounded-full bg-primary"></span>
+									<span>無料おためしは初回の登録のみ対象です。</span>
+								</li>
+								<li class="flex items-start gap-2">
+									<span class="mt-1 h-1.5 w-1.5 rounded-full bg-primary"></span>
+									<span>購読期間終了の24時間前までにキャンセルしない場合、自動更新されます。</span>
+								</li>
+							</ul>
+						</div>
+
+						<div class="flex flex-col gap-2">
+							<Button class="w-full" href={resolve('/me/settings')}>
+								プランを選ぶ
+							</Button>
+							<div class="flex flex-wrap items-center justify-center gap-2 text-[11px] font-semibold text-primary sm:justify-start">
+								<a class="hover:underline" href={resolve('/faq')}>よくある質問</a>
+								<a class="hover:underline" href={resolve('/terms')}>利用規約</a>
+								<a class="hover:underline" href={resolve('/privacy')}>プライバシーポリシー</a>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
 		</div>
 	</Dialog.Content>
 </Dialog.Root>

@@ -134,5 +134,7 @@
 	"brand_suffix": "デモアプリ\n\n",
 	"cta_explore_products": "プランを今すぐ探す",
 	"offer_body": "迅速で信頼性の高い配送サービスで、お気に入りの商品をご自宅までお届けします。今すぐショッピングを始めて、オンライン購入の便利さを体験してください。",
-	"settings_plan": "プラン"
+	"settings_plan": "プラン",
+	"settings_premium_status_label": "プレミアムの状況",
+	"settings_premium_status_action": "プラン情報へ"
 }

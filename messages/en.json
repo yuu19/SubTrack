@@ -65,6 +65,8 @@
 	"settings_theme_selected_label": "Selected: ",
 	"settings_theme_default": "black",
 	"settings_plan": "Plan",
+	"settings_premium_status_label": "Premium status",
+	"settings_premium_status_action": "View plan info",
 	"add_address_address": "Address",
 	"add_address_country": "Country",
 	"add_address_default_billing": "Set as default billing",

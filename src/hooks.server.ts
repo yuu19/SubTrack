@@ -16,7 +16,7 @@ const protectedUserRoutes = ['/me', '/subscriptions'];
 const handleAuth: Handle = async ({ event, resolve }) => {
 	const { locals, url, request } = event;
 	const { db } = locals;
-	const auth = createAuth(db);
+	const auth = createAuth(db, { requestOrigin: event.url.origin });
 	const session = await auth.api.getSession({ headers: request.headers });
 
 	if (url.pathname.startsWith('/admin') && session?.user.role !== 'admin') {
@@ -89,7 +89,7 @@ const handleTheme: Handle = async ({ event, resolve }) => {
 
 	let activeTheme = 'rose';
 	try {
-		const auth = createAuth(event.locals.db);
+		const auth = createAuth(event.locals.db, { requestOrigin: event.url.origin });
 		const session = await auth.api.getSession({
 			headers: event.request.headers
 		});

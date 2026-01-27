@@ -24,24 +24,62 @@ const TEST_PRICE_LOOKUP_KEY = 'test_daily';
 const stripeSecretKey = process.env.SECRET_STRIPE_KEY;
 const authBaseUrl =
 	process.env.BETTER_AUTH_URL ?? process.env.PUBLIC_BETTER_AUTH_URL ?? process.env.APP_ORIGIN;
+const authBasePath = '/api/auth';
+type CreateAuthOptions = {
+	requestOrigin?: string;
+};
+
+const getRequestOrigin = (): string | undefined => {
+	try {
+		return getRequestEvent()?.url.origin;
+	} catch {
+		return undefined;
+	}
+};
+
+const resolveAuthBaseUrl = (requestOrigin?: string) => {
+	const origin = requestOrigin ?? getRequestOrigin();
+
+	if (!authBaseUrl) return origin;
+	if (!origin) return authBaseUrl;
+
+	try {
+		if (new URL(authBaseUrl).origin === origin) return authBaseUrl;
+	} catch {
+		return authBaseUrl;
+	}
+
+	return origin;
+};
+
+const resolveAuthRedirectURI = (requestOrigin?: string, providerId = 'google') => {
+	const origin = resolveAuthBaseUrl(requestOrigin);
+	if (!origin) return undefined;
+
+	return new URL(`${authBasePath}/callback/${providerId}`, origin).toString();
+};
 const adminUserIds = parseAdminUserIds(process.env.ADMIN_USER_IDS);
 
 const stripeClient = new Stripe(stripeSecretKey!, {
 	apiVersion: '2025-11-17.clover'
 });
 
-export function createAuth(db: DrizzleD1Database<Schema> | BetterSQLite3Database<Schema>) {
+export function createAuth(
+	db: DrizzleD1Database<Schema> | BetterSQLite3Database<Schema>,
+	options: CreateAuthOptions = {}
+) {
 	return betterAuth({
 		database: drizzleAdapter(db, {
 			schema,
 			provider: 'sqlite'
 		}),
-		baseURL: authBaseUrl,
+		baseURL: resolveAuthBaseUrl(options.requestOrigin),
 		socialProviders: {
 			google: {
 				prompt: "select_account", 
 				clientId: process.env.GOOGLE_CLIENT_ID!,
-				clientSecret: process.env.GOOGLE_CLIENT_SECRET!
+				clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+				redirectURI: resolveAuthRedirectURI(options.requestOrigin, 'google')
 			}
 		},
 

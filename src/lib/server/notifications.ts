@@ -266,13 +266,13 @@ const resolveReturnUrl = () => {
 		process.env.APP_ORIGIN;
 
 	if (directBase) {
-		return new URL('/me/personal-info', directBase).toString();
+		return new URL('/me/settings', directBase).toString();
 	}
 
 	if (process.env.PUSH_CRON_URL) {
 		try {
 			const origin = new URL(process.env.PUSH_CRON_URL).origin;
-			return new URL('/me/personal-info', origin).toString();
+			return new URL('/me/settings', origin).toString();
 		} catch {
 			return null;
 		}
