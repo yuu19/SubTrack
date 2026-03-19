@@ -1,20 +1,21 @@
 <script lang="ts">
 	import * as Dialog from '$lib/components/ui/dialog';
 	import { buttonVariants } from '$lib/components/ui/button';
+	import { m } from '$lib/paraglide/messages.js';
 	import { UserConfigContext } from '$lib/states/userConfig.svelte';
 
 	let modalState = $state(false);
 	const userConfig = UserConfigContext.get();
 
-	const options = [
-		{ value: 'push', label: 'プッシュ通知' },
-		{ value: 'email', label: 'メール通知' },
-		{ value: 'both', label: '両方' }
-	];
+	const options = $derived([
+		{ value: 'push', label: m.notification_method_push() },
+		{ value: 'email', label: m.notification_method_email() },
+		{ value: 'both', label: m.notification_method_both() }
+	]);
 
 	const currentValue = $derived(userConfig.current.notificationMethod ?? 'push');
 	const currentLabel = $derived(
-		options.find((option) => option.value === currentValue)?.label ?? 'プッシュ通知'
+		options.find((option) => option.value === currentValue)?.label ?? m.notification_method_push()
 	);
 
 	const selectMethod = (value: string) => {
@@ -28,10 +29,10 @@
 	<Dialog.Content class="w-full p-3 sm:p-5">
 		<Dialog.Header class="mt-10">
 			<Dialog.Title class="font-display text-lg sm:text-xl md:text-3xl">
-				通知方法
+				{m.settings_notification_method_title()}
 			</Dialog.Title>
 			<Dialog.Description class="text-muted-foreground text-sm">
-				サブスクの通知方法を選択してください。
+				{m.settings_notification_method_description()}
 			</Dialog.Description>
 		</Dialog.Header>
 

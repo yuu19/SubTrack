@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { NOTIFICATION_METHODS, ROLE, THEMES } from '../../constant';
+import { APP_LOCALES, DEFAULT_LOCALE, NOTIFICATION_METHODS, ROLE, THEMES } from '../../constant';
 import { sqliteTable, text, integer, index } from 'drizzle-orm/sqlite-core';
 export const timestamps = {
 	updatedAt: integer('updated_at', {
@@ -40,6 +40,7 @@ export const user = sqliteTable('user', {
 		.$onUpdate(() => new Date())
 		.notNull(),
 	role: text('role', { enum: ROLE }).default('user'),
+	locale: text('locale', { enum: APP_LOCALES }).notNull().default(DEFAULT_LOCALE),
 	activeTheme: text('active_theme', { enum: THEMES }).notNull().default('rose'),
 	defaultNotifyDaysBefore: integer('default_notify_days_before').notNull().default(3),
 	notificationMethod: text('notification_method', { enum: NOTIFICATION_METHODS })
@@ -168,9 +169,10 @@ export const subscription = sqliteTable('subscription', {
 	cancelAt: integer('cancel_at', { mode: 'timestamp_ms' }),
 	canceledAt: integer('canceled_at', { mode: 'timestamp_ms' }),
 	endedAt: integer('ended_at', { mode: 'timestamp_ms' }),
-	seats: integer('seats')
+	seats: integer('seats'),
+	billingInterval: text('billing_interval'),
+	stripeScheduleId: text('stripe_schedule_id')
 });
-
 
 export const trackedSubscriptionTable = sqliteTable('tracked_subscription', {
 	id: integer('id').primaryKey(),

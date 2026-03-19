@@ -1,38 +1,34 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
-	import { page } from '$app/state';
-	import {
-		baseLocale,
-		getLocale,
-		isLocale,
-		localizeHref,
-		locales,
-		setLocale
-	} from '$lib/paraglide/runtime';
+	import type { AppLocale } from '$lib/constant';
+	import { UserConfigContext } from '$lib/states/userConfig.svelte';
+	import { isLocale, setLocale } from '$lib/paraglide/runtime';
 	import { m } from '$lib/paraglide/messages.js';
-	import { browser } from '$app/environment';
+	import { toast } from 'svelte-sonner';
 
-	const currentLocale = $derived.by(() => {
-		// tie updates to navigation changes
-		page.url;
-
-		if (browser) {
-			const docLang = document.documentElement.lang;
-			if (isLocale(docLang)) return docLang;
+	const userConfig = UserConfigContext.get();
+	const currentLocale = $derived(userConfig.current.locale);
+	const localeOptions = [
+		{
+			value: 'ja' as const,
+			label: () => m.language_option_ja()
+		},
+		{
+			value: 'en' as const,
+			label: () => m.language_option_en()
 		}
-
-		try {
-			return getLocale();
-		} catch (err) {
-			console.warn('Could not read current locale', err);
-			return baseLocale;
-		}
-	});
+	];
 
 	const switchLocale = async (locale: string) => {
 		if (!isLocale(locale) || locale === currentLocale) return;
 
-		// Let Paraglide handle URL localization + hard reload so lang attribute updates
+		const previousLocale = currentLocale;
+		const persisted = await userConfig.updateConfig({ locale: locale as AppLocale });
+		if (!persisted) {
+			userConfig.setLocale(previousLocale);
+			toast.error(m.settings_language_save_error());
+			return;
+		}
+
 		await setLocale(locale);
 	};
 </script>
@@ -44,7 +40,7 @@
 	value={currentLocale}
 	onchange={(event) => switchLocale((event.target as HTMLSelectElement).value)}
 >
-	{#each locales as locale (locale)}
-		<option value={locale} selected={locale === currentLocale}>{locale.toUpperCase()}</option>
+	{#each localeOptions as option (option.value)}
+		<option value={option.value} selected={option.value === currentLocale}>{option.label()}</option>
 	{/each}
 </select>

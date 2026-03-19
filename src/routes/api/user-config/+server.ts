@@ -1,5 +1,12 @@
 import { createAuth } from '$lib/auth.js';
-import { NOTIFICATION_METHODS, THEMES } from '$lib/constant.js';
+import {
+	APP_LOCALES,
+	NOTIFICATION_METHODS,
+	THEMES,
+	type AppLocale,
+	type NotificationMethod,
+	type Themes
+} from '$lib/constant.js';
 import { user } from '$lib/server/db/schema';
 import { error, json } from '@sveltejs/kit';
 import { eq } from 'drizzle-orm';
@@ -7,6 +14,7 @@ import { z } from 'zod/v4';
 
 const configSchema = z
 	.object({
+		locale: z.enum(APP_LOCALES).optional(),
 		activeTheme: z.enum(THEMES).optional(),
 		defaultNotifyDaysBefore: z.number().int().min(0).max(365).optional(),
 		notificationMethod: z.enum(NOTIFICATION_METHODS).optional()
@@ -28,10 +36,14 @@ export const POST = async ({ request, locals: { db } }) => {
 	if (!parsed.success) error(400, 'invalid config');
 
 	const updates: {
-		activeTheme?: string;
+		locale?: AppLocale;
+		activeTheme?: Themes;
 		defaultNotifyDaysBefore?: number;
-		notificationMethod?: string;
+		notificationMethod?: NotificationMethod;
 	} = {};
+	if (parsed.data.locale) {
+		updates.locale = parsed.data.locale;
+	}
 	if (parsed.data.activeTheme) {
 		updates.activeTheme = parsed.data.activeTheme;
 	}
@@ -45,10 +57,7 @@ export const POST = async ({ request, locals: { db } }) => {
 		error(400, 'invalid config');
 	}
 
-	await db
-		.update(user)
-		.set(updates)
-		.where(eq(user.id, userId));
+	await db.update(user).set(updates).where(eq(user.id, userId));
 
 	return json({ ok: true });
 };

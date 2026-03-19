@@ -1,7 +1,8 @@
 import * as schema from './db/schema';
 import {
 	isActiveOrTrialing,
-	isPendingCancel as isPendingCancelUtil
+	isPendingCancel as isPendingCancelUtil,
+	toTimestamp
 } from './better-auth-stripe-utils';
 
 export type SubscriptionRecord = typeof schema.subscription.$inferSelect;
@@ -20,7 +21,7 @@ const normalizePlanName = (name: string) => name.trim().toLowerCase();
 
 const getAccessEnd = (subscription: SubscriptionRecord | null | undefined) => {
 	if (!subscription) return null;
-	return subscription.periodEnd ?? subscription.trialEnd ?? null;
+	return toTimestamp(subscription.periodEnd ?? subscription.trialEnd ?? null);
 };
 
 const pickCurrentSubscription = (
@@ -66,8 +67,7 @@ export const resolveCurrentPlan = (
 
 	const accessEndsAt = getAccessEnd(subscription);
 	const isSubscriptionActive = isActiveOrTrialing(subscription);
-	const hasActiveAccess =
-		typeof accessEndsAt === 'number' ? accessEndsAt > now : isSubscriptionActive;
+	const hasActiveAccess = accessEndsAt !== null ? accessEndsAt > now : isSubscriptionActive;
 	const isActuallyActive =
 		hasActiveAccess && (isSubscriptionActive || subscription.status === 'canceled');
 	const rawPlanName = subscription.plan ?? FREE_PLAN_NAME;

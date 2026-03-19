@@ -20,11 +20,20 @@
 		type SubscriptionPayload,
 		type SubscriptionRecord
 	} from '$lib/offline/subscriptions';
+	import {
+		formatCurrencyYen,
+		formatLongDate,
+		formatNotifyDays,
+		getCycleLabel,
+		getCycleUnitLabel,
+		resolveLocale
+	} from '$lib/locale';
+	import { m } from '$lib/paraglide/messages.js';
+	import { getLocale } from '$lib/paraglide/runtime';
 	import { addSubscriptionModalState } from '$lib/states/modalState.svelte';
-	import { formatCurrency } from '$lib/utils';
 	import { browser, dev } from '$app/environment';
 	import { enhance as kitEnhance } from '$app/forms';
-	import { base } from '$app/paths';
+	import { base, resolve } from '$app/paths';
 	import { fromAction } from 'svelte/attachments';
 	import { Bell, CalendarDays, Repeat } from 'lucide-svelte';
 	import { onMount } from 'svelte';
@@ -37,16 +46,29 @@
 		_pending?: boolean;
 	};
 
-	let {
-		data
-	} = $props<{ data: { subscriptions: Subscription[]; form: unknown; vapidPublicKey: string; hasPushSubscription: boolean } }>();
+	let { data } = $props<{
+		data: {
+			subscriptions: Subscription[];
+			form: unknown;
+			vapidPublicKey: string;
+			hasPushSubscription: boolean;
+		};
+	}>();
 
-	let subscriptions = $state<SubscriptionView[]>(data.subscriptions as SubscriptionView[]);
+	function getInitialSubscriptions() {
+		return data.subscriptions as SubscriptionView[];
+	}
+
+	function getInitialPushSubscribed() {
+		return data.hasPushSubscription;
+	}
+
+	let subscriptions = $state<SubscriptionView[]>(getInitialSubscriptions());
 	let isOnline = $state(true);
 	let isSyncing = $state(false);
 	let syncError = $state<string | null>(null);
 	let pushSupported = $state(false);
-	let pushSubscribed = $state(data.hasPushSubscription);
+	let pushSubscribed = $state(getInitialPushSubscribed());
 	let pushPermission = $state<NotificationPermission>('default');
 	let pushBusy = $state(false);
 	let pushError = $state<string | null>(null);
@@ -54,23 +76,12 @@
 	let editOpen = $state(false);
 	let deleteOpen = $state(false);
 	let selectedSubscription = $state<SubscriptionView | null>(null);
+	const currentLocale = $derived(resolveLocale(getLocale()));
 
 	const pendingCount = $derived(subscriptions.filter((sub) => sub._pending).length);
 	const canMutateSelected = $derived(
 		Boolean(selectedSubscription) && isOnline && !selectedSubscription?._pending
 	);
-
-	const cycleLabelMap: Record<string, string> = {
-		monthly: '毎月',
-		quarterly: '3ヶ月ごと',
-		yearly: '毎年'
-	};
-
-	const cycleUnitMap: Record<string, string> = {
-		monthly: '月',
-		quarterly: '3ヶ月',
-		yearly: '年'
-	};
 
 	const cycleDayMap: Record<string, number> = {
 		monthly: 30,
@@ -79,15 +90,7 @@
 	};
 
 	const formatBillingDate = (value?: string | null) => {
-		if (!value) return '-';
-		const safeValue = value.includes('T') ? value : `${value}T00:00:00`;
-		const date = new Date(safeValue);
-		if (Number.isNaN(date.getTime())) return value.slice(0, 10);
-		return new Intl.DateTimeFormat('ja-JP', {
-			year: 'numeric',
-			month: 'long',
-			day: 'numeric'
-		}).format(date);
+		return formatLongDate(value, currentLocale);
 	};
 
 	const getCycleProgress = (subscription: SubscriptionView) => {
@@ -124,11 +127,11 @@
 			const result = await syncPendingSubscriptions(`${base}/subscriptions?/create`);
 			subscriptions = result.subscriptions as SubscriptionView[];
 			if (result.failed > 0) {
-				syncError = '同期に失敗しました。オンライン状態を確認してください。';
+				syncError = m.subscription_sync_failed_offline();
 			}
 		} catch (error) {
 			console.error('Failed to sync subscriptions', error);
-			syncError = '同期に失敗しました。';
+			syncError = m.subscription_sync_failed();
 		} finally {
 			isSyncing = false;
 		}
@@ -152,12 +155,12 @@
 
 	const handleCreateResult = async (serverSubscriptions: Subscription[]) => {
 		await handleServerResult(serverSubscriptions);
-		toast.success('サブスクを追加しました。');
+		toast.success(m.subscription_added_toast());
 	};
 
 	const handleUpdateResult = async (serverSubscriptions: Subscription[]) => {
 		await handleServerResult(serverSubscriptions);
-		toast.success('サブスクを更新しました。');
+		toast.success(m.subscription_updated_toast());
 	};
 
 	const openDetail = (subscription: SubscriptionView) => {
@@ -189,7 +192,7 @@
 			if (data?.subscriptions) {
 				await handleServerResult(data.subscriptions);
 			}
-			toast.success('サブスクを削除しました。');
+			toast.success(m.subscription_deleted_toast());
 			deleteOpen = false;
 			detailOpen = false;
 			editOpen = false;
@@ -272,13 +275,13 @@
 			const permission = await Notification.requestPermission();
 			pushPermission = permission;
 			if (permission !== 'granted') {
-				pushError = '通知が許可されていません。';
+				pushError = m.subscription_push_permission_denied();
 				return;
 			}
 
 			const registration = await getServiceWorkerRegistration();
 			if (!registration) {
-				pushError = 'サービスワーカーが利用できません。';
+				pushError = m.subscription_push_service_worker_unavailable();
 				return;
 			}
 
@@ -294,7 +297,7 @@
 			pushSubscribed = true;
 		} catch (error) {
 			console.error('Failed to enable push notifications', error);
-			pushError = '通知の登録に失敗しました。';
+			pushError = m.subscription_push_enable_failed();
 		} finally {
 			pushBusy = false;
 		}
@@ -315,7 +318,7 @@
 			pushSubscribed = false;
 		} catch (error) {
 			console.error('Failed to disable push notifications', error);
-			pushError = '通知の解除に失敗しました。';
+			pushError = m.subscription_push_disable_failed();
 		} finally {
 			pushBusy = false;
 		}
@@ -352,8 +355,8 @@
 <section class="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-10">
 	<header class="flex flex-wrap items-center justify-between gap-4">
 		<div>
-			<h1 class="text-3xl font-bold">サブスク管理</h1>
-			<p class="text-muted-foreground">契約を追加して支払いを整理しましょう。</p>
+			<h1 class="text-3xl font-bold">{m.subscription_page_title()}</h1>
+			<p class="text-muted-foreground">{m.subscription_page_description()}</p>
 		</div>
 		<div class="flex flex-wrap items-center gap-2">
 			{#if pushSupported && data.vapidPublicKey}
@@ -363,17 +366,22 @@
 					disabled={pushBusy}
 					onclick={pushSubscribed ? disablePush : enablePush}
 				>
-					{pushSubscribed ? '通知を無効にする' : '通知を有効にする'}
+					{pushSubscribed ? m.subscription_push_disable() : m.subscription_push_enable()}
 				</Button>
 			{/if}
-			<Button onclick={() => addSubscriptionModalState.setTrue()}>サブスクを追加</Button>
+			<Button onclick={() => addSubscriptionModalState.setTrue()}
+				>{m.subscription_page_add_button()}</Button
+			>
 		</div>
 	</header>
 	{#if pushSupported && data.vapidPublicKey}
 		<div class="text-muted-foreground flex flex-wrap items-center gap-2 text-xs">
-			<span>通知日にプッシュ通知を受け取れます。</span>
+			<span>{m.subscription_push_hint()}</span>
+			<a href={resolve('/push')} class="text-primary underline-offset-4 hover:underline">
+				{m.subscription_push_details_link()}
+			</a>
 			{#if pushPermission === 'denied'}
-				<span class="text-destructive">ブラウザの通知設定を許可してください。</span>
+				<span class="text-destructive">{m.subscription_push_permission_denied()}</span>
 			{/if}
 			{#if pushError}
 				<span class="text-destructive">{pushError}</span>
@@ -386,12 +394,12 @@
 			class="border-border/60 bg-muted/40 text-muted-foreground flex flex-wrap items-center gap-3 rounded-lg border px-4 py-3 text-xs"
 		>
 			{#if !isOnline}
-				<span>オフライン中のためキャッシュを表示しています。</span>
+				<span>{m.subscription_offline_banner()}</span>
 			{:else if pendingCount > 0}
 				<span>
-					未同期のデータが {pendingCount} 件あります。
+					{m.subscription_pending_sync_banner({ count: pendingCount })}
 					{#if isSyncing}
-						同期中...
+						{m.subscription_syncing()}
 					{/if}
 				</span>
 			{/if}
@@ -403,15 +411,15 @@
 
 	{#if subscriptions.length === 0}
 		<div class="text-muted-foreground rounded-lg border border-dashed p-6">
-			まだ登録されたサブスクがありません。
+			{m.subscription_empty_state()}
 		</div>
 	{:else}
 		<div class="flex flex-col gap-4">
 			{#each subscriptions as sub (sub.id)}
 				<Card
-					class="overflow-hidden cursor-pointer"
+					class="cursor-pointer overflow-hidden"
 					role="button"
-					tabindex="0"
+					tabindex={0}
 					onkeydown={(event) => {
 						if (event.key === 'Enter' || event.key === ' ') {
 							event.preventDefault();
@@ -424,18 +432,20 @@
 						<div class="flex items-start justify-between gap-4">
 							<div class="space-y-1">
 								<CardTitle class="text-base">{sub.serviceName}</CardTitle>
-								<CardDescription class="text-xs flex flex-wrap items-center gap-2">
-									<span>{cycleLabelMap[sub.cycle] ?? sub.cycle}</span>
+								<CardDescription class="flex flex-wrap items-center gap-2 text-xs">
+									<span>{getCycleLabel(sub.cycle, currentLocale)}</span>
 									{#if sub._pending}
-										<Badge variant="secondary" class="text-[10px]">同期待ち</Badge>
+										<Badge variant="secondary" class="text-[10px]"
+											>{m.subscription_pending_badge()}</Badge
+										>
 									{/if}
 								</CardDescription>
 							</div>
 							<div class="text-right">
 								<div class="text-base font-semibold">
-									{formatCurrency(sub.amount, { currency: 'JPY', locale: 'ja-JP' })}
+									{formatCurrencyYen(sub.amount, currentLocale)}
 									<span class="text-muted-foreground text-xs">
-										/ {cycleUnitMap[sub.cycle] ?? sub.cycle}
+										/ {getCycleUnitLabel(sub.cycle, currentLocale)}
 									</span>
 								</div>
 							</div>
@@ -447,15 +457,15 @@
 								{formatBillingDate(sub.nextBillingAt)}
 							</span>
 							<span class="text-muted-foreground">
-								支払いまで {sub.daysUntilNextBilling}日
+								{m.subscription_due_in_days({ days: sub.daysUntilNextBilling })}
 							</span>
 						</div>
 						<div
 							class="text-muted-foreground flex flex-wrap items-center justify-between gap-2 text-xs"
 						>
 							<span>
-								通知
-								{sub.notifyDaysBefore === 0 ? '当日' : `${sub.notifyDaysBefore}日前`}
+								{m.subscription_notify_label()}
+								{formatNotifyDays(sub.notifyDaysBefore, currentLocale)}
 							</span>
 							{#if sub.tags.length > 0}
 								<div class="flex flex-wrap gap-2">
@@ -482,19 +492,19 @@
 	<Dialog.Content class="w-full max-w-md overflow-hidden p-0">
 		<div class="flex items-center justify-between border-b px-4 py-3">
 			<Dialog.Title class="text-base font-semibold">
-				{selectedSubscription?.serviceName ?? 'サブスク詳細'}
+				{selectedSubscription?.serviceName ?? m.subscription_detail_fallback_title()}
 			</Dialog.Title>
 		</div>
 		{#if selectedSubscription}
 			<div class="space-y-4 p-4">
 				<div class="bg-card rounded-xl border px-4 py-5 text-center">
-					<p class="text-muted-foreground text-xs">支払い料金</p>
+					<p class="text-muted-foreground text-xs">{m.subscription_amount_label()}</p>
 					<p class="text-3xl font-bold">
-						{formatCurrency(selectedSubscription.amount, { currency: 'JPY', locale: 'ja-JP' })}
+						{formatCurrencyYen(selectedSubscription.amount, currentLocale)}
 					</p>
 					<div class="text-muted-foreground mt-4 flex items-center justify-center gap-2 text-sm">
 						<Repeat class="size-4" />
-						<span>{cycleLabelMap[selectedSubscription.cycle] ?? selectedSubscription.cycle}</span>
+						<span>{getCycleLabel(selectedSubscription.cycle, currentLocale)}</span>
 					</div>
 					<div class="text-muted-foreground mt-2 flex items-center justify-center gap-2 text-sm">
 						<CalendarDays class="size-4" />
@@ -504,29 +514,31 @@
 
 				<div class="bg-card space-y-3 rounded-xl border px-4 py-4 text-sm">
 					<div class="flex items-center justify-between">
-						<span class="text-muted-foreground">支払いまで</span>
-						<span class="font-semibold">{selectedSubscription.daysUntilNextBilling}日</span>
+						<span class="text-muted-foreground">{m.subscription_days_until_label()}</span>
+						<span class="font-semibold"
+							>{m.subscription_due_in_days({
+								days: selectedSubscription.daysUntilNextBilling
+							})}</span
+						>
 					</div>
 					<div class="flex items-center justify-between">
-						<span class="text-muted-foreground">初回支払日</span>
+						<span class="text-muted-foreground">{m.subscription_first_payment_label()}</span>
 						<span>{formatBillingDate(selectedSubscription.firstPaymentDate)}</span>
 					</div>
 					<div class="flex items-center justify-between">
 						<span class="text-muted-foreground flex items-center gap-2">
 							<Bell class="size-4" />
-							通知
+							{m.subscription_notify_label()}
 						</span>
 						<span>
-							{selectedSubscription.notifyDaysBefore === 0
-								? '当日'
-								: `${selectedSubscription.notifyDaysBefore}日前`}
+							{formatNotifyDays(selectedSubscription.notifyDaysBefore, currentLocale)}
 						</span>
 					</div>
 				</div>
 
 				{#if !canMutateSelected}
 					<p class="text-muted-foreground text-xs">
-						オフライン中、または同期待ちのデータは編集・削除できません。
+						{m.subscription_cannot_edit_offline()}
 					</p>
 				{/if}
 
@@ -535,17 +547,17 @@
 						variant="outline"
 						disabled={!canMutateSelected}
 						onclick={openEdit}
-						class="w-full h-12 text-base sm:h-10 sm:text-sm"
+						class="h-12 w-full text-base sm:h-10 sm:text-sm"
 					>
-						編集する
+						{m.subscription_edit_button()}
 					</Button>
 					<Button
 						variant="destructive"
 						disabled={!canMutateSelected}
 						onclick={openDelete}
-						class="w-full h-12 text-base sm:h-10 sm:text-sm"
+						class="h-12 w-full text-base sm:h-10 sm:text-sm"
 					>
-						削除する
+						{m.subscription_delete_button()}
 					</Button>
 				</div>
 			</div>
@@ -556,9 +568,9 @@
 <Dialog.Root bind:open={editOpen}>
 	<Dialog.Content class="max-h-[90vh] w-full max-w-3xl overflow-y-auto p-6">
 		<Dialog.Header class="space-y-1">
-			<Dialog.Title class="text-2xl font-bold">サブスクを編集</Dialog.Title>
+			<Dialog.Title class="text-2xl font-bold">{m.subscription_edit_title()}</Dialog.Title>
 			<Dialog.Description class="text-muted-foreground text-sm">
-				契約内容を更新できます。
+				{m.subscription_edit_description()}
 			</Dialog.Description>
 		</Dialog.Header>
 		<div class="mt-6">
@@ -576,20 +588,17 @@
 <AlertDialog.Root bind:open={deleteOpen}>
 	<AlertDialog.Content>
 		<AlertDialog.Header>
-			<AlertDialog.Title>サブスクを削除しますか？</AlertDialog.Title>
+			<AlertDialog.Title>{m.subscription_delete_title()}</AlertDialog.Title>
 			<AlertDialog.Description>
-				削除すると元に戻せません。必要であれば内容を確認してください。
+				{m.subscription_delete_description()}
 			</AlertDialog.Description>
 		</AlertDialog.Header>
 		<form method="post" action="?/delete" {@attach fromAction(kitEnhance, () => deleteEnhance)}>
 			<input type="hidden" name="id" value={selectedSubscription?.id ?? ''} />
 			<AlertDialog.Footer class="mt-4">
-				<AlertDialog.Cancel type="button">キャンセル</AlertDialog.Cancel>
-				<AlertDialog.Action
-					type="submit"
-					class="bg-destructive hover:bg-destructive/90 text-white"
-				>
-					削除する
+				<AlertDialog.Cancel type="button">{m.common_cancel()}</AlertDialog.Cancel>
+				<AlertDialog.Action type="submit" class="bg-destructive hover:bg-destructive/90 text-white">
+					{m.common_delete()}
 				</AlertDialog.Action>
 			</AlertDialog.Footer>
 		</form>
