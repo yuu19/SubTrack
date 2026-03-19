@@ -74,6 +74,9 @@ export function createAuth(
 			provider: 'sqlite'
 		}),
 		baseURL: resolveAuthBaseUrl(options.requestOrigin),
+		emailAndPassword: {
+			enabled: true
+		},
 		socialProviders: {
 			google: {
 				prompt: "select_account", 

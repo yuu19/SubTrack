@@ -1,3 +1,4 @@
+import { DEFAULT_LOCALE, type AppLocale } from '$lib/constant';
 import { createAuth } from '$lib/auth.js';
 import { userConfigSchema } from '$lib/states/userConfig.svelte';
 import { trackedSubscriptionTable, user as userTable } from '$lib/server/db/schema';
@@ -14,20 +15,21 @@ export const load = async ({ request, locals }) => {
 	const adminUserIds = parseAdminUserIds(process.env.ADMIN_USER_IDS);
 	const id = session?.user.id || '';
 	const user = id
-		? await db.query.user.findFirst({
+		? ((await db.query.user.findFirst({
 				where: (user, { eq }) => eq(user.id, id)
-			})
+			})) ?? null)
 		: null;
 	const isAdmin = isAdminUser(user, adminUserIds);
 
 	if (user && !user.sampleDataSeeded) {
-		const existing = await db
-			.select({ id: trackedSubscriptionTable.id })
-			.from(trackedSubscriptionTable)
-			.where(eq(trackedSubscriptionTable.userId, user.id))
-			.limit(1);
+		const existing = await db.query.trackedSubscriptionTable.findFirst({
+			columns: {
+				id: true
+			},
+			where: (trackedSubscription, { eq }) => eq(trackedSubscription.userId, user.id)
+		});
 
-		if (existing.length === 0) {
+		if (!existing) {
 			const today = new Date();
 			const dateSeed = today.toISOString().slice(0, 10);
 			const samples = [
@@ -74,13 +76,11 @@ export const load = async ({ request, locals }) => {
 			}
 		}
 
-		await db
-			.update(userTable)
-			.set({ sampleDataSeeded: true })
-			.where(eq(userTable.id, user.id));
+		await db.update(userTable).set({ sampleDataSeeded: true }).where(eq(userTable.id, user.id));
 		user.sampleDataSeeded = true;
 	}
 	const parsedConfig = userConfigSchema.safeParse({
+		locale: (user?.locale as AppLocale | null | undefined) ?? DEFAULT_LOCALE,
 		activeTheme: user?.activeTheme ?? 'rose',
 		defaultNotifyDaysBefore: user?.defaultNotifyDaysBefore ?? 3,
 		notificationMethod: user?.notificationMethod ?? 'push'

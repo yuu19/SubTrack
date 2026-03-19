@@ -2,13 +2,21 @@
 	import { invalidateAll } from '$app/navigation';
 	import { page } from '$app/state';
 	import { authClient } from '$lib/auth-client';
+	import LanguageSwitcher from '$lib/components/LanguageSwitcher.svelte';
 	import DefaultNotifyModal from '$lib/components/modals/DefaultNotifyModal.svelte';
 	import NotificationMethodModal from '$lib/components/modals/NotificationMethodModal.svelte';
 	import UpdateNameModal from '$lib/components/modals/UpdateNameModal.svelte';
 	import ThemeSelectModal from '$lib/components/modals/ThemeSelectModal.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import * as Dialog from '$lib/components/ui/dialog';
+	import {
+		formatCurrencyYen,
+		formatLongDate,
+		getSubscriptionStatusLabel,
+		resolveLocale
+	} from '$lib/locale';
 	import { m } from '$lib/paraglide/messages.js';
+	import { getLocale } from '$lib/paraglide/runtime';
 	import Check from 'lucide-svelte/icons/check';
 	import X from 'lucide-svelte/icons/x';
 	import { Loader2 } from 'lucide-svelte';
@@ -16,44 +24,33 @@
 	import { onMount } from 'svelte';
 
 	let { user, subscription, currentPlan } = $derived(page.data);
-
-	type FeatureValue = string | number | boolean;
-
-	const statusLabels: Record<string, string> = {
-		active: '有効',
-		trialing: 'トライアル中',
-		past_due: '支払い遅延',
-		canceled: '解約済み',
-		incomplete: '手続き中',
-		incomplete_expired: '期限切れ',
-		unpaid: '未払い'
-	};
+	const currentLocale = $derived.by(() => {
+		page.url;
+		return resolveLocale(getLocale());
+	});
 
 	const isPremium = $derived(currentPlan?.isPremium ?? false);
 	const isPendingCancel = $derived(currentPlan?.isPendingCancel ?? false);
-	const planLabel = $derived(isPremium ? 'プレミアムプラン' : '無料プラン');
+	const planLabel = $derived(isPremium ? m.plan_premium() : m.plan_free());
 	const statusLabel = $derived(
 		isPendingCancel && isPremium
-			? '解約予定'
-			: subscription?.status
-				? (statusLabels[subscription.status] ?? '未設定')
-				: '未設定'
+			? getSubscriptionStatusLabel('pending_cancel', currentLocale)
+			: getSubscriptionStatusLabel(subscription?.status, currentLocale)
 	);
 	const periodEndLabel = $derived(formatDate(subscription?.periodEnd ?? subscription?.trialEnd));
 	const nextBillingLabel = $derived(formatDate(subscription?.periodEnd ?? subscription?.trialEnd));
 	const hasBillingDate = $derived(Boolean(subscription?.periodEnd ?? subscription?.trialEnd));
-	const billingAmountLabel = $derived(isPremium ? '¥5,000' : '—');
+	const billingAmountLabel = $derived(isPremium ? formatCurrencyYen(5000, currentLocale) : '—');
 	const premiumPlanName = 'Premium';
-
-	const premiumFeatures: { label: string; free: FeatureValue; premium: FeatureValue }[] = [
-		{ label: 'サブスクリプション登録数', free: '5', premium: '∞' },
-		{ label: 'カテゴリー登録数', free: '3', premium: '∞' },
-		{ label: '支払い方法登録数', free: '3', premium: '∞' },
-		{ label: '全広告の非表示', free: false, premium: true },
-		{ label: '画像の登録', free: false, premium: true },
-		{ label: '支払い日前通知を個別に設定可能', free: false, premium: true },
-		{ label: 'データのCSVエクスポート', free: false, premium: true }
-	];
+	const premiumFeatures = $derived([
+		{ label: m.premium_feature_subscription_limit(), free: '5', premium: '∞' },
+		{ label: m.premium_feature_category_limit(), free: '3', premium: '∞' },
+		{ label: m.premium_feature_payment_method_limit(), free: '3', premium: '∞' },
+		{ label: m.premium_feature_hide_ads(), free: false, premium: true },
+		{ label: m.premium_feature_image_upload(), free: false, premium: true },
+		{ label: m.premium_feature_custom_notification(), free: false, premium: true },
+		{ label: m.premium_feature_csv_export(), free: false, premium: true }
+	]);
 
 	let isPremiumModalOpen = $state(false);
 	let isUpgrading = $state(false);
@@ -101,7 +98,7 @@
 				return;
 			}
 
-			toast.error('ポータルのURL取得に失敗しました。');
+			toast.error(m.settings_billing_portal_error());
 		} finally {
 			isUpgrading = false;
 		}
@@ -125,7 +122,7 @@
 				return;
 			}
 
-			toast.success('解約のキャンセルを受け付けました。');
+			toast.success(m.settings_restore_cancel_success());
 			await invalidateAll();
 		} finally {
 			isRestoringCancel = false;
@@ -139,13 +136,8 @@
 			.join('');
 	}
 
-	function formatDate(value: number | null | undefined) {
-		if (!value) return '未設定';
-		const date = new Date(value);
-		const year = date.getFullYear();
-		const month = String(date.getMonth() + 1).padStart(2, '0');
-		const day = String(date.getDate()).padStart(2, '0');
-		return `${year}-${month}-${day}`;
+	function formatDate(value: number | Date | null | undefined) {
+		return value ? formatLongDate(value, currentLocale) : m.common_not_set();
 	}
 </script>
 
@@ -178,14 +170,14 @@
 		</div>
 	</section>
 
-	<section id="plan-info" class="rounded-2xl border bg-card p-6 shadow-sm">
+	<section id="plan-info" class="bg-card rounded-2xl border p-6 shadow-sm">
 		<div class="flex flex-col gap-1">
-			<h2 class="text-base font-semibold md:text-lg">プラン情報</h2>
-			<p class="text-sm text-muted-foreground">
+			<h2 class="text-base font-semibold md:text-lg">{m.settings_plan_info_title()}</h2>
+			<p class="text-muted-foreground text-sm">
 				{#if isPremium}
-					プレミアムプランをご利用中です。
+					{m.settings_plan_info_desc_premium()}
 				{:else}
-					無料プランをご利用中です。サブスクリプションは最大5件まで登録できます。
+					{m.settings_plan_info_desc_free()}
 				{/if}
 			</p>
 		</div>
@@ -196,7 +188,7 @@
 					class="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"
 				>
 					<div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-						<p class="font-medium">次回更新時に解約予定です。</p>
+						<p class="font-medium">{m.settings_plan_pending_cancel_title()}</p>
 						<Button
 							variant="outline"
 							size="sm"
@@ -207,35 +199,39 @@
 							{#if isRestoringCancel}
 								<Loader2 class="size-4 animate-spin" />
 							{/if}
-							解約をキャンセル
+							{m.settings_plan_pending_cancel_button()}
 						</Button>
 					</div>
 					{#if hasBillingDate}
 						<p class="mt-1 text-amber-800">
-							{nextBillingLabel}までプレミアム機能を利用できます。
+							{m.settings_plan_pending_cancel_until({ date: nextBillingLabel })}
 						</p>
 					{/if}
 				</div>
 			{/if}
 			<div class="mt-5 divide-y rounded-lg border text-sm">
 				<div class="flex items-center justify-between px-4 py-3">
-					<span class="text-muted-foreground">現在のプラン</span>
+					<span class="text-muted-foreground">{m.settings_plan_current_label()}</span>
 					<span class="font-medium">{planLabel}</span>
 				</div>
 				<div class="flex items-center justify-between px-4 py-3">
-					<span class="text-muted-foreground">ステータス</span>
+					<span class="text-muted-foreground">{m.settings_plan_status_label()}</span>
 					<span class="font-medium">{statusLabel}</span>
 				</div>
 				<div class="flex items-center justify-between px-4 py-3">
-					<span class="text-muted-foreground">有効期限</span>
+					<span class="text-muted-foreground">{m.settings_plan_expiry_label()}</span>
 					<span class="font-medium">{periodEndLabel}</span>
 				</div>
 				<div class="flex items-center justify-between px-4 py-3">
-					<span class="text-muted-foreground">{isPendingCancel ? '終了日' : '次回の更新日'}</span>
+					<span class="text-muted-foreground">
+						{isPendingCancel
+							? m.settings_plan_end_date_label()
+							: m.settings_plan_next_billing_label()}
+					</span>
 					<span class="font-medium">{nextBillingLabel}</span>
 				</div>
 				<div class="flex items-center justify-between px-4 py-3">
-					<span class="text-muted-foreground">請求予定金額</span>
+					<span class="text-muted-foreground">{m.settings_plan_billing_amount_label()}</span>
 					<span class="font-medium">{billingAmountLabel}</span>
 				</div>
 			</div>
@@ -244,18 +240,23 @@
 					{#if isUpgrading}
 						<Loader2 class="size-4 animate-spin" />
 					{/if}
-					プランの詳細確認・変更・キャンセルはこちら
+					{m.settings_plan_manage_button()}
 				</Button>
-				<span class="text-xs text-muted-foreground">返金ポリシー</span>
+				<span class="text-muted-foreground text-xs">{m.settings_plan_refund_policy()}</span>
 			</div>
 		{/if}
 	</section>
 
-	<section class="rounded-2xl border bg-card p-6 shadow-sm">
+	<section class="bg-card rounded-2xl border p-6 shadow-sm">
 		<div class="flex items-center justify-between">
 			<h2 class="text-base font-semibold md:text-lg">{m.nav_settings()}</h2>
 		</div>
 		<div class="mt-4 divide-y">
+			<div class="flex w-full justify-between gap-5 py-3">
+				<p class="text-base font-semibold md:text-lg">{m.settings_language_label()}</p>
+				<LanguageSwitcher />
+			</div>
+
 			<div class="flex w-full justify-between gap-5 py-3">
 				<p class="text-base font-semibold md:text-lg">{m.settings_name()}</p>
 				<UpdateNameModal />
@@ -267,12 +268,12 @@
 			</div>
 
 			<div class="flex w-full justify-between gap-5 py-3">
-				<p class="text-base font-semibold md:text-lg">デフォルト通知日</p>
+				<p class="text-base font-semibold md:text-lg">{m.settings_default_notify_label()}</p>
 				<DefaultNotifyModal />
 			</div>
 
 			<div class="flex w-full justify-between gap-5 py-3">
-				<p class="text-base font-semibold md:text-lg">通知方法</p>
+				<p class="text-base font-semibold md:text-lg">{m.settings_notification_method_label()}</p>
 				<NotificationMethodModal />
 			</div>
 
@@ -288,8 +289,7 @@
 					onclick={() => {
 						authClient.signOut();
 						invalidateAll();
-					}}
-					>{m.settings_logout_button()}</Button
+					}}>{m.settings_logout_button()}</Button
 				>
 			</div>
 		</div>
@@ -300,24 +300,26 @@
 			<Dialog.Content class="w-full max-w-[420px] p-6 sm:p-7">
 				<div class="flex flex-col items-center gap-4 text-center">
 					<span class="rounded-full bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-600">
-						一生分のお得をあなたに
+						{m.premium_modal_badge()}
 					</span>
-					<h3 class="text-xl font-semibold">サブスク管理 プレミアム</h3>
-					<div class="flex h-32 w-32 items-center justify-center rounded-full bg-muted">
+					<h3 class="text-xl font-semibold">{m.premium_modal_title()}</h3>
+					<div class="bg-muted flex h-32 w-32 items-center justify-center rounded-full">
 						<span class="text-4xl">¥</span>
 					</div>
-					<p class="text-sm text-muted-foreground">
-						プレミアム機能でサブスク管理をもっと快適に。
+					<p class="text-muted-foreground text-sm">
+						{m.premium_modal_description()}
 					</p>
 				</div>
 
-				<div class="mt-6 rounded-xl border bg-muted/30 p-4 text-sm">
-					<div class="flex items-center justify-between pb-3 text-xs font-semibold text-muted-foreground">
-						<span>機能</span>
+				<div class="bg-muted/30 mt-6 rounded-xl border p-4 text-sm">
+					<div
+						class="text-muted-foreground flex items-center justify-between pb-3 text-xs font-semibold"
+					>
+						<span>{m.premium_modal_feature_label()}</span>
 						<div class="flex items-center gap-4">
-							<span class="rounded-full bg-muted px-2 py-0.5">無料</span>
-							<span class="rounded-full bg-primary px-2 py-0.5 text-primary-foreground">
-								プレミアム
+							<span class="bg-muted rounded-full px-2 py-0.5">{m.plan_free()}</span>
+							<span class="bg-primary text-primary-foreground rounded-full px-2 py-0.5">
+								{m.plan_premium()}
 							</span>
 						</div>
 					</div>
@@ -326,12 +328,12 @@
 							<div class="flex items-center justify-between py-2">
 								<span class="text-foreground">{feature.label}</span>
 								<div class="flex items-center gap-6">
-									<span class="flex w-12 items-center justify-center text-muted-foreground">
+									<span class="text-muted-foreground flex w-12 items-center justify-center">
 										{#if typeof feature.free === 'boolean'}
 											{#if feature.free}
 												<Check class="h-4 w-4 text-emerald-500" />
 											{:else}
-												<X class="h-4 w-4 text-muted-foreground" />
+												<X class="text-muted-foreground h-4 w-4" />
 											{/if}
 										{:else}
 											{feature.free}
@@ -342,7 +344,7 @@
 											{#if feature.premium}
 												<Check class="h-4 w-4 text-emerald-500" />
 											{:else}
-												<X class="h-4 w-4 text-muted-foreground" />
+												<X class="text-muted-foreground h-4 w-4" />
 											{/if}
 										{:else}
 											{feature.premium}
@@ -359,11 +361,11 @@
 						{#if isUpgrading}
 							<Loader2 class="size-4 animate-spin" />
 						{/if}
-						プレミアムプランに登録する
+						{m.premium_modal_cta()}
 					</Button>
-					<div class="flex items-center justify-center gap-6 text-xs text-muted-foreground">
-						<span>利用規約</span>
-						<span>プライバシーポリシー</span>
+					<div class="text-muted-foreground flex items-center justify-center gap-6 text-xs">
+						<span>{m.legal_terms()}</span>
+						<span>{m.legal_privacy()}</span>
 					</div>
 				</div>
 			</Dialog.Content>

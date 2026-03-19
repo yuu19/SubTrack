@@ -1,7 +1,10 @@
 import type { DrizzleD1Database } from 'drizzle-orm/d1';
+import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 import * as schema from './db/schema';
 
-export async function getUsers(db: DrizzleD1Database<typeof schema>) {
+export async function getUsers(
+	db: DrizzleD1Database<typeof schema> | BetterSQLite3Database<typeof schema>
+) {
 	const users = await db.query.user.findMany({
 		orderBy: (t, { desc }) => desc(t.createdAt)
 	});

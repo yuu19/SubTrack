@@ -1,22 +1,24 @@
 <script lang="ts">
 	import * as Dialog from '$lib/components/ui/dialog';
 	import { buttonVariants } from '$lib/components/ui/button';
+	import { formatNotifyDays, resolveLocale } from '$lib/locale';
+	import { m } from '$lib/paraglide/messages.js';
+	import { getLocale } from '$lib/paraglide/runtime';
 	import { UserConfigContext } from '$lib/states/userConfig.svelte';
 
 	let modalState = $state(false);
 	const userConfig = UserConfigContext.get();
 
-	const notifyOptions = [
-		{ value: 0, label: '当日' },
-		{ value: 1, label: '1日前' },
-		{ value: 3, label: '3日前' },
-		{ value: 7, label: '7日前' }
-	];
+	const currentLocale = $derived(resolveLocale(getLocale()));
+	const notifyOptions = $derived([
+		{ value: 0, label: formatNotifyDays(0, currentLocale) },
+		{ value: 1, label: formatNotifyDays(1, currentLocale) },
+		{ value: 3, label: formatNotifyDays(3, currentLocale) },
+		{ value: 7, label: formatNotifyDays(7, currentLocale) }
+	]);
 
 	const currentValue = $derived(userConfig.current.defaultNotifyDaysBefore ?? 3);
-	const currentLabel = $derived(
-		currentValue === 0 ? '当日' : `${currentValue}日前`
-	);
+	const currentLabel = $derived(formatNotifyDays(currentValue, currentLocale));
 
 	const selectDefault = (value: number) => {
 		userConfig.setConfig({ defaultNotifyDaysBefore: value });
@@ -29,10 +31,10 @@
 	<Dialog.Content class="w-full p-3 sm:p-5">
 		<Dialog.Header class="mt-10">
 			<Dialog.Title class="font-display text-lg sm:text-xl md:text-3xl">
-				デフォルト通知日
+				{m.settings_default_notify_title()}
 			</Dialog.Title>
 			<Dialog.Description class="text-muted-foreground text-sm">
-				支払日の何日前に通知するかを設定します。
+				{m.settings_default_notify_description()}
 			</Dialog.Description>
 		</Dialog.Header>
 

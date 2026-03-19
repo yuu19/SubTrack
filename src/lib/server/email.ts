@@ -2,7 +2,7 @@ import { Resend } from 'resend';
 import { dev } from '$app/environment';
 
 const resendApiKey = process.env.RESEND_API_KEY;
-const defaultFrom = process.env.RESEND_FROM ?? 'no-reply@example.com';
+const configuredFrom = process.env.RESEND_FROM?.trim();
 // Use Resend's sandbox addresses during development to avoid sending real mail.
 const SANDBOX_FROM = 'Acme <onboarding@resend.dev>';
 const SANDBOX_TO = ['delivered@resend.dev'];
@@ -15,7 +15,11 @@ function resolveEnvelope(recipient: string | string[]) {
 		return { from: SANDBOX_FROM, to: SANDBOX_TO };
 	}
 
-	return { from: defaultFrom, to: recipient };
+	if (!configuredFrom) {
+		throw new Error('[email] RESEND_FROM is required in non-dev environments.');
+	}
+
+	return { from: configuredFrom, to: recipient };
 }
 
 export type SendVerificationInput = {

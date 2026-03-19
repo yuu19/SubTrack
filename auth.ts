@@ -34,6 +34,9 @@ export const auth = betterAuth({
 		provider: 'sqlite'
 	}),
 	baseURL: authBaseUrl,
+	emailAndPassword: {
+		enabled: true
+	},
 	socialProviders: {
 		google: {
 			prompt: "select_account", 

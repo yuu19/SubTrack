@@ -9,17 +9,21 @@
 	import Input from '$lib/components/ui/input/input.svelte';
 	import TagsInput from '$lib/components/ui/tags-input/tags-input.svelte';
 	import { payloadFromFormData } from '$lib/offline/subscriptions';
+	import { formatNotifyDays, getCycleLabel, resolveLocale } from '$lib/locale';
+	import { m } from '$lib/paraglide/messages.js';
+	import { getLocale } from '$lib/paraglide/runtime';
 	import { addSubscriptionModalState } from '$lib/states/modalState.svelte';
 	import { UserConfigContext } from '$lib/states/userConfig.svelte';
 
-	const cycleOptions = [
-		{ value: 'monthly', label: '毎月' },
-		{ value: 'quarterly', label: '3ヶ月ごと' },
-		{ value: 'yearly', label: '毎年' }
-	];
-
 	let { data, onOfflineSubmit, onServerResult } = $props();
 	const userConfig = UserConfigContext.get();
+	const currentLocale = $derived(resolveLocale(getLocale()));
+	const cycleOptions = $derived([
+		{ value: 'monthly', label: getCycleLabel('monthly', currentLocale) },
+		{ value: 'quarterly', label: getCycleLabel('quarterly', currentLocale) },
+		{ value: 'yearly', label: getCycleLabel('yearly', currentLocale) }
+	]);
+	const notifyOptions = $derived([1, 3, 7]);
 
 	const defaultNotifyDaysBefore = $derived(userConfig.current.defaultNotifyDaysBefore ?? 3);
 	const now = new Date();
@@ -45,7 +49,7 @@
 	const tagsField = fieldProxy(form, 'tagsinput');
 
 	const enhanceEvents = {
-		onSubmit: async (input) => {
+		onSubmit: async (input: any) => {
 			if (typeof navigator === 'undefined' || navigator.onLine) return;
 			input.cancel();
 			const payload = payloadFromFormData(input.formData);
@@ -55,7 +59,7 @@
 				addSubscriptionModalState.setFalse();
 			}
 		},
-		onResult: async (event) => {
+		onResult: async (event: any) => {
 			const result = event?.result as { data?: { subscriptions?: unknown } } | undefined;
 			const subscriptions = result?.data?.subscriptions;
 			if (subscriptions && Array.isArray(subscriptions)) {
@@ -75,16 +79,20 @@
 		}
 		wasOpen = isOpen;
 	});
-
 </script>
 
 <div class="space-y-6 p-6">
-	<h2 class="text-2xl font-bold">サブスクを追加</h2>
-	<form method="post" action="?/create" class="space-y-4" {@attach fromAction(enhance, () => enhanceEvents)}>
+	<h2 class="text-2xl font-bold">{m.add_subscription_title()}</h2>
+	<form
+		method="post"
+		action="?/create"
+		class="space-y-4"
+		{@attach fromAction(enhance, () => enhanceEvents)}
+	>
 		<Field {form} name="text">
 			<Control>
 				{#snippet children({ props })}
-					<Label class="font-medium">サービス名</Label>
+					<Label class="font-medium">{m.subscription_form_service_name_label()}</Label>
 					<Input {...props} type="text" placeholder="Netflix" bind:value={$textField} />
 				{/snippet}
 			</Control>
@@ -94,13 +102,13 @@
 		<Field {form} name="select">
 			<Control>
 				{#snippet children({ props })}
-					<Label class="font-medium">支払い周期</Label>
+					<Label class="font-medium">{m.subscription_form_cycle_label()}</Label>
 					<select
 						{...props}
 						class="border-input focus-visible:ring-ring focus-visible:border-ring bg-background flex h-10 w-full rounded-md border px-3 text-sm shadow-sm transition"
 						bind:value={$selectField}
 					>
-						<option value="" disabled>選択してください</option>
+						<option value="" disabled>{m.subscription_form_cycle_placeholder()}</option>
 						{#each cycleOptions as option (option.value)}
 							<option value={option.value}>{option.label}</option>
 						{/each}
@@ -113,15 +121,15 @@
 		<Field {form} name="notifyDaysBefore">
 			<Control>
 				{#snippet children({ props })}
-					<Label class="font-medium">何日前に通知しますか？</Label>
+					<Label class="font-medium">{m.subscription_form_notify_label()}</Label>
 					<select
 						{...props}
 						class="border-input focus-visible:ring-ring focus-visible:border-ring bg-background flex h-10 w-full rounded-md border px-3 text-sm shadow-sm transition"
 						bind:value={$notifyDaysBeforeField}
 					>
-						<option value={1}>1日前</option>
-						<option value={3}>3日前</option>
-						<option value={7}>7日前</option>
+						{#each notifyOptions as days (days)}
+							<option value={days}>{formatNotifyDays(days, currentLocale)}</option>
+						{/each}
 					</select>
 				{/snippet}
 			</Control>
@@ -131,7 +139,7 @@
 		<Field {form} name="number">
 			<Control>
 				{#snippet children({ props })}
-					<Label class="font-medium">月額料金</Label>
+					<Label class="font-medium">{m.subscription_form_amount_label()}</Label>
 					<Input
 						{...props}
 						type="number"
@@ -141,7 +149,7 @@
 						bind:value={$numberField}
 					/>
 					<Description class="text-muted-foreground text-xs">
-						税込の支払額を入力してください。
+						{m.subscription_form_amount_description()}
 					</Description>
 				{/snippet}
 			</Control>
@@ -151,7 +159,7 @@
 		<Field {form} name="datepicker">
 			<Control>
 				{#snippet children({ props })}
-					<Label class="font-medium">初回支払日</Label>
+					<Label class="font-medium">{m.subscription_form_first_payment_label()}</Label>
 					<Input {...props} type="date" bind:value={$datepickerField} />
 				{/snippet}
 			</Control>
@@ -161,8 +169,8 @@
 		<Field {form} name="tagsinput">
 			<Control>
 				{#snippet children({ props })}
-					<Label class="font-medium">タグ</Label>
-					<TagsInput bind:value={$tagsField} placeholder="動画, 音楽 など" />
+					<Label class="font-medium">{m.subscription_form_tags_label()}</Label>
+					<TagsInput bind:value={$tagsField} placeholder={m.subscription_form_tags_placeholder()} />
 					{#each $tagsField as tag, i (i)}
 						<input {...props} type="hidden" value={tag} name="tagsinput" />
 					{/each}
@@ -171,6 +179,7 @@
 			<FieldErrors class="text-destructive text-sm" />
 		</Field>
 
-		<Button type="submit" class="w-full h-12 text-base sm:h-10 sm:text-sm">保存する</Button>
+		<Button type="submit" class="h-12 w-full text-base sm:h-10 sm:text-sm">{m.common_save()}</Button
+		>
 	</form>
 </div>

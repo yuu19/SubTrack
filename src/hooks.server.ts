@@ -1,6 +1,9 @@
+import { APP_LOCALES, type AppLocale } from '$lib/constant';
+import { cookieMaxAge, cookieName } from '$lib/paraglide/runtime';
 import { paraglideMiddleware } from '$lib/paraglide/server';
 import * as Sentry from '@sentry/sveltekit';
 import { sentryHandle, initCloudflareSentryHandle } from '@sentry/sveltekit';
+import { building } from '$app/environment';
 import { redirect, type Handle } from '@sveltejs/kit';
 import { sequence } from '@sveltejs/kit/hooks';
 import { svelteKitHandler } from 'better-auth/svelte-kit';
@@ -12,6 +15,20 @@ import { drizzle as drizzleSqlite } from 'drizzle-orm/better-sqlite3';
 import * as schema from '$lib/server/db/schema';
 
 const protectedUserRoutes = ['/me', '/subscriptions'];
+
+const isAppLocale = (value: string | null | undefined): value is AppLocale =>
+	value !== undefined && value !== null && APP_LOCALES.includes(value as AppLocale);
+
+const upsertCookieHeader = (header: string, name: string, value: string) => {
+	const parts = header
+		.split(';')
+		.map((part) => part.trim())
+		.filter(Boolean)
+		.filter((part) => !part.startsWith(`${name}=`));
+
+	parts.push(`${name}=${value}`);
+	return parts.join('; ');
+};
 
 const handleAuth: Handle = async ({ event, resolve }) => {
 	const { locals, url, request } = event;
@@ -29,7 +46,7 @@ const handleAuth: Handle = async ({ event, resolve }) => {
 		redirect(303, '/');
 	}
 
-	return svelteKitHandler({ event, resolve, auth });
+	return svelteKitHandler({ event, resolve, auth, building });
 };
 
 export const handleDb: Handle = async ({ event, resolve }) => {
@@ -46,6 +63,58 @@ export const handleDb: Handle = async ({ event, resolve }) => {
 		const db = drizzleSqlite(sqlite, { schema });
 
 		event.locals.db = db as any;
+	}
+
+	return resolve(event);
+};
+
+const handleLocalePreference: Handle = async ({ event, resolve }) => {
+	const accept = event.request.headers.get('accept') ?? '';
+	const isDocumentRequest = event.request.method === 'GET' && accept.includes('text/html');
+
+	if (!isDocumentRequest || !event.locals.db) {
+		return resolve(event);
+	}
+
+	try {
+		const auth = createAuth(event.locals.db, { requestOrigin: event.url.origin });
+		const session = await auth.api.getSession({
+			headers: event.request.headers
+		});
+		const userId = session?.user.id;
+
+		if (!userId) {
+			return resolve(event);
+		}
+
+		const record = await event.locals.db.query.user.findFirst({
+			columns: {
+				locale: true
+			},
+			where: (t, { eq }) => eq(t.id, userId)
+		});
+		const locale = record?.locale;
+
+		if (!isAppLocale(locale)) {
+			return resolve(event);
+		}
+
+		const requestHeaders = new Headers(event.request.headers);
+		const cookieHeader = requestHeaders.get('cookie') ?? '';
+		requestHeaders.set('cookie', upsertCookieHeader(cookieHeader, cookieName, locale));
+		event.request = new Request(event.request, {
+			headers: requestHeaders
+		});
+
+		if (event.cookies.get(cookieName) !== locale) {
+			event.cookies.set(cookieName, locale, {
+				path: '/',
+				maxAge: cookieMaxAge,
+				sameSite: 'lax'
+			});
+		}
+	} catch {
+		// Fall through to default locale resolution if auth or db lookup fails.
 	}
 
 	return resolve(event);
@@ -117,11 +186,12 @@ const handleTheme: Handle = async ({ event, resolve }) => {
 };
 
 export const handle = sequence(
+	handleDb,
+	handleLocalePreference,
 	handleParaglide,
 	sentryHandleConfigured ?? noopHandle,
 	sentryHandle(),
 	preloadFonts,
-	handleDb,
 	handleAuth,
 	handleTheme
 );
