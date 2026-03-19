@@ -3,7 +3,13 @@
 onboarding@resend.dev = Resend が提供する “テスト用 差出人アドレス”。ドメイン認証前のメール送信に使われる。
 delivered@resend.dev = Resend が提供する “テスト用 受信先アドレス”。メールが正しく送信／配信されるかを確認するためのもの。
 
-- 開発モード（`npm run dev`）では `src/lib/server/email.ts` で `from` と `to` を自動的に上記サンドボックスアドレスに差し替えるようにしているため、実ユーザーには送られません。本番では `RESEND_FROM` の値が使われます。
+- 開発モード（`npm run dev`）では `src/lib/server/email.ts` で `from` と `to` を自動的に上記サンドボックスアドレスに差し替えるようにしているため、実ユーザーには送られません。本番では `RESEND_FROM` が必須です。未設定なら送信時にエラーになります。
+
+- 本番の `RESEND_FROM` 例
+
+```
+RESEND_FROM=SubTrack <no-reply@send.subtracknotify.com>
+```
 
 - 例
 
