@@ -191,6 +191,8 @@
 	"subscription_page_title": "サブスク管理",
 	"subscription_page_description": "契約を追加して支払いを整理しましょう。",
 	"subscription_page_add_button": "サブスクを追加",
+	"subscription_export_button": "CSVを書き出す",
+	"subscription_export_upgrade_button": "PremiumでCSV",
 	"subscription_push_enable": "通知を有効にする",
 	"subscription_push_disable": "通知を無効にする",
 	"subscription_push_hint": "通知日にプッシュ通知を受け取れます。",

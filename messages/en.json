@@ -191,6 +191,8 @@
 	"subscription_page_title": "Subscriptions",
 	"subscription_page_description": "Add plans and keep recurring payments organized.",
 	"subscription_page_add_button": "Add subscription",
+	"subscription_export_button": "Export CSV",
+	"subscription_export_upgrade_button": "Unlock CSV export",
 	"subscription_push_enable": "Enable notifications",
 	"subscription_push_disable": "Disable notifications",
 	"subscription_push_hint": "Receive push notifications on reminder dates.",

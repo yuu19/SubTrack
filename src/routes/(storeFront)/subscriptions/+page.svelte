@@ -52,6 +52,9 @@
 			form: unknown;
 			vapidPublicKey: string;
 			hasPushSubscription: boolean;
+			currentPlan: {
+				isPremium: boolean;
+			};
 		};
 	}>();
 
@@ -77,6 +80,9 @@
 	let deleteOpen = $state(false);
 	let selectedSubscription = $state<SubscriptionView | null>(null);
 	const currentLocale = $derived(resolveLocale(getLocale()));
+	const isPremium = $derived(Boolean(data.currentPlan?.isPremium));
+	const exportHref = $derived(resolve('/subscriptions/export'));
+	const upgradePlanHref = $derived(`${resolve('/me/settings')}#plan-info`);
 
 	const pendingCount = $derived(subscriptions.filter((sub) => sub._pending).length);
 	const canMutateSelected = $derived(
@@ -367,6 +373,15 @@
 					onclick={pushSubscribed ? disablePush : enablePush}
 				>
 					{pushSubscribed ? m.subscription_push_disable() : m.subscription_push_enable()}
+				</Button>
+			{/if}
+			{#if isPremium}
+				<Button size="sm" variant="outline" href={exportHref} download>
+					{m.subscription_export_button()}
+				</Button>
+			{:else}
+				<Button size="sm" variant="outline" href={upgradePlanHref}>
+					{m.subscription_export_upgrade_button()}
 				</Button>
 			{/if}
 			<Button onclick={() => addSubscriptionModalState.setTrue()}

@@ -41,16 +41,30 @@ export const load: PageServerLoad = async ({ locals, request }) => {
 	form.data.notifyDaysBefore = 3;
 
 	const vapidPublicKey = process.env.VAPID_PUBLIC_KEY ?? '';
+	const { currentPlan: freePlan } = getCurrentPlan([]);
 
 	const db = locals.db;
 	if (!db) {
-		return { form, subscriptions: [], vapidPublicKey, hasPushSubscription: false };
+		return {
+			form,
+			subscriptions: [],
+			vapidPublicKey,
+			hasPushSubscription: false,
+			currentPlan: freePlan
+		};
 	}
 
 	const auth = createAuth(db);
 	const session = await auth.api.getSession({ headers: request.headers });
 	const userId = session?.user.id;
 	form.data.notifyDaysBefore = await resolveDefaultNotifyDaysBefore(db, userId);
+	const billingSubscriptions =
+		userId !== undefined
+			? await db.query.subscription.findMany({
+					where: (subscription, { eq }) => eq(subscription.referenceId, userId)
+				})
+			: [];
+	const { currentPlan } = getCurrentPlan(billingSubscriptions);
 
 	const subscriptions =
 		userId !== undefined
@@ -82,16 +96,17 @@ export const load: PageServerLoad = async ({ locals, request }) => {
 
 	const hasPushSubscription =
 		userId !== undefined
-			? (
-					await db
-						.select({ id: pushSubscriptionTable.id })
-						.from(pushSubscriptionTable)
-						.where(eq(pushSubscriptionTable.userId, userId))
-						.limit(1)
-				).length > 0
+			? Boolean(
+					await db.query.pushSubscriptionTable.findFirst({
+						columns: {
+							id: true
+						},
+						where: (pushSubscription, { eq }) => eq(pushSubscription.userId, userId)
+					})
+				)
 			: false;
 
-	return { form, subscriptions, vapidPublicKey, hasPushSubscription };
+	return { form, subscriptions, vapidPublicKey, hasPushSubscription, currentPlan };
 };
 
 export const actions: Actions = {
@@ -122,11 +137,13 @@ export const actions: Actions = {
 			const { currentPlan } = getCurrentPlan(billingSubscriptions);
 
 			if (!currentPlan.isPremium) {
-				const existingSubscriptions = await db
-					.select({ id: trackedSubscriptionTable.id })
-					.from(trackedSubscriptionTable)
-					.where(eq(trackedSubscriptionTable.userId, userId))
-					.limit(5);
+				const existingSubscriptions = await db.query.trackedSubscriptionTable.findMany({
+					columns: {
+						id: true
+					},
+					where: (trackedSubscription, { eq }) => eq(trackedSubscription.userId, userId),
+					limit: 5
+				});
 
 				if (existingSubscriptions.length >= 5) {
 					return fail(403, {
