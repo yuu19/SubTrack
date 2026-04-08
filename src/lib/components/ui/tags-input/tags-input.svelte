@@ -2,7 +2,9 @@
 	import { cn } from '$lib/utils.js';
 	import type { TagsInputProps } from './types';
 	import TagsInputTag from './tags-input-tag.svelte';
-	import { untrack } from 'svelte';
+
+	const TAG_SEPARATOR_PATTERN = /[,\n、，]/;
+	const TRAILING_TAG_SEPARATOR_PATTERN = /[,\n、，]\s*$/;
 
 	const defaultValidate: TagsInputProps['validate'] = (val, tags) => {
 		const transformed = val.trim();
@@ -30,28 +32,80 @@
 	let invalid = $state(false);
 	let isComposing = $state(false);
 
-	$effect(() => {
-		// whenever input value changes reset invalid
-		// eslint-disable-next-line @typescript-eslint/no-unused-expressions
-		inputValue;
+	const appendValidatedTags = (candidates: string[], currentTags: string[]) => {
+		let nextTags = currentTags;
+		let attempted = 0;
+		let accepted = 0;
 
-		untrack(() => {
+		for (const candidate of candidates) {
+			const trimmed = candidate.trim();
+			if (trimmed.length === 0) continue;
+
+			attempted += 1;
+
+			const validated = validate(trimmed, nextTags);
+			if (!validated) continue;
+
+			nextTags = [...nextTags, validated];
+			accepted += 1;
+		}
+
+		return { nextTags, attempted, accepted };
+	};
+
+	const splitCompletedSegments = (raw: string) => {
+		const segments = raw.split(TAG_SEPARATOR_PATTERN);
+		const trailingSeparator = TRAILING_TAG_SEPARATOR_PATTERN.test(raw);
+		const pendingValue = trailingSeparator ? '' : (segments.pop() ?? '');
+
+		return {
+			completed: segments,
+			pendingValue
+		};
+	};
+
+	const commitInput = ({
+		raw,
+		splitCompletedOnly = false,
+		markInvalid = false
+	}: {
+		raw: string;
+		splitCompletedOnly?: boolean;
+		markInvalid?: boolean;
+	}) => {
+		if (raw.trim().length === 0) {
+			if (!splitCompletedOnly) inputValue = '';
 			invalid = false;
+			return false;
+		}
+
+		const { completed, pendingValue } = splitCompletedOnly
+			? splitCompletedSegments(raw)
+			: { completed: [raw], pendingValue: '' };
+		const { nextTags, attempted, accepted } = appendValidatedTags(completed, value);
+
+		if (accepted > 0) {
+			value = nextTags;
+		}
+
+		inputValue = pendingValue;
+		invalid = markInvalid ? attempted > 0 && accepted === 0 : false;
+
+		return accepted > 0;
+	};
+
+	const handleInput = () => {
+		invalid = false;
+
+		queueMicrotask(() => {
+			if (!TAG_SEPARATOR_PATTERN.test(inputValue)) return;
+			commitInput({ raw: inputValue, splitCompletedOnly: true });
 		});
-	});
+	};
 
 	const enter = () => {
 		if (isComposing) return;
-
-		const validated = validate(inputValue, value);
-
-		if (!validated) {
-			invalid = true;
-			return;
-		}
-
-		value = [...value, validated];
-		inputValue = '';
+		commitInput({ raw: inputValue, markInvalid: true });
 	};
 
 	const compositionStart = () => {
@@ -177,20 +231,21 @@
 	};
 
 	const blur = () => {
+		if (!isComposing) {
+			commitInput({ raw: inputValue });
+		}
+
 		tagIndex = undefined;
 	};
 </script>
 
 <div
 	class={cn(
-		'border-input bg-background selection:bg-primary dark:bg-input/30 flex min-h-[36px] w-full flex-wrap place-items-center gap-1 rounded-md border py-0.5 pr-1 pl-1 disabled:opacity-50 aria-disabled:cursor-not-allowed',
+		'border-input bg-background selection:bg-primary dark:bg-input/30 flex min-h-11 w-full flex-wrap items-start gap-2 rounded-md border p-2 disabled:opacity-50 aria-disabled:cursor-not-allowed sm:min-h-[36px] sm:items-center sm:gap-1 sm:py-0.5 sm:pr-1 sm:pl-1',
 		className
 	)}
 	aria-disabled={disabled}
 >
-	{#each value as tag, i (tag)}
-		<TagsInputTag value={tag} {disabled} onDelete={deleteValue} active={i === tagIndex} />
-	{/each}
 	<input
 		{...rest}
 		bind:value={inputValue}
@@ -200,7 +255,11 @@
 		{disabled}
 		{placeholder}
 		data-invalid={invalid}
+		oninput={handleInput}
 		onkeydown={keydown}
-		class="placeholder:text-muted-foreground min-w-16 shrink grow basis-0 border-none bg-transparent px-2 outline-hidden focus:outline-hidden disabled:cursor-not-allowed data-[invalid=true]:text-red-500 md:text-sm"
+		class="placeholder:text-muted-foreground order-first min-h-10 w-full min-w-0 shrink grow basis-full border-none bg-transparent px-2 text-base outline-hidden focus:outline-hidden disabled:cursor-not-allowed data-[invalid=true]:text-red-500 sm:order-none sm:min-h-0 sm:min-w-16 sm:basis-0 sm:px-1 sm:text-sm"
 	/>
+	{#each value as tag, i (tag)}
+		<TagsInputTag value={tag} {disabled} onDelete={deleteValue} active={i === tagIndex} />
+	{/each}
 </div>
