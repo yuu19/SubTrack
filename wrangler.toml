@@ -6,7 +6,7 @@ compatibility_flags = ["nodejs_compat"]
 assets = { binding = "ASSETS", directory = ".svelte-kit/cloudflare" }
 
 [vars]
-RESEND_FROM = "SubTrack <no-reply@send.subtracknotify.com>"
+RESEND_FROM = "SubTrack <no-reply@subtracknotify.com>"
 
 [triggers]
 # Cron format is UTC.

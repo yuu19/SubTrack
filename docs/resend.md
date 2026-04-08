@@ -8,7 +8,7 @@ delivered@resend.dev = Resend が提供する “テスト用 受信先アドレ
 - 本番の `RESEND_FROM` 例
 
 ```
-RESEND_FROM=SubTrack <no-reply@send.subtracknotify.com>
+RESEND_FROM=SubTrack <no-reply@subtracknotify.com>
 ```
 
 - 例
