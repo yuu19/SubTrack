@@ -1,18 +1,21 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
+	import { page } from '$app/state';
 	import { watch } from 'runed';
 	import { UserConfig, UserConfigContext } from '$lib/states/userConfig.svelte';
 	import { ModeWatcher, setTheme } from 'mode-watcher';
 	import Header from '$lib/components/Header.svelte';
 	import OnboardingDialog from '$lib/components/onboarding/OnboardingDialog.svelte';
 	import MobileBottomNav from '$lib/components/MobileBottomNav.svelte';
+	import PublicFooter from '$lib/components/PublicFooter.svelte';
 
-	let { children, data } = $props();
+	const props = $props();
 	// todo: この部分について修正する必要があるか確認する
-	const userConfig = UserConfigContext.set(new UserConfig(data.userConfig));
+	const userConfig = UserConfigContext.set(new UserConfig(props.data.userConfig));
+	const homePath = resolve('/');
 
-	const modeClasses = $derived([
-		`theme-${userConfig.current.activeTheme}`,
-	]);
+	const modeClasses = $derived([`theme-${userConfig.current.activeTheme}`]);
+	const showPublicFooter = $derived(page.url.pathname === homePath);
 	watch.pre(
 		() => userConfig.current.activeTheme,
 		() => {
@@ -32,18 +35,21 @@
 />
 
 <Header />
-{#if data.user}
+{#if props.data.user}
 	<OnboardingDialog
-		userId={data.user.id}
-		onboardingCompleted={data.user.onboardingCompleted ?? true}
-		alwaysShow={data.isAdmin}
+		userId={props.data.user.id}
+		onboardingCompleted={props.data.user.onboardingCompleted ?? true}
+		alwaysShow={props.data.isAdmin}
 	/>
 {/if}
-{#if data.user}
+{#if props.data.user}
 	<div class="pb-[calc(env(safe-area-inset-bottom)+6rem)] md:pb-0">
-		{@render children()}
+		{@render props.children()}
 	</div>
 	<MobileBottomNav />
 {:else}
-	{@render children()}
+	{@render props.children()}
+{/if}
+{#if showPublicFooter}
+	<PublicFooter />
 {/if}

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import { invalidateAll } from '$app/navigation';
 	import { page } from '$app/state';
 	import { authClient } from '$lib/auth-client';
@@ -364,8 +365,15 @@
 						{m.premium_modal_cta()}
 					</Button>
 					<div class="text-muted-foreground flex items-center justify-center gap-6 text-xs">
-						<span>{m.legal_terms()}</span>
-						<span>{m.legal_privacy()}</span>
+						<a class="underline-offset-4 hover:underline" href={resolve('/commercial-transactions')}>
+							特定商取引法に基づく表記
+						</a>
+						<a class="underline-offset-4 hover:underline" href={resolve('/terms')}>
+							{m.legal_terms()}
+						</a>
+						<a class="underline-offset-4 hover:underline" href={resolve('/privacy')}>
+							{m.legal_privacy()}
+						</a>
 					</div>
 				</div>
 			</Dialog.Content>
