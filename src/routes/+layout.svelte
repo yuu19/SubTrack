@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { Toaster } from 'svelte-sonner';
 	import '../app.css';
+	import '../nprogress.css';
 	import NProgress from 'nprogress';
 	import { browser } from '$app/environment';
 	import { baseLocale, getLocale, isLocale, setLocale } from '$lib/paraglide/runtime';
@@ -22,15 +23,20 @@
 		}
 	}
 
-	beforeNavigate(() => {
-		NProgress.start();
-	});
-	afterNavigate(() => {
-		NProgress.done();
-	});
-	NProgress.configure({
-		showSpinner: false
-	});
+	if (browser) {
+		NProgress.configure({
+			showSpinner: false
+		});
+
+		beforeNavigate((navigation) => {
+			if (navigation.willUnload) return;
+			NProgress.start();
+		});
+
+		afterNavigate(() => {
+			NProgress.done();
+		});
+	}
 </script>
 
 <svelte:head>

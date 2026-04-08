@@ -21,6 +21,7 @@
 	type FeatureValue = string | number | boolean;
 	type OnboardingCopy = {
 		tutorialBadge: string;
+		tutorialProgressLabel: string;
 		pwaInfoTitle: string;
 		pwaInfoBody1: string;
 		pwaInfoBody2: string;
@@ -31,6 +32,12 @@
 		planBadge: string;
 		planTitle: string;
 		planDescription: string;
+		planRoleLabel: string;
+		planFreeTitle: string;
+		planFreeDescription: string;
+		planPremiumTitle: string;
+		planPremiumDescription: string;
+		planFeatureTitle: string;
 		planBullet1: string;
 		planBullet2: string;
 		planAction: string;
@@ -53,6 +60,7 @@
 	const copyByLocale: Record<'ja' | 'en', OnboardingCopy> = {
 		ja: {
 			tutorialBadge: 'チュートリアル',
+			tutorialProgressLabel: '使い方のガイド',
 			pwaInfoTitle: 'PWAとPush通知について',
 			pwaInfoBody1: 'PWAは、ホーム画面に追加してアプリのように素早く開ける仕組みです。',
 			pwaInfoBody2: 'Push通知は更新前にお知らせを送る機能で、設定からいつでもON/OFFできます。',
@@ -63,6 +71,12 @@
 			planBadge: 'プレミアムのご案内',
 			planTitle: 'サブスク管理 プレミアム',
 			planDescription: '広告を非表示にして、登録数や通知の制限なくサブスク管理を続けられます。',
+			planRoleLabel: 'プランの役割',
+			planFreeTitle: '無料プラン',
+			planFreeDescription: '少ない件数を気軽に管理したいライトユーザー向けです。',
+			planPremiumTitle: 'Premium',
+			planPremiumDescription: '複数のサブスクをまとめて継続管理したい人向けです。',
+			planFeatureTitle: '比較できる主な違い',
 			planBullet1: '無料おためしは初回の登録のみ対象です。',
 			planBullet2: '購読期間終了の24時間前までにキャンセルしない場合、自動更新されます。',
 			planAction: 'プランを選ぶ',
@@ -117,6 +131,7 @@
 		},
 		en: {
 			tutorialBadge: 'Tutorial',
+			tutorialProgressLabel: 'Quick setup guide',
 			pwaInfoTitle: 'About PWA and push notifications',
 			pwaInfoBody1: 'A PWA lets you open SubTrack quickly from your home screen like an app.',
 			pwaInfoBody2:
@@ -129,6 +144,13 @@
 			planTitle: 'SubTrack Premium',
 			planDescription:
 				'Remove ads and keep managing subscriptions without limits on registrations or reminder settings.',
+			planRoleLabel: 'Who each plan is for',
+			planFreeTitle: 'Free',
+			planFreeDescription: 'For lighter usage when you only need to manage a small set of subscriptions.',
+			planPremiumTitle: 'Premium',
+			planPremiumDescription:
+				'For people who want to keep many subscriptions organized and maintained over time.',
+			planFeatureTitle: 'Key differences at a glance',
 			planBullet1: 'The free trial is only available on the first upgrade.',
 			planBullet2:
 				'Unless you cancel at least 24 hours before the billing period ends, the subscription renews automatically.',
@@ -280,6 +302,8 @@
 	let direction = $state(1);
 
 	const step = $derived(steps[stepIndex]);
+	const lastStepIndex = $derived(steps.length - 1);
+	const progressPercent = $derived(((stepIndex + 1) / steps.length) * 100);
 	const motion = $derived({
 		duration: prefersReducedMotion.current ? 0 : 240,
 		outDuration: prefersReducedMotion.current ? 0 : 200,
@@ -332,204 +356,271 @@
 		direction = -1;
 		stepIndex -= 1;
 	};
+
+	const jumpToStep = (index: number) => {
+		if (index === stepIndex) return;
+		direction = index > stepIndex ? 1 : -1;
+		stepIndex = index;
+	};
 </script>
 
 <Dialog.Root bind:open={() => open, setOpen}>
 	<Dialog.Content
 		showCloseButton={false}
-		class="w-[min(1120px,calc(100vw-2rem))] !max-w-[calc(100vw-2rem)] overflow-hidden p-0 pb-24 sm:!max-w-[1120px] sm:pb-0"
+		class="w-[min(1120px,calc(100vw-1rem))] !max-w-[calc(100vw-1rem)] overflow-hidden p-0 sm:!max-w-[1120px]"
 	>
-		<div
-			class="grid gap-0 lg:min-h-[560px] lg:grid-cols-[minmax(0,1fr)_minmax(380px,0.92fr)] xl:grid-cols-[minmax(0,1.04fr)_minmax(420px,0.96fr)]"
-		>
-			<section class="flex min-w-0 flex-col gap-4 p-4 sm:gap-6 sm:p-6 md:p-8">
-				<div
-					class="text-muted-foreground flex items-center gap-3 text-xs tracking-[0.3em] uppercase"
-				>
-					<span
-						class="bg-primary/10 text-primary rounded-full border px-3 py-1 text-[10px] font-semibold"
+		<div class="flex max-h-[min(92vh,860px)] min-h-0 flex-col overflow-hidden">
+			<div class="border-b px-4 py-4 sm:px-6 md:px-8">
+				<div class="flex items-start justify-between gap-4">
+					<div class="min-w-0 flex-1 space-y-3">
+						<div class="text-muted-foreground flex flex-wrap items-center gap-3 text-[11px] tracking-[0.3em] uppercase">
+							<span class="bg-primary/10 text-primary rounded-full border px-3 py-1 font-semibold">
+								{copy.tutorialBadge}
+							</span>
+							<span>{copy.tutorialProgressLabel}</span>
+							<span>{stepIndex + 1}/{steps.length}</span>
+						</div>
+						<div class="bg-muted h-2 overflow-hidden rounded-full">
+							<div
+								class="bg-primary h-full rounded-full transition-[width] duration-300"
+								style={`width: ${progressPercent}%`}
+							></div>
+						</div>
+					</div>
+					<Button
+						variant="ghost"
+						size="icon"
+						class="shrink-0"
+						aria-label={copy.close}
+						onclick={() => setOpen(false)}
 					>
-						{copy.tutorialBadge}
-					</span>
-					<span>{stepIndex + 1}/{steps.length}</span>
+						<X class="size-4" />
+					</Button>
 				</div>
 
-				{#key stepIndex}
-					<div
-						in:fly={{ x: direction * motion.offset, duration: motion.duration, easing: cubicOut }}
-						class="space-y-3"
-					>
-						<Dialog.Title
-							class="font-display text-[clamp(2rem,7vw,3.25rem)] leading-[1.1] font-semibold"
+				<div class="-mb-1 mt-4 flex gap-2 overflow-x-auto pb-1">
+					{#each steps as item, index (index)}
+						<button
+							type="button"
+							class={cn(
+								'min-h-11 min-w-[9.5rem] shrink-0 rounded-2xl border px-3 py-2 text-left transition-colors sm:min-w-0 sm:flex-1',
+								index === stepIndex
+									? 'border-primary bg-primary/8 text-foreground'
+									: 'bg-background text-muted-foreground hover:bg-muted/70'
+							)}
+							aria-current={index === stepIndex ? 'step' : undefined}
+							onclick={() => jumpToStep(index)}
 						>
-							{step.title}
-						</Dialog.Title>
-						<Dialog.Description class="text-muted-foreground text-sm leading-7 md:text-base">
-							{step.description}
-						</Dialog.Description>
-					</div>
-				{/key}
+							<div class="flex items-center gap-2">
+								<span
+									class={cn(
+										'inline-flex size-6 items-center justify-center rounded-full text-[11px] font-semibold',
+										index === stepIndex
+											? 'bg-primary text-primary-foreground'
+											: 'bg-muted text-muted-foreground'
+									)}
+								>
+									{index + 1}
+								</span>
+								<span class="truncate text-sm font-semibold">{item.badge}</span>
+							</div>
+						</button>
+					{/each}
+				</div>
+			</div>
 
-				{#if stepIndex === steps.length - 1}
-					<div
-						in:fly={{ y: 8, duration: motion.duration, easing: cubicOut }}
-						out:fly={{ y: 8, duration: motion.outDuration, easing: cubicIn }}
-						class="bg-muted/30 text-muted-foreground rounded-2xl border p-4 text-sm leading-relaxed"
-					>
-						<p class="text-foreground font-semibold">{copy.pwaInfoTitle}</p>
-						<p class="mt-2">{copy.pwaInfoBody1}</p>
-						<p class="mt-2">
-							{copy.pwaInfoBody2}
-						</p>
-					</div>
-				{/if}
+			<div class="flex-1 overflow-y-auto px-4 py-4 sm:px-6 md:px-8 md:py-6">
+				<div class="grid items-start gap-5 lg:grid-cols-[minmax(0,0.9fr)_minmax(340px,1.1fr)] lg:gap-6">
+					<section class="order-2 min-w-0 space-y-4 lg:order-1 lg:space-y-5">
+						{#key stepIndex}
+							<div
+								in:fly={{ x: direction * motion.offset, duration: motion.duration, easing: cubicOut }}
+								class="space-y-3"
+							>
+								<Dialog.Title
+									class="font-display text-[clamp(1.85rem,6vw,3.2rem)] leading-[1.08] font-semibold tracking-tight"
+								>
+									{step.title}
+								</Dialog.Title>
+								<Dialog.Description class="text-muted-foreground max-w-[36rem] text-sm leading-7 md:text-base">
+									{step.description}
+								</Dialog.Description>
+							</div>
+						{/key}
 
-				<div class="mt-auto hidden gap-4 sm:grid sm:grid-cols-[auto_1fr_auto] sm:items-center">
-					<Button variant="ghost" onclick={handleBack}>
-						{stepIndex === 0 ? copy.close : copy.back}
-					</Button>
-					<div class="flex items-center justify-center gap-2">
+						<div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+							<div class="bg-muted/30 rounded-2xl border p-4">
+								<p class="text-foreground text-sm font-semibold">{step.previewLabel}</p>
+								<p class="text-muted-foreground mt-2 text-sm leading-6">
+									{step.previewHint}
+								</p>
+							</div>
+							<div class="bg-background rounded-2xl border p-4">
+								<div class="flex items-center gap-2">
+									<step.icon class="text-primary size-4" />
+									<p class="text-foreground text-sm font-semibold">{step.badge}</p>
+								</div>
+								<p class="text-muted-foreground mt-2 text-sm leading-6">
+									{step.previewTitle}
+								</p>
+							</div>
+						</div>
+
+						{#if stepIndex === lastStepIndex}
+							<div
+								in:fly={{ y: 8, duration: motion.duration, easing: cubicOut }}
+								out:fly={{ y: 8, duration: motion.outDuration, easing: cubicIn }}
+								class="bg-muted/30 text-muted-foreground rounded-2xl border p-4 text-sm leading-relaxed"
+							>
+								<p class="text-foreground font-semibold">{copy.pwaInfoTitle}</p>
+								<p class="mt-2">{copy.pwaInfoBody1}</p>
+								<p class="mt-2">{copy.pwaInfoBody2}</p>
+							</div>
+						{/if}
+					</section>
+
+					<section class="order-1 min-w-0 overflow-hidden rounded-[28px] border lg:order-2">
+						<div class={cn('relative h-full bg-gradient-to-br p-4 sm:p-5 md:p-6', step.accent)}>
+							<div
+								class="bg-background/80 inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold"
+							>
+								<step.icon class="text-primary size-4" />
+								<span>{step.badge}</span>
+							</div>
+
+							{#key stepIndex}
+								<div
+									in:fly={{ x: direction * motion.offset, duration: motion.duration, easing: cubicOut }}
+									class="mt-4 space-y-3"
+								>
+									<div
+										class={cn(
+											'bg-background/90 rounded-[24px] border border-white/60 p-2.5 shadow-[0_24px_60px_-38px_rgba(15,23,42,0.45)] backdrop-blur sm:p-3 md:p-4',
+											step.previewShellClass
+										)}
+									>
+										<div
+											class={cn(
+												'relative overflow-hidden rounded-[20px] border bg-white shadow-[0_18px_36px_-28px_rgba(15,23,42,0.55)]',
+												step.previewFrameClass
+											)}
+										>
+											<img
+												src={step.previewImage}
+												alt={step.previewAlt}
+												loading="lazy"
+												class={step.previewImageClass}
+											/>
+											<div
+												class="pointer-events-none absolute inset-x-0 top-0 h-14 bg-gradient-to-b from-white/25 to-transparent md:h-20"
+											></div>
+										</div>
+
+										<div class="mt-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+											<div class="min-w-0 space-y-1">
+												<p class="text-foreground text-sm font-semibold">{step.previewTitle}</p>
+												<p class="text-muted-foreground text-[11px] leading-5 sm:hidden">
+													{step.previewHintMobile}
+												</p>
+												<p class="text-muted-foreground hidden text-xs leading-6 sm:block">
+													{step.previewHint}
+												</p>
+											</div>
+											<span
+												class="bg-background/80 text-muted-foreground inline-flex w-fit shrink-0 self-start rounded-full border px-2.5 py-1 text-[11px] font-semibold whitespace-nowrap"
+											>
+												{step.previewLabel}
+											</span>
+										</div>
+									</div>
+								</div>
+							{/key}
+						</div>
+					</section>
+				</div>
+			</div>
+
+			<div class="bg-background/95 border-t px-4 py-3 backdrop-blur sm:px-6 md:px-8">
+				<div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+					<div class="flex items-center gap-2">
 						{#each steps as _, index (index)}
 							<span
 								class={cn(
-									'h-2 w-2 rounded-full transition-colors',
-									index === stepIndex ? 'bg-primary' : 'bg-muted'
+									'h-2.5 rounded-full transition-all',
+									index === stepIndex ? 'bg-primary w-7' : 'bg-muted w-2.5'
 								)}
 							></span>
 						{/each}
 					</div>
-					<Button onclick={handleNext}>
-						{stepIndex === steps.length - 1 ? copy.start : copy.continue}
-					</Button>
-				</div>
-			</section>
-
-			<section class="relative min-w-0 overflow-hidden border-t lg:border-t-0 lg:border-l">
-				<div class={cn('relative h-full bg-gradient-to-br p-4 sm:p-6 md:p-8', step.accent)}>
-					<div
-						class="bg-background/80 inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold"
-					>
-						<step.icon class="text-primary size-4" />
-						<span>{step.badge}</span>
+					<div class="flex items-center justify-end gap-2">
+						<Button variant="ghost" class="min-h-11 min-w-24" onclick={handleBack}>
+							{stepIndex === 0 ? copy.close : copy.back}
+						</Button>
+						<Button class="min-h-11 min-w-28" onclick={handleNext}>
+							{stepIndex === lastStepIndex ? copy.start : copy.continue}
+						</Button>
 					</div>
-
-					{#key stepIndex}
-						<div
-							in:fly={{ x: direction * motion.offset, duration: motion.duration, easing: cubicOut }}
-							class="mt-4 w-full space-y-3 sm:mt-6 sm:space-y-4 lg:ml-auto lg:max-w-[460px]"
-						>
-							<div
-								class={cn(
-									'bg-background/90 mx-auto rounded-[24px] border border-white/60 p-2.5 shadow-[0_24px_60px_-38px_rgba(15,23,42,0.45)] backdrop-blur sm:rounded-[28px] sm:p-3 md:p-4',
-									step.previewShellClass
-								)}
-							>
-								<div
-									class={cn(
-										'relative overflow-hidden rounded-[22px] border bg-white shadow-[0_18px_36px_-28px_rgba(15,23,42,0.55)]',
-										step.previewFrameClass
-									)}
-								>
-									<img
-										src={step.previewImage}
-										alt={step.previewAlt}
-										loading="lazy"
-										class={step.previewImageClass}
-									/>
-									<div
-										class="pointer-events-none absolute inset-x-0 top-0 h-14 bg-gradient-to-b from-white/25 to-transparent md:h-20"
-									></div>
-								</div>
-
-								<div class="mt-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-									<div class="min-w-0 space-y-1">
-										<p class="text-foreground text-sm font-semibold">{step.previewTitle}</p>
-										<p class="text-muted-foreground text-[11px] leading-5 sm:hidden">
-											{step.previewHintMobile}
-										</p>
-										<p class="text-muted-foreground hidden text-xs leading-6 sm:block">
-											{step.previewHint}
-										</p>
-									</div>
-									<span
-										class="bg-background/80 text-muted-foreground inline-flex w-fit shrink-0 self-start rounded-full border px-2.5 py-1 text-[11px] font-semibold whitespace-nowrap"
-									>
-										{step.previewLabel}
-									</span>
-								</div>
-							</div>
-						</div>
-					{/key}
-
-					<div
-						class={cn(
-							'bg-background/80 absolute -bottom-6 left-10 hidden h-12 w-12 rotate-45 rounded-2xl border shadow-sm lg:block',
-							step.pointer
-						)}
-					></div>
 				</div>
-			</section>
-		</div>
-		<div
-			class="bg-background/95 fixed bottom-0 left-1/2 z-50 w-[calc(100%-2rem)] -translate-x-1/2 border-t px-4 py-3 shadow-[0_-8px_30px_-20px_rgba(0,0,0,0.45)] backdrop-blur sm:hidden"
-		>
-			<div class="flex items-center justify-between gap-3">
-				<Button variant="ghost" size="sm" onclick={handleBack}>
-					{stepIndex === 0 ? copy.close : copy.back}
-				</Button>
-				<div class="flex items-center justify-center gap-2">
-					{#each steps as _, index (index)}
-						<span
-							class={cn(
-								'h-2 w-2 rounded-full transition-colors',
-								index === stepIndex ? 'bg-primary' : 'bg-muted'
-							)}
-						></span>
-					{/each}
-				</div>
-				<Button size="sm" onclick={handleNext}>
-					{stepIndex === steps.length - 1 ? copy.start : copy.continue}
-				</Button>
 			</div>
 		</div>
 	</Dialog.Content>
 </Dialog.Root>
 
 <Dialog.Root bind:open={planOpen}>
-	<Dialog.Content class="w-full max-w-[560px] p-0 sm:max-w-[760px]">
-		<div class="max-h-[90vh] overflow-y-auto">
-			<div class="space-y-3 p-4 sm:p-5">
-				<div class="flex flex-col items-center gap-1.5 text-center sm:items-start sm:text-left">
+	<Dialog.Content class="w-[min(960px,calc(100vw-1rem))] !max-w-[calc(100vw-1rem)] p-0 sm:!max-w-[960px]">
+		<div class="max-h-[min(92vh,860px)] overflow-y-auto">
+			<div class="space-y-5 p-5 sm:p-6 md:p-8">
+				<div class="flex max-w-[640px] flex-col items-center gap-2 text-center sm:items-start sm:text-left">
 					<span class="rounded-full bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-600">
 						{copy.planBadge}
 					</span>
-					<h3 class="text-base font-semibold sm:text-lg">{copy.planTitle}</h3>
-					<p class="text-muted-foreground text-[11px] sm:text-xs">
+					<h3 class="text-lg font-semibold sm:text-2xl">{copy.planTitle}</h3>
+					<p class="text-muted-foreground text-sm leading-6">
 						{copy.planDescription}
 					</p>
 				</div>
 
-				<div class="grid gap-3 sm:grid-cols-[1.35fr_1fr]">
-					<div class="bg-muted/30 rounded-lg border p-3 text-[11px]">
-						<div class="text-muted-foreground flex items-center justify-between pb-2 font-semibold">
-							<span>{m.premium_modal_feature_label()}</span>
-							<div class="flex items-center gap-3">
-								<span class="bg-muted rounded-full px-2 py-0.5 text-[10px]">{m.plan_free()}</span>
+				<div class="grid gap-4 md:grid-cols-2">
+					<div class="rounded-2xl border bg-muted/30 p-4 sm:p-5">
+						<p class="text-muted-foreground text-xs font-semibold tracking-[0.2em] uppercase">
+							{copy.planRoleLabel}
+						</p>
+						<div class="mt-3 grid gap-3">
+							<div class="bg-background rounded-2xl border p-4">
+								<p class="text-sm font-semibold">{copy.planFreeTitle}</p>
+								<p class="text-muted-foreground mt-2 text-sm leading-6">
+									{copy.planFreeDescription}
+								</p>
+							</div>
+							<div class="bg-primary/6 rounded-2xl border border-primary/20 p-4">
+								<p class="text-sm font-semibold">{copy.planPremiumTitle}</p>
+								<p class="text-muted-foreground mt-2 text-sm leading-6">
+									{copy.planPremiumDescription}
+								</p>
+							</div>
+						</div>
+					</div>
+
+					<div class="bg-muted/30 flex h-full flex-col rounded-2xl border p-4 text-sm sm:p-5">
+						<div class="text-muted-foreground flex items-center justify-between gap-4 pb-3 font-semibold">
+							<span>{copy.planFeatureTitle}</span>
+							<div class="flex items-center gap-2 sm:gap-3">
+								<span class="bg-muted rounded-full px-2.5 py-1 text-[11px]">{m.plan_free()}</span>
 								<span
-									class="bg-primary text-primary-foreground rounded-full px-2 py-0.5 text-[10px]"
+									class="bg-primary text-primary-foreground rounded-full px-2.5 py-1 text-[11px]"
 								>
 									{m.plan_premium()}
 								</span>
 							</div>
 						</div>
-						<div class="grid gap-2 sm:grid-cols-2 sm:gap-3">
+						<div class="grid flex-1 gap-2 sm:grid-cols-2 sm:gap-4">
 							{#each premiumFeatureColumns as column, columnIndex (columnIndex)}
-								<div class={cn('divide-y', columnIndex === 0 ? '' : 'sm:border-l sm:pl-3')}>
+								<div class={cn('divide-y', columnIndex === 0 ? '' : 'sm:border-l sm:pl-4')}>
 									{#each column as feature (feature.label)}
-										<div class="flex items-center justify-between gap-2 py-1">
-											<span class="text-foreground">{feature.label}</span>
+										<div class="flex items-center justify-between gap-3 py-2">
+											<span class="text-foreground pr-3 leading-6">{feature.label}</span>
 											<div class="flex items-center gap-3">
-												<span class="text-muted-foreground flex w-9 items-center justify-center">
+												<span class="text-muted-foreground flex w-10 items-center justify-center text-base">
 													{#if typeof feature.free === 'boolean'}
 														{#if feature.free}
 															<Check class="h-3.5 w-3.5 text-emerald-500" />
@@ -540,7 +631,7 @@
 														{feature.free}
 													{/if}
 												</span>
-												<span class="flex w-9 items-center justify-center">
+												<span class="flex w-10 items-center justify-center text-base">
 													{#if typeof feature.premium === 'boolean'}
 														{#if feature.premium}
 															<Check class="h-3.5 w-3.5 text-emerald-500" />
@@ -558,25 +649,36 @@
 							{/each}
 						</div>
 					</div>
+				</div>
 
-					<div class="space-y-3">
-						<div class="bg-background/80 text-muted-foreground rounded-lg border p-3 text-[11px]">
-							<ul class="space-y-1.5">
-								<li class="flex items-start gap-2">
-									<span class="bg-primary mt-1 h-1.5 w-1.5 rounded-full"></span>
-									<span>{copy.planBullet1}</span>
-								</li>
-								<li class="flex items-start gap-2">
-									<span class="bg-primary mt-1 h-1.5 w-1.5 rounded-full"></span>
-									<span>{copy.planBullet2}</span>
-								</li>
-							</ul>
+				<div class="grid items-stretch gap-4 lg:grid-cols-[minmax(0,1.14fr)_minmax(320px,0.86fr)]">
+					<div class="bg-background/80 text-muted-foreground rounded-2xl border p-4 text-sm leading-7 sm:p-5">
+						<ul class="space-y-2">
+							<li class="flex items-start gap-2">
+								<span class="bg-primary mt-2 h-2 w-2 rounded-full"></span>
+								<span>{copy.planBullet1}</span>
+							</li>
+							<li class="flex items-start gap-2">
+								<span class="bg-primary mt-2 h-2 w-2 rounded-full"></span>
+								<span>{copy.planBullet2}</span>
+							</li>
+						</ul>
+					</div>
+
+					<div class="flex h-full flex-col gap-4">
+						<div class="bg-background/80 text-muted-foreground rounded-2xl border p-4 text-sm leading-7 sm:p-5">
+							<p class="text-foreground text-sm font-semibold">{copy.planPremiumTitle}</p>
+							<p class="mt-2">
+								{copy.planPremiumDescription}
+							</p>
 						</div>
 
-						<div class="flex flex-col gap-2">
-							<Button class="w-full" href={resolve('/me/settings')}>{copy.planAction}</Button>
+						<div class="mt-auto flex flex-col gap-3">
+							<Button class="h-12 w-full text-base" href={resolve('/me/settings')}>
+								{copy.planAction}
+							</Button>
 							<div
-								class="text-primary flex flex-wrap items-center justify-center gap-2 text-[11px] font-semibold sm:justify-start"
+								class="text-primary flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs font-semibold sm:justify-start"
 							>
 								<a class="hover:underline" href="/faq">{copy.faqLink}</a>
 								<a class="hover:underline" href="/terms">{copy.termsLink}</a>
