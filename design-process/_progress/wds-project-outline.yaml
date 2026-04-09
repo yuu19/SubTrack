@@ -1,0 +1,37 @@
+project_name: "Subtrack"
+project_type: "brownfield"
+product_complexity: "complex"
+product_category: "web_application"
+tech_stack:
+  framework: "Svelte / SvelteKit"
+  notes: "Existing application codebase"
+component_library:
+  name: "shadcn-svelte"
+  skip_design_system: true
+  rationale: "Treated as the shadcn/ui-equivalent choice for WDS routing"
+root_folder: "design-process"
+brief_level: "complete"
+strategic_analysis: null
+existing_materials:
+  has_materials: true
+  context_notes: "Existing notes and technical context are available under docs/."
+  files:
+    - "docs/domain.md"
+    - "docs/mcp.md"
+    - "docs/pwa.md"
+    - "docs/d1-docs.md"
+    - "docs/miniflare.md"
+    - "docs/resend.md"
+project_context:
+  stakes: "small_business_investment"
+working_relationship:
+  collaboration_level: "highly_collaborative"
+  user_role: "product_owner"
+  recommendation_style: "recommend_with_rationale"
+wds_routing:
+  current_phase: "0-project-setup"
+  next_phase: "8-product-evolution"
+  brownfield_entry: true
+  next_decision_required: "Choose limited brief, codebase scan, or direct improvement scope."
+created_at: "2026-04-08"
+updated_at: "2026-04-08"

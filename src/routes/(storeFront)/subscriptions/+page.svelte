@@ -2,7 +2,7 @@
 	import AddSubscription from '$lib/components/modals/AddSubscription.svelte';
 	import EditSubscription from '$lib/components/modals/EditSubscription.svelte';
 	import * as AlertDialog from '$lib/components/ui/alert-dialog';
-	import { Badge } from '$lib/components/ui/badge';
+	import { Badge, badgeVariants } from '$lib/components/ui/badge';
 	import Button from '$lib/components/ui/button/button.svelte';
 	import {
 		Card,
@@ -33,8 +33,11 @@
 	import { addSubscriptionModalState } from '$lib/states/modalState.svelte';
 	import { browser, dev } from '$app/environment';
 	import { enhance as kitEnhance } from '$app/forms';
+	import { goto } from '$app/navigation';
 	import { base, resolve } from '$app/paths';
+	import { page } from '$app/state';
 	import { fromAction } from 'svelte/attachments';
+	import { cn } from '$lib/utils';
 	import { Bell, CalendarDays, Repeat } from 'lucide-svelte';
 	import { onMount } from 'svelte';
 	import { toast } from 'svelte-sonner';
@@ -83,11 +86,21 @@
 	const isPremium = $derived(Boolean(data.currentPlan?.isPremium));
 	const exportHref = $derived(resolve('/subscriptions/export'));
 	const upgradePlanHref = $derived(`${resolve('/me/settings')}#plan-info`);
+	const activeTag = $derived(page.url.searchParams.get('tag')?.trim() ?? '');
+	const normalizedActiveTag = $derived(activeTag.toLocaleLowerCase());
 
 	const pendingCount = $derived(subscriptions.filter((sub) => sub._pending).length);
 	const canMutateSelected = $derived(
 		Boolean(selectedSubscription) && isOnline && !selectedSubscription?._pending
 	);
+	const hasActiveTagFilter = $derived(activeTag.length > 0);
+	const filteredSubscriptions = $derived.by(() => {
+		if (!normalizedActiveTag) return subscriptions;
+
+		return subscriptions.filter((sub) =>
+			sub.tags.some((tag) => tag.trim().toLocaleLowerCase() === normalizedActiveTag)
+		);
+	});
 
 	const cycleDayMap: Record<string, number> = {
 		monthly: 30,
@@ -106,6 +119,30 @@
 		if (!Number.isFinite(daysLeft)) return 1;
 		const elapsed = Math.max(0, total - daysLeft);
 		return Math.min(1, elapsed / total);
+	};
+
+	const isActiveTag = (tag: string) => tag.trim().toLocaleLowerCase() === normalizedActiveTag;
+
+	const updateTagFilter = async (tag: string) => {
+		const nextTag = isActiveTag(tag) ? '' : tag.trim();
+		const url = new URL(page.url);
+
+		if (nextTag) {
+			url.searchParams.set('tag', nextTag);
+		} else {
+			url.searchParams.delete('tag');
+		}
+
+		await goto(url, {
+			replaceState: true,
+			noScroll: true,
+			keepFocus: true
+		});
+	};
+
+	const handleTagClick = async (event: MouseEvent, tag: string) => {
+		event.stopPropagation();
+		await updateTagFilter(tag);
 	};
 
 	const applyServerSubscriptions = async (serverSubscriptions: Subscription[]) => {
@@ -424,13 +461,32 @@
 		</div>
 	{/if}
 
-	{#if subscriptions.length === 0}
+	{#if hasActiveTagFilter}
+		<div class="bg-muted/50 flex flex-wrap items-center gap-2 rounded-lg border px-4 py-3 text-sm">
+			<span class="text-muted-foreground">{m.subscription_tag_filter_active()}</span>
+			<Badge class="text-[10px]">{activeTag}</Badge>
+			<Button
+				size="sm"
+				variant="ghost"
+				class="h-7 px-2 text-xs"
+				onclick={() => void updateTagFilter('')}
+			>
+				{m.subscription_tag_filter_clear()}
+			</Button>
+		</div>
+	{/if}
+
+	{#if filteredSubscriptions.length === 0}
 		<div class="text-muted-foreground rounded-lg border border-dashed p-6">
-			{m.subscription_empty_state()}
+			{#if hasActiveTagFilter}
+				{m.subscription_tag_filter_empty({ tag: activeTag })}
+			{:else}
+				{m.subscription_empty_state()}
+			{/if}
 		</div>
 	{:else}
 		<div class="flex flex-col gap-4">
-			{#each subscriptions as sub (sub.id)}
+			{#each filteredSubscriptions as sub (sub.id)}
 				<Card
 					class="cursor-pointer overflow-hidden"
 					role="button"
@@ -482,13 +538,26 @@
 								{m.subscription_notify_label()}
 								{formatNotifyDays(sub.notifyDaysBefore, currentLocale)}
 							</span>
-							{#if sub.tags.length > 0}
-								<div class="flex flex-wrap gap-2">
-									{#each sub.tags as tag, i (i)}
-										<Badge variant="secondary" class="text-[10px]">{tag}</Badge>
-									{/each}
-								</div>
-							{/if}
+								{#if sub.tags.length > 0}
+									<div class="flex flex-wrap gap-2">
+										{#each sub.tags as tag, i (i)}
+											<button
+												type="button"
+												class={cn(
+													badgeVariants({
+														variant: isActiveTag(tag) ? 'default' : 'secondary'
+													}),
+													'cursor-pointer text-[10px]'
+												)}
+												aria-pressed={isActiveTag(tag)}
+												onclick={(event) => void handleTagClick(event, tag)}
+												onkeydown={(event) => event.stopPropagation()}
+											>
+												{tag}
+											</button>
+										{/each}
+									</div>
+								{/if}
 						</div>
 						<div class="bg-muted h-1 w-full rounded-full">
 							<div

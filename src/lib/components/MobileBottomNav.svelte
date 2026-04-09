@@ -2,7 +2,7 @@
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
 	import { cn } from '$lib/utils';
-	import { CalendarDays, CreditCard, LayoutGrid, Settings } from 'lucide-svelte';
+	import { CalendarDays, CreditCard, LayoutGrid, PieChart, Settings } from 'lucide-svelte';
 
 	const items = [
 		{
@@ -15,6 +15,11 @@
 			href: resolve('/subscriptions'),
 			label: 'Subscriptions',
 			icon: CreditCard
+		},
+		{
+			href: resolve('/analysis'),
+			label: 'Analytics',
+			icon: PieChart
 		},
 		{
 			href: resolve('/calendar'),
