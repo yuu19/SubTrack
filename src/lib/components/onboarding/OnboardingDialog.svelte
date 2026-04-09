@@ -61,23 +61,24 @@
 		ja: {
 			tutorialBadge: 'チュートリアル',
 			tutorialProgressLabel: '使い方のガイド',
-			pwaInfoTitle: 'PWAとPush通知について',
+			pwaInfoTitle: 'ホーム画面追加とプッシュ通知について',
 			pwaInfoBody1: 'PWAは、ホーム画面に追加してアプリのように素早く開ける仕組みです。',
-			pwaInfoBody2: 'Push通知は更新前にお知らせを送る機能で、設定からいつでもON/OFFできます。',
+			pwaInfoBody2:
+				'プッシュ通知は更新前にお知らせを送る機能で、設定からいつでもオン/オフを切り替えられます。',
 			close: '閉じる',
 			back: '戻る',
 			start: 'はじめる',
 			continue: '続ける',
 			planBadge: 'プレミアムのご案内',
 			planTitle: 'サブスク管理 プレミアム',
-			planDescription: '広告を非表示にして、登録数や通知の制限なくサブスク管理を続けられます。',
+			planDescription: '広告を非表示にし、登録件数や通知設定の制限なくサブスクを管理できます。',
 			planRoleLabel: 'プランの役割',
 			planFreeTitle: '無料プラン',
-			planFreeDescription: '少ない件数を気軽に管理したいライトユーザー向けです。',
+			planFreeDescription: '登録数が少ない方や、まずは気軽に使いたい方向けです。',
 			planPremiumTitle: 'Premium',
 			planPremiumDescription: '複数のサブスクをまとめて継続管理したい人向けです。',
 			planFeatureTitle: '比較できる主な違い',
-			planBullet1: '無料おためしは初回の登録のみ対象です。',
+			planBullet1: '無料お試しは、初回登録時のみ利用できます。',
 			planBullet2: '購読期間終了の24時間前までにキャンセルしない場合、自動更新されます。',
 			planAction: 'プランを選ぶ',
 			faqLink: 'よくある質問',
@@ -85,8 +86,9 @@
 			privacyLink: 'プライバシーポリシー',
 			steps: [
 				{
-					title: 'サブスクをまとめて登録',
-					description: '料金・周期・タグを一括で管理。支出の見える化がすぐに始まります。',
+					title: 'サブスクをまとめて管理',
+					description:
+						'料金・支払い間隔・タグをまとめて管理できます。毎月の支出をすぐに把握できます。',
 					badge: 'サブスク一覧',
 					previewAlt: 'SubTrackのサブスク一覧画面',
 					previewLabel: '一覧画面',
@@ -96,33 +98,35 @@
 						'上部の操作ボタンとカード全体が見えるよう、PC向けの横長バランスにしています。'
 				},
 				{
-					title: '更新日をカレンダーで把握',
-					description: '支払いの山を可視化して、家計の波を先読みできます。',
+					title: '支払い日をカレンダーで確認',
+					description:
+						'支払いが重なる時期を見つけやすくなり、出費の多い月を前もって把握できます。',
 					badge: '支払いカレンダー',
 					previewAlt: 'SubTrackのカレンダー画面',
 					previewLabel: 'カレンダー',
-					previewTitle: '支払い予定を月単位で俯瞰',
+					previewTitle: '1か月の支払い予定をまとめて確認',
 					previewHintMobile: '日付と予定の位置関係が見やすい高さです。',
 					previewHint: '横幅を活かしつつ、予定ラベルと日付の密度が崩れない高さに抑えています。'
 				},
 				{
-					title: '通知で取りこぼしゼロに',
-					description: '更新日前にリマインド。解約タイミングも逃しません。',
+					title: '通知で見落としを防ぐ',
+					description:
+						'更新日前にお知らせします。解約を検討したいときも、タイミングを確認しやすくなります。',
 					badge: 'リマインダー',
 					previewAlt: 'SubTrackのPush通知ガイド画面',
 					previewLabel: '通知設定',
-					previewTitle: '通知導線を実画面で確認',
-					previewHintMobile: '通知導線が読める位置を優先しています。',
+					previewTitle: '通知の設定手順を画面で確認',
+					previewHintMobile: '通知の設定手順が見やすい位置で表示されます。',
 					previewHint: '説明ブロックとCTAが見える位置を優先して、縦方向に少し余裕を持たせています。'
 				},
 				{
-					title: 'PWAでサッと開ける',
+					title: 'ホーム画面からすぐ開ける',
 					description:
-						'ホーム画面に追加すればアプリのように起動できます。Push通知は設定からいつでもON/OFFできます。',
+						'ホーム画面に追加すると、アプリのようにすぐ開けます。プッシュ通知は設定からいつでもオン/オフを切り替えられます。',
 					badge: 'PWA / Push',
 					previewAlt: 'SubTrackのPushガイド下部画面',
 					previewLabel: 'PWA / Push',
-					previewTitle: '導入後の使い方までそのまま追える',
+					previewTitle: '設定後の使い方まで続けて確認できる',
 					previewHintMobile: '縦方向の情報量を保ったまま詰めています。',
 					previewHint:
 						'スマホ寄りの情報量に合わせて、縦長に寄せたプレビューで読める密度を保っています。'

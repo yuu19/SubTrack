@@ -18,6 +18,10 @@
 	// const session = authClient.useSession();
 	const accountPages = [
 		{
+			title: () => m.analysis_page_title(),
+			href: resolve('/analysis')
+		},
+		{
 			title: () => m.nav_settings(),
 			href: resolve('/me/settings')
 		}
