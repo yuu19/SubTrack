@@ -1,9 +1,10 @@
 <script lang="ts">
+	import { m } from '$lib/paraglide/messages.js';
 	import { authClient } from '$lib/auth-client';
 	import { toast } from 'svelte-sonner';
 	import { base } from '$app/paths';
 
-	let { label = 'Sign in with Google', disabled = false } = $props<{
+	let { label = m.google_auth_button_label(), disabled = false } = $props<{
 		label?: string;
 		disabled?: boolean;
 	}>();
@@ -17,7 +18,7 @@
 		});
 
 		if (error) {
-			toast.error(error.message ?? error.statusText ?? 'Failed to sign in with Google.');
+			toast.error(error.message ?? error.statusText ?? m.google_auth_button_error());
 		}
 	};
 </script>
