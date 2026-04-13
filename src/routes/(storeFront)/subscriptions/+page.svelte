@@ -28,6 +28,7 @@
 		getCycleUnitLabel,
 		resolveLocale
 	} from '$lib/locale';
+	import { startLifetimeCheckout } from '$lib/client/lifetime-checkout';
 	import { m } from '$lib/paraglide/messages.js';
 	import { getLocale } from '$lib/paraglide/runtime';
 	import { addSubscriptionModalState } from '$lib/states/modalState.svelte';
@@ -57,6 +58,8 @@
 			hasPushSubscription: boolean;
 			currentPlan: {
 				isPremium: boolean;
+				hasSubscriptionAccess?: boolean;
+				hasLifetimeEntitlement?: boolean;
 			};
 		};
 	}>();
@@ -78,12 +81,18 @@
 	let pushPermission = $state<NotificationPermission>('default');
 	let pushBusy = $state(false);
 	let pushError = $state<string | null>(null);
+	let isCreatingLifetimeCheckout = $state(false);
 	let detailOpen = $state(false);
 	let editOpen = $state(false);
 	let deleteOpen = $state(false);
 	let selectedSubscription = $state<SubscriptionView | null>(null);
 	const currentLocale = $derived(resolveLocale(getLocale()));
 	const isPremium = $derived(Boolean(data.currentPlan?.isPremium));
+	const hasSubscriptionAccess = $derived(Boolean(data.currentPlan?.hasSubscriptionAccess));
+	const hasLifetimeEntitlement = $derived(Boolean(data.currentPlan?.hasLifetimeEntitlement));
+	const shouldShowLifetimeEntry = $derived(
+		!isPremium && !hasSubscriptionAccess && !hasLifetimeEntitlement
+	);
 	const exportHref = $derived(resolve('/subscriptions/export'));
 	const upgradePlanHref = $derived(`${resolve('/me/settings')}#plan-info`);
 	const activeTag = $derived(page.url.searchParams.get('tag')?.trim() ?? '');
@@ -143,6 +152,22 @@
 	const handleTagClick = async (event: MouseEvent, tag: string) => {
 		event.stopPropagation();
 		await updateTagFilter(tag);
+	};
+
+	const handleLifetimeCheckout = async () => {
+		if (isCreatingLifetimeCheckout) return;
+		isCreatingLifetimeCheckout = true;
+		try {
+			await startLifetimeCheckout({
+				returnPath: page.url.pathname,
+				errorMessage: m.settings_lifetime_checkout_error(),
+				purchasedMessage: m.settings_plan_lifetime_purchased()
+			});
+		} catch (error) {
+			console.error('Failed to start lifetime checkout from subscriptions', error);
+		} finally {
+			isCreatingLifetimeCheckout = false;
+		}
 	};
 
 	const applyServerSubscriptions = async (serverSubscriptions: Subscription[]) => {
@@ -441,6 +466,27 @@
 		</div>
 	{/if}
 
+	{#if shouldShowLifetimeEntry}
+		<div class="bg-card flex flex-col gap-4 rounded-2xl border p-5 shadow-sm">
+			<div class="space-y-1">
+				<p class="text-muted-foreground text-xs font-semibold tracking-[0.24em] uppercase">
+					{m.lifetime_entry_badge()}
+				</p>
+				<h2 class="text-lg font-semibold">{m.lifetime_entry_title()}</h2>
+				<p class="text-muted-foreground text-sm">{m.subscription_lifetime_description()}</p>
+			</div>
+			<div class="flex flex-wrap gap-3">
+				<Button onclick={handleLifetimeCheckout} disabled={isCreatingLifetimeCheckout}>
+					{m.premium_modal_cta_lifetime()}
+				</Button>
+				<Button variant="outline" href={upgradePlanHref}>
+					{m.settings_premium_status_action()}
+				</Button>
+			</div>
+			<p class="text-muted-foreground text-xs">{m.premium_modal_lifetime_caption()}</p>
+		</div>
+	{/if}
+
 	{#if !isOnline || pendingCount > 0 || syncError}
 		<div
 			class="border-border/60 bg-muted/40 text-muted-foreground flex flex-wrap items-center gap-3 rounded-lg border px-4 py-3 text-xs"
@@ -538,26 +584,26 @@
 								{m.subscription_notify_label()}
 								{formatNotifyDays(sub.notifyDaysBefore, currentLocale)}
 							</span>
-								{#if sub.tags.length > 0}
-									<div class="flex flex-wrap gap-2">
-										{#each sub.tags as tag, i (i)}
-											<button
-												type="button"
-												class={cn(
-													badgeVariants({
-														variant: isActiveTag(tag) ? 'default' : 'secondary'
-													}),
-													'cursor-pointer text-[10px]'
-												)}
-												aria-pressed={isActiveTag(tag)}
-												onclick={(event) => void handleTagClick(event, tag)}
-												onkeydown={(event) => event.stopPropagation()}
-											>
-												{tag}
-											</button>
-										{/each}
-									</div>
-								{/if}
+							{#if sub.tags.length > 0}
+								<div class="flex flex-wrap gap-2">
+									{#each sub.tags as tag, i (i)}
+										<button
+											type="button"
+											class={cn(
+												badgeVariants({
+													variant: isActiveTag(tag) ? 'default' : 'secondary'
+												}),
+												'cursor-pointer text-[10px]'
+											)}
+											aria-pressed={isActiveTag(tag)}
+											onclick={(event) => void handleTagClick(event, tag)}
+											onkeydown={(event) => event.stopPropagation()}
+										>
+											{tag}
+										</button>
+									{/each}
+								</div>
+							{/if}
 						</div>
 						<div class="bg-muted h-1 w-full rounded-full">
 							<div

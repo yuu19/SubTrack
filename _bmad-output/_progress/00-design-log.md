@@ -19,6 +19,10 @@
 - 2026-04-09: Scoped the first i18n improvement cycle as shared UI i18n foundation + translation coverage cleanup.
 - Scenario file: `_bmad-output/evolution/scenarios/i18n-foundation-and-coverage.md`.
 - 2026-04-09: Wrote the implementation-ready mini spec for the first i18n cycle under `_bmad-output/evolution/specs/i18n-foundation-and-coverage.md`.
+- 2026-04-14: Started Product Evolution cycle for adding lifetime purchase entry points to the top page and subscriptions list.
+- Target views: `/` and `/subscriptions`.
+- Goal: expose the existing 6,000 JPY lifetime purchase option earlier in the user journey without changing Stripe or database contracts.
+- 2026-04-14: Scoped the change under `_bmad-output/evolution/` with scenario and implementation-ready spec files.
 
 ## Backlog
 

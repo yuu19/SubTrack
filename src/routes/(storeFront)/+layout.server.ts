@@ -4,6 +4,8 @@ import { userConfigSchema } from '$lib/states/userConfig.svelte';
 import { trackedSubscriptionTable, user as userTable } from '$lib/server/db/schema';
 import { computeNextBilling } from '$lib/server/subscriptions';
 import { isAdminUser, parseAdminUserIds } from '$lib/server/admin';
+import { listActiveEntitlementsForUser } from '$lib/server/entitlements';
+import { getCurrentPlan } from '$lib/server/plan';
 import { subscriptionColors } from '$lib/subscription-colors';
 import { eq } from 'drizzle-orm';
 
@@ -91,10 +93,19 @@ export const load = async ({ request, locals }) => {
 		notificationMethod: user?.notificationMethod ?? 'push'
 	});
 	const userConfig = parsedConfig.success ? parsedConfig.data : userConfigSchema.parse({});
+	const billingSubscriptions =
+		user && db
+			? await db.query.subscription.findMany({
+					where: (subscription, { eq }) => eq(subscription.referenceId, user.id)
+				})
+			: [];
+	const entitlements = user && db ? await listActiveEntitlementsForUser(db, user.id) : [];
+	const { currentPlan } = getCurrentPlan(billingSubscriptions, entitlements);
 
 	return {
 		user,
 		userConfig,
-		isAdmin
+		isAdmin,
+		currentPlan
 	};
 };

@@ -3,6 +3,7 @@
 	import { invalidateAll } from '$app/navigation';
 	import { page } from '$app/state';
 	import { authClient } from '$lib/auth-client';
+	import { startLifetimeCheckout } from '$lib/client/lifetime-checkout';
 	import LanguageSwitcher from '$lib/components/LanguageSwitcher.svelte';
 	import DefaultNotifyModal from '$lib/components/modals/DefaultNotifyModal.svelte';
 	import NotificationMethodModal from '$lib/components/modals/NotificationMethodModal.svelte';
@@ -146,38 +147,11 @@
 		if (isCreatingLifetimeCheckout) return;
 		isCreatingLifetimeCheckout = true;
 		try {
-			const response = await fetch('/api/stripe/lifetime-checkout', {
-				method: 'POST',
-				headers: {
-					'content-type': 'application/json'
-				},
-				body: JSON.stringify({
-					returnPath: page.url.pathname
-				})
+			await startLifetimeCheckout({
+				returnPath: page.url.pathname,
+				errorMessage: lifetimeCheckoutErrorLabel,
+				purchasedMessage: lifetimePurchasedLabel
 			});
-
-			const payload = (await response.json().catch(() => null)) as {
-				url?: string | null;
-				alreadyPurchased?: boolean;
-			} | null;
-
-			if (!response.ok) {
-				toast.error(lifetimeCheckoutErrorLabel);
-				return;
-			}
-
-			if (payload?.alreadyPurchased) {
-				toast.success(lifetimePurchasedLabel);
-				await invalidateAll();
-				return;
-			}
-
-			if (payload?.url) {
-				window.location.href = payload.url;
-				return;
-			}
-
-			toast.error(lifetimeCheckoutErrorLabel);
 		} catch (error) {
 			console.error('Failed to create lifetime checkout', error);
 			toast.error(lifetimeCheckoutErrorLabel);
