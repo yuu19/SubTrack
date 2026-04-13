@@ -1,5 +1,5 @@
-import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
+import { defaultSubscriptionColor, subscriptionColors } from '$lib/subscription-colors';
 
 const isValidPhoneNumber = (phone: string): boolean => {
 	const regex = /^([0|+[0-9]{1,5})?([7-9][0-9]{9})$/;
@@ -30,6 +30,7 @@ export const subscriptionSchema = z.object({
 	text: z
 		.string({ error: 'Please enter the service name.' })
 		.min(1, { error: 'Please enter the service name.' }),
+	color: z.enum(subscriptionColors).default(defaultSubscriptionColor),
 	tagsinput: z.string().array().default([]),
 	notifyDaysBefore: z
 		.number({ error: 'Please select notify days.' })

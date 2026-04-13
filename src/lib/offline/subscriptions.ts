@@ -1,5 +1,10 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
 import dayjs from 'dayjs';
+import {
+	defaultSubscriptionColor,
+	resolveSubscriptionColor,
+	type SubscriptionColor
+} from '$lib/subscription-colors';
 
 const DB_NAME = 'dishpage-offline';
 const DB_VERSION = 1;
@@ -8,6 +13,7 @@ const PENDING_STORE = 'subscription_pending';
 
 export type SubscriptionPayload = {
 	serviceName: string;
+	color: SubscriptionColor;
 	cycle: string;
 	amount: number;
 	firstPaymentDate: string;
@@ -19,6 +25,7 @@ export type SubscriptionRecord = {
 	id: number | string;
 	userId?: string | null;
 	serviceName: string;
+	color: SubscriptionColor;
 	cycle: string;
 	amount: number;
 	firstPaymentDate: string;
@@ -47,7 +54,7 @@ interface OfflineDb extends DBSchema {
 		key: number | string;
 		value: SubscriptionRecord;
 	};
-	pending: {
+	subscription_pending: {
 		key: number;
 		value: PendingAction;
 	};
@@ -141,6 +148,7 @@ export const payloadFromFormData = (formData: FormData): SubscriptionPayload => 
 
 	return {
 		serviceName: `${formData.get('text') ?? ''}`,
+		color: resolveSubscriptionColor(formData.get('color'), defaultSubscriptionColor),
 		cycle: `${formData.get('select') ?? ''}`,
 		amount: toNumber(formData.get('number'), 0),
 		firstPaymentDate: `${formData.get('datepicker') ?? ''}`,
@@ -195,6 +203,7 @@ export const addPendingSubscription = async (
 		_clientId: clientId,
 		_pending: true,
 		serviceName: payload.serviceName,
+		color: payload.color,
 		cycle: payload.cycle,
 		amount: payload.amount,
 		firstPaymentDate: payload.firstPaymentDate,
@@ -206,7 +215,7 @@ export const addPendingSubscription = async (
 		updatedAt: now
 	};
 
-	const tx = db.transaction([SUBSCRIPTIONS_STORE, PENDING_STORE], 'readwrite');
+	const tx = db.transaction([SUBSCRIPTIONS_STORE, PENDING_STORE] as const, 'readwrite');
 	await tx.objectStore(SUBSCRIPTIONS_STORE).put(record);
 	await tx.objectStore(PENDING_STORE).add({
 		action: 'add',
@@ -227,6 +236,7 @@ export type SyncResult = {
 const buildFormData = (payload: SubscriptionPayload) => {
 	const formData = new FormData();
 	formData.set('text', payload.serviceName);
+	formData.set('color', payload.color);
 	formData.set('select', payload.cycle);
 	formData.set('number', `${payload.amount}`);
 	formData.set('datepicker', payload.firstPaymentDate);

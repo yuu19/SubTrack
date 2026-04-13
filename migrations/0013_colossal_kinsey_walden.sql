@@ -1,0 +1,1 @@
+ALTER TABLE `tracked_subscription` ADD `color` text DEFAULT 'blue' NOT NULL;
