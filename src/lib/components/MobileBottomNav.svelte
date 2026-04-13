@@ -1,34 +1,35 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
+	import { m } from '$lib/paraglide/messages.js';
 	import { cn } from '$lib/utils';
 	import { CalendarDays, CreditCard, LayoutGrid, PieChart, Settings } from 'lucide-svelte';
 
 	const items = [
 		{
 			href: resolve('/'),
-			label: 'Home',
+			label: () => m.mobile_nav_home(),
 			icon: LayoutGrid,
 			exact: true
 		},
 		{
 			href: resolve('/subscriptions'),
-			label: 'Subscriptions',
+			label: () => m.mobile_nav_subscriptions(),
 			icon: CreditCard
 		},
 		{
 			href: resolve('/analysis'),
-			label: 'Analytics',
+			label: () => m.mobile_nav_analysis(),
 			icon: PieChart
 		},
 		{
 			href: resolve('/calendar'),
-			label: 'Calendar',
+			label: () => m.mobile_nav_calendar(),
 			icon: CalendarDays
 		},
 		{
 			href: resolve('/me/settings'),
-			label: 'Settings',
+			label: () => m.nav_settings(),
 			icon: Settings
 		}
 	];
@@ -60,7 +61,7 @@
 				aria-current={active ? 'page' : undefined}
 			>
 				<Icon class="size-5" />
-				<span class="sr-only">{item.label}</span>
+				<span class="sr-only">{item.label()}</span>
 			</a>
 		{/each}
 		</div>

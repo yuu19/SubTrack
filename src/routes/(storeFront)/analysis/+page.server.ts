@@ -1,11 +1,10 @@
 import type { PageServerLoad } from './$types';
 import { createAuth } from '$lib/auth';
-import { trackedSubscriptionTable } from '$lib/server/db/schema';
 import {
 	buildSubscriptionAnalytics,
 	emptySubscriptionAnalytics
 } from '$lib/server/subscription-analytics';
-import { desc, eq } from 'drizzle-orm';
+import { resolveSubscriptionColor } from '$lib/subscription-colors';
 
 export const load: PageServerLoad = async ({ locals, request }) => {
 	const db = locals.db;
@@ -25,17 +24,23 @@ export const load: PageServerLoad = async ({ locals, request }) => {
 		};
 	}
 
-	const subscriptions = await db
-		.select({
-			serviceName: trackedSubscriptionTable.serviceName,
-			cycle: trackedSubscriptionTable.cycle,
-			amount: trackedSubscriptionTable.amount
-		})
-		.from(trackedSubscriptionTable)
-		.where(eq(trackedSubscriptionTable.userId, userId))
-		.orderBy(desc(trackedSubscriptionTable.createdAt));
+	const subscriptions = await db.query.trackedSubscriptionTable.findMany({
+		columns: {
+			serviceName: true,
+			color: true,
+			cycle: true,
+			amount: true
+		},
+		where: (trackedSubscription, { eq }) => eq(trackedSubscription.userId, userId),
+		orderBy: (trackedSubscription, { desc }) => desc(trackedSubscription.createdAt)
+	});
 
 	return {
-		analytics: buildSubscriptionAnalytics(subscriptions)
+		analytics: buildSubscriptionAnalytics(
+			subscriptions.map((subscription) => ({
+				...subscription,
+				color: resolveSubscriptionColor(subscription.color)
+			}))
+		)
 	};
 };

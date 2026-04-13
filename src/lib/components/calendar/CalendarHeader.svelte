@@ -1,12 +1,13 @@
 <script lang="ts">
 	import { formatMonthYear } from '$lib/locale';
+	import { m } from '$lib/paraglide/messages.js';
 
 	let { currentDate, locale, onPrevMonth, onNextMonth, onToday } = $props();
 
 	const displayDate = $derived(formatMonthYear(currentDate.toDate?.() ?? currentDate, locale));
-	const todayLabel = $derived(locale === 'en' ? 'Today' : '今日');
-	const previousMonthLabel = $derived(locale === 'en' ? 'Previous month' : '前の月');
-	const nextMonthLabel = $derived(locale === 'en' ? 'Next month' : '次の月');
+	const todayLabel = $derived(m.calendar_header_today());
+	const previousMonthLabel = $derived(m.calendar_header_previous_month());
+	const nextMonthLabel = $derived(m.calendar_header_next_month());
 </script>
 
 <header class="border-border flex items-center justify-between border-b px-6 py-4">

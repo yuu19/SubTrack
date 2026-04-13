@@ -4,6 +4,7 @@ import { userConfigSchema } from '$lib/states/userConfig.svelte';
 import { trackedSubscriptionTable, user as userTable } from '$lib/server/db/schema';
 import { computeNextBilling } from '$lib/server/subscriptions';
 import { isAdminUser, parseAdminUserIds } from '$lib/server/admin';
+import { subscriptionColors } from '$lib/subscription-colors';
 import { eq } from 'drizzle-orm';
 
 export const load = async ({ request, locals }) => {
@@ -35,6 +36,7 @@ export const load = async ({ request, locals }) => {
 			const samples = [
 				{
 					serviceName: 'Netflix',
+					color: subscriptionColors[0],
 					cycle: 'monthly',
 					amount: 1490,
 					firstPaymentDate: dateSeed,
@@ -43,6 +45,7 @@ export const load = async ({ request, locals }) => {
 				},
 				{
 					serviceName: 'Spotify',
+					color: subscriptionColors[1],
 					cycle: 'monthly',
 					amount: 980,
 					firstPaymentDate: dateSeed,
@@ -51,6 +54,7 @@ export const load = async ({ request, locals }) => {
 				},
 				{
 					serviceName: 'Notion',
+					color: subscriptionColors[2],
 					cycle: 'yearly',
 					amount: 12000,
 					firstPaymentDate: dateSeed,
@@ -64,6 +68,7 @@ export const load = async ({ request, locals }) => {
 				await db.insert(trackedSubscriptionTable).values({
 					userId: user.id,
 					serviceName: sample.serviceName,
+					color: sample.color,
 					cycle: sample.cycle,
 					amount: sample.amount,
 					firstPaymentDate: sample.firstPaymentDate,

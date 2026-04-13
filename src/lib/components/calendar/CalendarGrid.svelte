@@ -1,7 +1,9 @@
 <script lang="ts">
 	import dayjs from 'dayjs';
 	import { formatMonthDay, getWeekdayLabels } from '$lib/locale';
+	import { m } from '$lib/paraglide/messages.js';
 	import type { Dayjs } from 'dayjs';
+	import { getSubscriptionColorStyle, type SubscriptionColor } from '$lib/subscription-colors';
 
 	let {
 		currentDate,
@@ -12,8 +14,6 @@
 		onPrevMonth = () => {},
 		onNextMonth = () => {}
 	} = $props();
-
-	type EventColor = 'blue' | 'green' | 'red' | 'yellow' | 'purple' | 'orange';
 
 	const weekDays = $derived(getWeekdayLabels(locale));
 
@@ -60,7 +60,7 @@
 		id: string;
 		title: string;
 		date: string;
-		color: EventColor;
+		color: SubscriptionColor;
 	};
 
 	function getEventsForDate(date: Dayjs): CalendarEvent[] {
@@ -77,23 +77,11 @@
 	}
 
 	const addEventAriaLabel = (date: Dayjs) =>
-		locale === 'en'
-			? `Open payments for ${formatMonthDay(date.toDate?.() ?? date, locale)}`
-			: `${formatMonthDay(date.toDate?.() ?? date, locale)}に予定を追加`;
+		m.calendar_grid_open_payments({ date: formatMonthDay(date.toDate?.() ?? date, locale) });
 
-	const eventAriaLabel = (title: string) =>
-		locale === 'en' ? `Payment: ${title}` : `予定: ${title}`;
+	const eventAriaLabel = (title: string) => m.calendar_grid_event_label({ title });
 
-	const moreEventsLabel = (count: number) => (locale === 'en' ? `+${count} more` : `+${count}件`);
-
-	const eventColors = {
-		blue: 'color-mix(in oklch, var(--primary) 90%, var(--background) 10%)',
-		green: 'color-mix(in oklch, var(--primary) 85%, var(--background) 15%)',
-		red: 'color-mix(in oklch, var(--primary) 80%, var(--background) 20%)',
-		yellow: 'color-mix(in oklch, var(--primary) 75%, var(--background) 25%)',
-		purple: 'color-mix(in oklch, var(--primary) 70%, var(--background) 30%)',
-		orange: 'color-mix(in oklch, var(--primary) 65%, var(--background) 35%)'
-	};
+	const moreEventsLabel = (count: number) => m.calendar_grid_more_events({ count });
 
 	let touchStartX = 0;
 	let touchStartY = 0;
@@ -190,7 +178,7 @@
 								type="button"
 								onclick={() => onEventClick(event)}
 								class="text-primary-foreground w-full truncate rounded px-1.5 py-0.5 text-left text-xs transition-opacity hover:opacity-80"
-								style:background-color={eventColors[event.color] || eventColors.blue}
+								style:background-color={getSubscriptionColorStyle(event.color)}
 								aria-label={eventAriaLabel(event.title)}
 							>
 								{event.title}

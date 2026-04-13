@@ -11,6 +11,14 @@
 - 2026-04-09: Started Product Evolution cycle for subscription analytics view.
 - Target view: new `/analysis` page plus mobile navigation entry.
 - Goal: help users compare spending distribution by service in monthly and yearly equivalent totals.
+- 2026-04-09: Started Product Evolution cycle for subscription color selection across create/edit, calendar, and analytics.
+- 2026-04-09: Scoped and specified the subscription color selection update under `_bmad-output/evolution/`.
+- 2026-04-09: Started Product Evolution analysis cycle for app-wide i18n audit.
+- Target scope: audit locale coverage, translation source fragmentation, legal content parity, and untranslated shared/admin UI.
+- 2026-04-09: Saved i18n audit analysis under `_bmad-output/evolution/analysis/i18n-audit-2026-04-09.md`.
+- 2026-04-09: Scoped the first i18n improvement cycle as shared UI i18n foundation + translation coverage cleanup.
+- Scenario file: `_bmad-output/evolution/scenarios/i18n-foundation-and-coverage.md`.
+- 2026-04-09: Wrote the implementation-ready mini spec for the first i18n cycle under `_bmad-output/evolution/specs/i18n-foundation-and-coverage.md`.
 
 ## Backlog
 

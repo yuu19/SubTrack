@@ -1,14 +1,18 @@
 import type { trackedSubscriptionTable } from '$lib/server/db/schema';
+import type { SubscriptionColor } from '$lib/subscription-colors';
 
 export type AnalyticsPeriod = 'monthly' | 'yearly';
 
 export type AnalyticsSubscription = Pick<
 	typeof trackedSubscriptionTable.$inferSelect,
 	'serviceName' | 'cycle' | 'amount'
->;
+> & {
+	color?: SubscriptionColor | null;
+};
 
 export type SubscriptionAnalyticsItem = {
 	serviceName: string;
+	color: SubscriptionColor | null;
 	amount: number;
 	share: number;
 	subscriptionCount: number;
@@ -53,9 +57,12 @@ export const buildSubscriptionAnalytics = (
 	subscriptions: AnalyticsSubscription[]
 ): SubscriptionAnalyticsSnapshot => {
 	const grouped = {
-		monthly: new Map<string, { amount: number; subscriptionCount: number }>(),
-		yearly: new Map<string, { amount: number; subscriptionCount: number }>()
-	} satisfies Record<AnalyticsPeriod, Map<string, { amount: number; subscriptionCount: number }>>;
+		monthly: new Map<string, { amount: number; color: SubscriptionColor | null; subscriptionCount: number }>(),
+		yearly: new Map<string, { amount: number; color: SubscriptionColor | null; subscriptionCount: number }>()
+	} satisfies Record<
+		AnalyticsPeriod,
+		Map<string, { amount: number; color: SubscriptionColor | null; subscriptionCount: number }>
+	>;
 
 	for (const subscription of subscriptions) {
 		const serviceName = subscription.serviceName.trim() || 'Unknown';
@@ -67,6 +74,7 @@ export const buildSubscriptionAnalytics = (
 			const existing = grouped[period].get(serviceName);
 			grouped[period].set(serviceName, {
 				amount: (existing?.amount ?? 0) + normalizedAmount,
+				color: existing?.color ?? subscription.color ?? null,
 				subscriptionCount: (existing?.subscriptionCount ?? 0) + 1
 			});
 		}
@@ -78,6 +86,7 @@ export const buildSubscriptionAnalytics = (
 		const items = Array.from(grouped[period].entries())
 			.map(([serviceName, value]) => ({
 				serviceName,
+				color: value.color,
 				amount: value.amount,
 				subscriptionCount: value.subscriptionCount,
 				share: 0

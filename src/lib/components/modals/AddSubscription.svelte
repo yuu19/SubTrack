@@ -14,6 +14,12 @@
 	import { getLocale } from '$lib/paraglide/runtime';
 	import { addSubscriptionModalState } from '$lib/states/modalState.svelte';
 	import { UserConfigContext } from '$lib/states/userConfig.svelte';
+	import {
+		defaultSubscriptionColor,
+		getSubscriptionColorLabel,
+		getSubscriptionColorStyle,
+		subscriptionColors
+	} from '$lib/subscription-colors';
 
 	let { data, onOfflineSubmit, onServerResult } = $props();
 	const userConfig = UserConfigContext.get();
@@ -23,7 +29,20 @@
 		{ value: 'quarterly', label: getCycleLabel('quarterly', currentLocale) },
 		{ value: 'yearly', label: getCycleLabel('yearly', currentLocale) }
 	]);
+	const colorOptions = $derived(
+		subscriptionColors.map((value) => ({
+			value,
+			label: getSubscriptionColorLabel(value, currentLocale),
+			style: getSubscriptionColorStyle(value)
+		}))
+	);
 	const notifyOptions = $derived([1, 3, 7]);
+	const colorFieldLabel = $derived(currentLocale === 'en' ? 'Color' : '色');
+	const colorFieldDescription = $derived(
+		currentLocale === 'en'
+			? 'Used for calendar and analysis views.'
+			: 'カレンダーと分析画面で使う表示色です。'
+	);
 
 	const defaultNotifyDaysBefore = $derived(userConfig.current.defaultNotifyDaysBefore ?? 3);
 	const now = new Date();
@@ -42,6 +61,7 @@
 	const { enhance } = form;
 
 	const textField = fieldProxy(form, 'text');
+	const colorField = fieldProxy(form, 'color');
 	const selectField = fieldProxy(form, 'select');
 	const notifyDaysBeforeField = fieldProxy(form, 'notifyDaysBefore');
 	const numberField = fieldProxy(form, 'number');
@@ -72,6 +92,7 @@
 	$effect(() => {
 		const isOpen = addSubscriptionModalState.value;
 		if (isOpen && !wasOpen) {
+			$colorField = defaultSubscriptionColor;
 			$notifyDaysBeforeField = defaultNotifyDaysBefore;
 			if (!$datepickerField) {
 				$datepickerField = todayISO;
@@ -94,6 +115,39 @@
 				{#snippet children({ props })}
 					<Label class="font-medium">{m.subscription_form_service_name_label()}</Label>
 					<Input {...props} type="text" placeholder="Netflix" bind:value={$textField} />
+				{/snippet}
+			</Control>
+			<FieldErrors class="text-destructive text-sm" />
+		</Field>
+
+		<Field {form} name="color">
+			<Control>
+				{#snippet children({ props })}
+					<Label class="font-medium">{colorFieldLabel}</Label>
+					<input {...props} type="hidden" bind:value={$colorField} />
+					<div class="flex flex-wrap gap-3" role="radiogroup" aria-label={colorFieldLabel}>
+						{#each colorOptions as option (option.value)}
+							<button
+								type="button"
+								onclick={() => ($colorField = option.value)}
+								class="flex items-center gap-2 rounded-full border px-3 py-2 text-sm transition-colors {option.value ===
+								$colorField
+									? 'border-primary bg-primary/5 ring-primary/30 ring-2'
+									: 'border-border hover:bg-muted/60'}"
+								role="radio"
+								aria-checked={option.value === $colorField}
+								aria-label={option.label}
+								title={option.label}
+							>
+								<span
+									class="size-4 rounded-full border border-black/10"
+									style:background-color={option.style}
+								></span>
+								<span>{option.label}</span>
+							</button>
+						{/each}
+					</div>
+					<Description class="text-muted-foreground text-xs">{colorFieldDescription}</Description>
 				{/snippet}
 			</Control>
 			<FieldErrors class="text-destructive text-sm" />

@@ -6,19 +6,16 @@
 	import { formatCurrencyYen, resolveLocale } from '$lib/locale';
 	import { m } from '$lib/paraglide/messages.js';
 	import { getLocale } from '$lib/paraglide/runtime';
+	import {
+		getFallbackSubscriptionColor,
+		getSubscriptionColorStyle
+	} from '$lib/subscription-colors';
 	import type {
 		AnalyticsPeriod,
+		SubscriptionAnalyticsItem,
 		SubscriptionAnalyticsSnapshot
 	} from '$lib/server/subscription-analytics';
 	import { ChartPie, CreditCard } from 'lucide-svelte';
-
-	const CHART_COLORS = [
-		'var(--chart-1)',
-		'var(--chart-2)',
-		'var(--chart-3)',
-		'var(--chart-4)',
-		'var(--chart-5)'
-	];
 
 	let { data } = $props<{
 		data: {
@@ -35,10 +32,10 @@
 	);
 	const totalDisplay = $derived(formatCurrencyYen(summary.total, locale));
 	const chartSegments = $derived.by(() =>
-		summary.items.map((item, index) => ({
+		summary.items.map((item: SubscriptionAnalyticsItem, index: number) => ({
 			label: item.serviceName,
 			value: item.amount,
-			color: CHART_COLORS[index % CHART_COLORS.length]
+			color: getSubscriptionColorStyle(item.color ?? getFallbackSubscriptionColor(index))
 		}))
 	);
 	const topItem = $derived(summary.items[0] ?? null);
@@ -141,7 +138,9 @@
 						<div class="flex items-center gap-3 py-4">
 							<span
 								class="size-3 shrink-0 rounded-full"
-								style={`background-color: ${CHART_COLORS[index % CHART_COLORS.length]};`}
+								style:background-color={getSubscriptionColorStyle(
+									item.color ?? getFallbackSubscriptionColor(index)
+								)}
 							></span>
 							<div class="min-w-0 flex-1">
 								<p class="truncate font-medium">{item.serviceName}</p>
