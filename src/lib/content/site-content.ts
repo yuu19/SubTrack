@@ -1,5 +1,8 @@
+import type { AppLocale } from '$lib/constant';
 import privacyPolicySource from '../../../docs/プライバシーポリシー.md?raw';
+import privacyPolicySourceEn from '../../../docs/privacy-policy.en.md?raw';
 import termsOfServiceSource from '../../../docs/利用規約.md?raw';
+import termsOfServiceSourceEn from '../../../docs/terms-of-service.en.md?raw';
 
 export type ContentBlock =
 	| {
@@ -21,6 +24,13 @@ export type MarkdownDocument = {
 	title: string;
 	updatedAt: string;
 	sections: ContentSection[];
+};
+
+export type LegalPageCopy = {
+	headTitle: string;
+	headDescription: string;
+	eyebrow: string;
+	updatedLabel: string;
 };
 
 export type FAQItem = {
@@ -67,6 +77,16 @@ const normalizeInline = (value: string) =>
 		.replace(/\[(.*?)\]\((.*?)\)/g, '$1')
 		.trim();
 
+const extractUpdatedAt = (lines: string[]): string => {
+	const updatedAtLine = lines.find(
+		(line) => line.startsWith('最終更新日：') || line.startsWith('Last updated:')
+	);
+
+	if (!updatedAtLine) return '';
+
+	return normalizeInline(updatedAtLine.replace(/^(最終更新日：|Last updated:\s*)/, ''));
+};
+
 const parseListItem = (line: string) => {
 	const orderedMatch = line.match(listPattern);
 	if (orderedMatch) {
@@ -90,8 +110,7 @@ const parseListItem = (line: string) => {
 const parseDocument = (source: string): MarkdownDocument => {
 	const lines = source.split(/\r?\n/);
 	const title = normalizeInline(lines.find((line) => line.startsWith('# '))?.replace(/^#\s+/, '') ?? '');
-	const updatedAt =
-		normalizeInline(lines.find((line) => line.startsWith('最終更新日：'))?.replace('最終更新日：', '') ?? '');
+	const updatedAt = extractUpdatedAt(lines);
 
 	const sections: ContentSection[] = [];
 	let currentSection: ContentSection | null = null;
@@ -163,8 +182,45 @@ const parseDocument = (source: string): MarkdownDocument => {
 	};
 };
 
-export const termsDocument = parseDocument(termsOfServiceSource);
-export const privacyDocument = parseDocument(privacyPolicySource);
+export const termsDocuments: Record<AppLocale, MarkdownDocument> = {
+	ja: parseDocument(termsOfServiceSource),
+	en: parseDocument(termsOfServiceSourceEn)
+};
+
+export const privacyDocuments: Record<AppLocale, MarkdownDocument> = {
+	ja: parseDocument(privacyPolicySource),
+	en: parseDocument(privacyPolicySourceEn)
+};
+
+export const termsPageCopy: Record<AppLocale, LegalPageCopy> = {
+	ja: {
+		headTitle: '利用規約 | SubTrack',
+		headDescription: 'SubTrack の利用規約です。',
+		eyebrow: '利用規約',
+		updatedLabel: '最終更新日'
+	},
+	en: {
+		headTitle: 'Terms of Service | SubTrack',
+		headDescription: 'Read the SubTrack terms of service.',
+		eyebrow: 'Terms of Service',
+		updatedLabel: 'Last updated'
+	}
+};
+
+export const privacyPageCopy: Record<AppLocale, LegalPageCopy> = {
+	ja: {
+		headTitle: 'プライバシーポリシー | SubTrack',
+		headDescription: 'SubTrack のプライバシーポリシーです。',
+		eyebrow: 'プライバシーポリシー',
+		updatedLabel: '最終更新日'
+	},
+	en: {
+		headTitle: 'Privacy Policy | SubTrack',
+		headDescription: 'Read the SubTrack privacy policy.',
+		eyebrow: 'Privacy Policy',
+		updatedLabel: 'Last updated'
+	}
+};
 
 export const faqPageCopy: Record<'ja' | 'en', FAQPageCopy> = {
 	ja: {
