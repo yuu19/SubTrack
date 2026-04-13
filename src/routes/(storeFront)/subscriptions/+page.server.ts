@@ -5,13 +5,12 @@ import { subscriptionSchema } from '$lib/formSchema';
 import { pushSubscriptionTable, trackedSubscriptionTable } from '$lib/server/db/schema';
 import { and, desc, eq } from 'drizzle-orm';
 import { createAuth } from '$lib/auth';
+import { listActiveEntitlementsForUser } from '$lib/server/entitlements';
 import { computeNextBilling } from '$lib/server/subscriptions';
 import { getCurrentPlan } from '$lib/server/plan';
+import { defaultSubscriptionColor } from '$lib/subscription-colors';
 
-const fetchSubscriptions = async (
-	db: NonNullable<App.Locals['db']>,
-	userId: string
-) => {
+const fetchSubscriptions = async (db: NonNullable<App.Locals['db']>, userId: string) => {
 	return db
 		.select()
 		.from(trackedSubscriptionTable)
@@ -38,6 +37,7 @@ export const load: PageServerLoad = async ({ locals, request }) => {
 	if (!form.data.select) {
 		form.data.select = 'monthly';
 	}
+	form.data.color = defaultSubscriptionColor;
 	form.data.notifyDaysBefore = 3;
 
 	const vapidPublicKey = process.env.VAPID_PUBLIC_KEY ?? '';
@@ -64,7 +64,8 @@ export const load: PageServerLoad = async ({ locals, request }) => {
 					where: (subscription, { eq }) => eq(subscription.referenceId, userId)
 				})
 			: [];
-	const { currentPlan } = getCurrentPlan(billingSubscriptions);
+	const entitlements = userId !== undefined ? await listActiveEntitlementsForUser(db, userId) : [];
+	const { currentPlan } = getCurrentPlan(billingSubscriptions, entitlements);
 
 	const subscriptions =
 		userId !== undefined
@@ -134,7 +135,8 @@ export const actions: Actions = {
 			const billingSubscriptions = await db.query.subscription.findMany({
 				where: (subscription, { eq }) => eq(subscription.referenceId, userId)
 			});
-			const { currentPlan } = getCurrentPlan(billingSubscriptions);
+			const entitlements = await listActiveEntitlementsForUser(db, userId);
+			const { currentPlan } = getCurrentPlan(billingSubscriptions, entitlements);
 
 			if (!currentPlan.isPremium) {
 				const existingSubscriptions = await db.query.trackedSubscriptionTable.findMany({
@@ -170,6 +172,7 @@ export const actions: Actions = {
 			await db.insert(trackedSubscriptionTable).values({
 				userId,
 				serviceName: form.data.text,
+				color: form.data.color,
 				cycle: form.data.select,
 				amount: form.data.number,
 				firstPaymentDate: form.data.datepicker,
@@ -225,6 +228,7 @@ export const actions: Actions = {
 				.update(trackedSubscriptionTable)
 				.set({
 					serviceName: form.data.text,
+					color: form.data.color,
 					cycle: form.data.select,
 					amount: form.data.number,
 					firstPaymentDate: form.data.datepicker,
@@ -233,7 +237,9 @@ export const actions: Actions = {
 					notifyDaysBefore: form.data.notifyDaysBefore ?? defaultNotifyDaysBefore,
 					tags: form.data.tagsinput
 				})
-				.where(and(eq(trackedSubscriptionTable.id, id), eq(trackedSubscriptionTable.userId, userId)));
+				.where(
+					and(eq(trackedSubscriptionTable.id, id), eq(trackedSubscriptionTable.userId, userId))
+				);
 
 			const subscriptions = await fetchSubscriptions(db, userId);
 			return { form, subscriptions };
@@ -265,7 +271,9 @@ export const actions: Actions = {
 		try {
 			await db
 				.delete(trackedSubscriptionTable)
-				.where(and(eq(trackedSubscriptionTable.id, id), eq(trackedSubscriptionTable.userId, userId)));
+				.where(
+					and(eq(trackedSubscriptionTable.id, id), eq(trackedSubscriptionTable.userId, userId))
+				);
 
 			const subscriptions = await fetchSubscriptions(db, userId);
 			return { subscriptions };

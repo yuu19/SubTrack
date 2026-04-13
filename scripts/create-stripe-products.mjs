@@ -43,9 +43,7 @@ loadDotEnv();
 const stripeSecretKey = process.env.SECRET_STRIPE_KEY;
 
 if (!stripeSecretKey) {
-	console.error(
-		'ERROR: Missing Stripe secret key. Set SECRET_STRIPE_KEY.'
-	);
+	console.error('ERROR: Missing Stripe secret key. Set SECRET_STRIPE_KEY.');
 	process.exit(1);
 }
 
@@ -54,9 +52,7 @@ const stripe = new Stripe(stripeSecretKey, {
 });
 
 const readConfig = async (filePath) => {
-	const absolute = path.isAbsolute(filePath)
-		? filePath
-		: path.join(process.cwd(), filePath);
+	const absolute = path.isAbsolute(filePath) ? filePath : path.join(process.cwd(), filePath);
 	const raw = await fsPromises.readFile(absolute, 'utf8');
 	return JSON.parse(raw);
 };
@@ -92,9 +88,12 @@ const findExistingPrice = async (productId, price) => {
 	return list.data.find((existing) => {
 		const sameAmount = existing.unit_amount === price.unit_amount;
 		const sameCurrency = existing.currency === price.currency;
+		const existingRecurring = existing.recurring ?? null;
+		const desiredRecurring = price.recurring ?? null;
 		const sameInterval =
-			existing.recurring?.interval === price.recurring?.interval &&
-			existing.recurring?.interval_count === price.recurring?.interval_count;
+			(existingRecurring === null && desiredRecurring === null) ||
+			(existingRecurring?.interval === desiredRecurring?.interval &&
+				existingRecurring?.interval_count === desiredRecurring?.interval_count);
 		return sameAmount && sameCurrency && sameInterval;
 	});
 };

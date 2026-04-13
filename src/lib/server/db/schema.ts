@@ -1,6 +1,7 @@
 import { sql } from 'drizzle-orm';
 import { APP_LOCALES, DEFAULT_LOCALE, NOTIFICATION_METHODS, ROLE, THEMES } from '../../constant';
-import { sqliteTable, text, integer, index } from 'drizzle-orm/sqlite-core';
+import { defaultSubscriptionColor } from '../../subscription-colors';
+import { sqliteTable, text, integer, index, uniqueIndex } from 'drizzle-orm/sqlite-core';
 export const timestamps = {
 	updatedAt: integer('updated_at', {
 		mode: 'timestamp_ms'
@@ -174,10 +175,37 @@ export const subscription = sqliteTable('subscription', {
 	stripeScheduleId: text('stripe_schedule_id')
 });
 
+export const userEntitlement = sqliteTable(
+	'user_entitlement',
+	{
+		id: text('id').primaryKey(),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id, { onDelete: 'cascade' }),
+		key: text('key').notNull(),
+		source: text('source').notNull(),
+		stripeSessionId: text('stripe_session_id'),
+		stripePaymentIntentId: text('stripe_payment_intent_id'),
+		grantedAt: integer('granted_at', { mode: 'timestamp_ms' }).notNull(),
+		revokedAt: integer('revoked_at', { mode: 'timestamp_ms' }),
+		metadata: text('metadata', { mode: 'json' }),
+		...timestamps
+	},
+	(table) => ({
+		userIdx: index('user_entitlement_user_idx').on(table.userId),
+		keyIdx: index('user_entitlement_key_idx').on(table.key),
+		sessionIdx: uniqueIndex('user_entitlement_stripe_session_idx').on(table.stripeSessionId),
+		paymentIntentIdx: uniqueIndex('user_entitlement_payment_intent_idx').on(
+			table.stripePaymentIntentId
+		)
+	})
+);
+
 export const trackedSubscriptionTable = sqliteTable('tracked_subscription', {
 	id: integer('id').primaryKey(),
 	userId: text('user_id').references(() => user.id, { onDelete: 'set null' }),
 	serviceName: text('service_name').notNull(),
+	color: text('color').notNull().default(defaultSubscriptionColor),
 	cycle: text('cycle').notNull(),
 	amount: integer('amount').notNull(),
 	firstPaymentDate: text('first_payment_date').notNull(),

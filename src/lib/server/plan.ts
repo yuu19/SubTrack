@@ -1,5 +1,10 @@
 import * as schema from './db/schema';
 import {
+	PREMIUM_LIFETIME_ENTITLEMENT_KEY,
+	type UserEntitlementRecord,
+	hasActiveEntitlement
+} from './entitlements';
+import {
 	isActiveOrTrialing,
 	isPendingCancel as isPendingCancelUtil,
 	toTimestamp
@@ -13,6 +18,8 @@ export type CurrentPlan = {
 	isPendingCancel: boolean;
 	status: string | null;
 	accessEndsAt: number | null;
+	hasSubscriptionAccess: boolean;
+	hasLifetimeEntitlement: boolean;
 };
 
 const FREE_PLAN_NAME = 'Free';
@@ -53,44 +60,66 @@ const pickCurrentSubscription = (
 
 export const resolveCurrentPlan = (
 	subscription: SubscriptionRecord | null | undefined,
+	entitlements: UserEntitlementRecord[] | null | undefined = [],
 	now = Date.now()
 ): CurrentPlan => {
+	const hasLifetimeEntitlement = hasActiveEntitlement(
+		entitlements,
+		PREMIUM_LIFETIME_ENTITLEMENT_KEY
+	);
+
 	if (!subscription) {
 		return {
-			planName: FREE_PLAN_NAME,
-			isPremium: false,
+			planName: hasLifetimeEntitlement ? 'Premium Lifetime' : FREE_PLAN_NAME,
+			isPremium: hasLifetimeEntitlement,
 			isPendingCancel: false,
-			status: null,
-			accessEndsAt: null
+			status: hasLifetimeEntitlement ? 'active' : null,
+			accessEndsAt: null,
+			hasSubscriptionAccess: false,
+			hasLifetimeEntitlement
 		};
 	}
 
 	const accessEndsAt = getAccessEnd(subscription);
 	const isSubscriptionActive = isActiveOrTrialing(subscription);
 	const hasActiveAccess = accessEndsAt !== null ? accessEndsAt > now : isSubscriptionActive;
-	const isActuallyActive =
+	const hasSubscriptionAccess =
 		hasActiveAccess && (isSubscriptionActive || subscription.status === 'canceled');
 	const rawPlanName = subscription.plan ?? FREE_PLAN_NAME;
-	const planName = isActuallyActive ? rawPlanName : FREE_PLAN_NAME;
-	const isPremium = normalizePlanName(planName) !== normalizePlanName(FREE_PLAN_NAME);
+	const planName = hasSubscriptionAccess
+		? rawPlanName
+		: hasLifetimeEntitlement
+			? 'Premium Lifetime'
+			: FREE_PLAN_NAME;
+	const isPremium =
+		hasSubscriptionAccess ||
+		hasLifetimeEntitlement ||
+		normalizePlanName(planName) !== normalizePlanName(FREE_PLAN_NAME);
 	const isPendingCancel =
-		isActuallyActive &&
+		hasSubscriptionAccess &&
 		(isPendingCancelUtil(subscription) || subscription.status === 'canceled');
 
 	return {
 		planName,
 		isPremium,
 		isPendingCancel,
-		status: subscription.status ?? null,
-		accessEndsAt
+		status: hasSubscriptionAccess
+			? (subscription.status ?? null)
+			: hasLifetimeEntitlement
+				? 'active'
+				: null,
+		accessEndsAt: hasSubscriptionAccess ? accessEndsAt : null,
+		hasSubscriptionAccess,
+		hasLifetimeEntitlement
 	};
 };
 
 export const getCurrentPlan = (
 	subscriptions: SubscriptionRecord[] | null | undefined,
+	entitlements: UserEntitlementRecord[] | null | undefined = [],
 	now = Date.now()
 ) => {
 	const subscription = pickCurrentSubscription(subscriptions, now);
-	const currentPlan = resolveCurrentPlan(subscription, now);
+	const currentPlan = resolveCurrentPlan(subscription, entitlements, now);
 	return { subscription, currentPlan };
 };

@@ -1,4 +1,5 @@
 import type { PageServerLoad } from './$types';
+import { listActiveEntitlementsForUser } from '$lib/server/entitlements';
 import { getCurrentPlan } from '$lib/server/plan';
 
 export const load: PageServerLoad = async ({ locals, parent }) => {
@@ -17,8 +18,9 @@ export const load: PageServerLoad = async ({ locals, parent }) => {
 	const subscriptions = await db.query.subscription.findMany({
 		where: (subscription, { eq }) => eq(subscription.referenceId, user.id)
 	});
+	const entitlements = await listActiveEntitlementsForUser(db, user.id);
 
-	const { subscription, currentPlan } = getCurrentPlan(subscriptions);
+	const { subscription, currentPlan } = getCurrentPlan(subscriptions, entitlements);
 
 	return { subscription, currentPlan };
 };
