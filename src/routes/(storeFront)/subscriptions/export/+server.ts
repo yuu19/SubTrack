@@ -1,5 +1,6 @@
 import type { RequestHandler } from './$types';
 import { createAuth } from '$lib/auth';
+import { listActiveEntitlementsForUser } from '$lib/server/entitlements';
 import {
 	UTF8_BOM,
 	buildSubscriptionExportCsv,
@@ -17,7 +18,8 @@ export const GET: RequestHandler = async ({ request, locals: { db } }) => {
 	const billingSubscriptions = await db.query.subscription.findMany({
 		where: (subscription, { eq }) => eq(subscription.referenceId, userId)
 	});
-	const { currentPlan } = getCurrentPlan(billingSubscriptions);
+	const entitlements = await listActiveEntitlementsForUser(db, userId);
+	const { currentPlan } = getCurrentPlan(billingSubscriptions, entitlements);
 
 	if (!currentPlan.isPremium) {
 		error(403, 'premium plan required');

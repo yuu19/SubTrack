@@ -29,19 +29,55 @@
 		page.url;
 		return resolveLocale(getLocale());
 	});
+	const lifetimeInfoLabel = $derived(
+		currentLocale === 'ja'
+			? 'Premium 買い切りをご利用中です。継続課金はありません。'
+			: 'You have Premium Lifetime. There is no recurring billing.'
+	);
+	const lifetimeStatusLabel = $derived(currentLocale === 'ja' ? '購入済み' : 'Purchased');
+	const lifetimePurchasedLabel = $derived(
+		currentLocale === 'ja' ? '買い切り購入済み' : 'Lifetime purchased'
+	);
+	const lifetimeCheckoutErrorLabel = $derived(
+		currentLocale === 'ja'
+			? '買い切りのチェックアウト作成に失敗しました。'
+			: 'Failed to create the lifetime checkout session.'
+	);
+	const lifetimeCtaLabel = $derived(
+		currentLocale === 'ja' ? '6,000円で買い切る' : 'Buy lifetime for ¥6,000'
+	);
+	const lifetimeCaptionLabel = $derived(
+		currentLocale === 'ja'
+			? '一度の支払いで Premium 機能を継続利用できます。'
+			: 'Pay once and keep Premium features available over time.'
+	);
 
 	const isPremium = $derived(currentPlan?.isPremium ?? false);
+	const hasSubscriptionAccess = $derived(currentPlan?.hasSubscriptionAccess ?? false);
+	const hasLifetimeEntitlement = $derived(currentPlan?.hasLifetimeEntitlement ?? false);
 	const isPendingCancel = $derived(currentPlan?.isPendingCancel ?? false);
-	const planLabel = $derived(isPremium ? m.plan_premium() : m.plan_free());
+	const planLabel = $derived(
+		currentPlan?.planName ?? (isPremium ? m.plan_premium() : m.plan_free())
+	);
 	const statusLabel = $derived(
-		isPendingCancel && isPremium
-			? getSubscriptionStatusLabel('pending_cancel', currentLocale)
-			: getSubscriptionStatusLabel(subscription?.status, currentLocale)
+		hasLifetimeEntitlement && !hasSubscriptionAccess
+			? lifetimeStatusLabel
+			: isPendingCancel && isPremium
+				? getSubscriptionStatusLabel('pending_cancel', currentLocale)
+				: getSubscriptionStatusLabel(subscription?.status, currentLocale)
 	);
 	const periodEndLabel = $derived(formatDate(subscription?.periodEnd ?? subscription?.trialEnd));
 	const nextBillingLabel = $derived(formatDate(subscription?.periodEnd ?? subscription?.trialEnd));
-	const hasBillingDate = $derived(Boolean(subscription?.periodEnd ?? subscription?.trialEnd));
-	const billingAmountLabel = $derived(isPremium ? formatCurrencyYen(5000, currentLocale) : '—');
+	const hasBillingDate = $derived(
+		hasSubscriptionAccess && Boolean(subscription?.periodEnd ?? subscription?.trialEnd)
+	);
+	const billingAmountLabel = $derived.by(() => {
+		if (!hasSubscriptionAccess) return '—';
+		if (subscription?.billingInterval === 'year') {
+			return formatCurrencyYen(3000, currentLocale);
+		}
+		return formatCurrencyYen(300, currentLocale);
+	});
 	const premiumPlanName = 'Premium';
 	const premiumFeatures = $derived([
 		{ label: m.premium_feature_subscription_limit(), free: '5', premium: '∞' },
@@ -55,6 +91,7 @@
 
 	let isPremiumModalOpen = $state(false);
 	let isUpgrading = $state(false);
+	let isCreatingLifetimeCheckout = $state(false);
 	let isRestoringCancel = $state(false);
 
 	onMount(() => {
@@ -102,6 +139,50 @@
 			toast.error(m.settings_billing_portal_error());
 		} finally {
 			isUpgrading = false;
+		}
+	}
+
+	async function handleLifetimeCheckout() {
+		if (isCreatingLifetimeCheckout) return;
+		isCreatingLifetimeCheckout = true;
+		try {
+			const response = await fetch('/api/stripe/lifetime-checkout', {
+				method: 'POST',
+				headers: {
+					'content-type': 'application/json'
+				},
+				body: JSON.stringify({
+					returnPath: page.url.pathname
+				})
+			});
+
+			const payload = (await response.json().catch(() => null)) as {
+				url?: string | null;
+				alreadyPurchased?: boolean;
+			} | null;
+
+			if (!response.ok) {
+				toast.error(lifetimeCheckoutErrorLabel);
+				return;
+			}
+
+			if (payload?.alreadyPurchased) {
+				toast.success(lifetimePurchasedLabel);
+				await invalidateAll();
+				return;
+			}
+
+			if (payload?.url) {
+				window.location.href = payload.url;
+				return;
+			}
+
+			toast.error(lifetimeCheckoutErrorLabel);
+		} catch (error) {
+			console.error('Failed to create lifetime checkout', error);
+			toast.error(lifetimeCheckoutErrorLabel);
+		} finally {
+			isCreatingLifetimeCheckout = false;
 		}
 	}
 
@@ -175,7 +256,9 @@
 		<div class="flex flex-col gap-1">
 			<h2 class="text-base font-semibold md:text-lg">{m.settings_plan_info_title()}</h2>
 			<p class="text-muted-foreground text-sm">
-				{#if isPremium}
+				{#if hasLifetimeEntitlement && !hasSubscriptionAccess}
+					{lifetimeInfoLabel}
+				{:else if isPremium}
 					{m.settings_plan_info_desc_premium()}
 				{:else}
 					{m.settings_plan_info_desc_free()}
@@ -219,30 +302,38 @@
 					<span class="text-muted-foreground">{m.settings_plan_status_label()}</span>
 					<span class="font-medium">{statusLabel}</span>
 				</div>
-				<div class="flex items-center justify-between px-4 py-3">
-					<span class="text-muted-foreground">{m.settings_plan_expiry_label()}</span>
-					<span class="font-medium">{periodEndLabel}</span>
-				</div>
-				<div class="flex items-center justify-between px-4 py-3">
-					<span class="text-muted-foreground">
-						{isPendingCancel
-							? m.settings_plan_end_date_label()
-							: m.settings_plan_next_billing_label()}
-					</span>
-					<span class="font-medium">{nextBillingLabel}</span>
-				</div>
-				<div class="flex items-center justify-between px-4 py-3">
-					<span class="text-muted-foreground">{m.settings_plan_billing_amount_label()}</span>
-					<span class="font-medium">{billingAmountLabel}</span>
-				</div>
+				{#if hasSubscriptionAccess}
+					<div class="flex items-center justify-between px-4 py-3">
+						<span class="text-muted-foreground">{m.settings_plan_expiry_label()}</span>
+						<span class="font-medium">{periodEndLabel}</span>
+					</div>
+					<div class="flex items-center justify-between px-4 py-3">
+						<span class="text-muted-foreground">
+							{isPendingCancel
+								? m.settings_plan_end_date_label()
+								: m.settings_plan_next_billing_label()}
+						</span>
+						<span class="font-medium">{nextBillingLabel}</span>
+					</div>
+					<div class="flex items-center justify-between px-4 py-3">
+						<span class="text-muted-foreground">{m.settings_plan_billing_amount_label()}</span>
+						<span class="font-medium">{billingAmountLabel}</span>
+					</div>
+				{/if}
 			</div>
 			<div class="mt-6 flex flex-col items-center gap-3">
-				<Button class="w-full sm:w-auto" onclick={handleManagePlan} disabled={isUpgrading}>
-					{#if isUpgrading}
-						<Loader2 class="size-4 animate-spin" />
-					{/if}
-					{m.settings_plan_manage_button()}
-				</Button>
+				{#if hasSubscriptionAccess}
+					<Button class="w-full sm:w-auto" onclick={handleManagePlan} disabled={isUpgrading}>
+						{#if isUpgrading}
+							<Loader2 class="size-4 animate-spin" />
+						{/if}
+						{m.settings_plan_manage_button()}
+					</Button>
+				{:else if hasLifetimeEntitlement}
+					<div class="rounded-full border px-4 py-2 text-sm font-medium">
+						{lifetimePurchasedLabel}
+					</div>
+				{/if}
 				<span class="text-muted-foreground text-xs">{m.settings_plan_refund_policy()}</span>
 			</div>
 		{/if}
@@ -364,8 +455,25 @@
 						{/if}
 						{m.premium_modal_cta()}
 					</Button>
+					<Button
+						class="w-full"
+						variant="outline"
+						onclick={handleLifetimeCheckout}
+						disabled={isCreatingLifetimeCheckout}
+					>
+						{#if isCreatingLifetimeCheckout}
+							<Loader2 class="size-4 animate-spin" />
+						{/if}
+						{lifetimeCtaLabel}
+					</Button>
+					<p class="text-muted-foreground text-center text-xs">
+						{lifetimeCaptionLabel}
+					</p>
 					<div class="text-muted-foreground flex items-center justify-center gap-6 text-xs">
-						<a class="underline-offset-4 hover:underline" href={resolve('/commercial-transactions')}>
+						<a
+							class="underline-offset-4 hover:underline"
+							href={resolve('/commercial-transactions')}
+						>
 							特定商取引法に基づく表記
 						</a>
 						<a class="underline-offset-4 hover:underline" href={resolve('/terms')}>
