@@ -6,10 +6,13 @@
 	import { resolveLocale } from '$lib/locale';
 	import { getLocale } from '$lib/paraglide/runtime';
 	import type { trackedSubscriptionTable } from '$lib/server/db/schema';
+	import {
+		getFallbackSubscriptionColor,
+		resolveSubscriptionColor,
+		type SubscriptionColor
+	} from '$lib/subscription-colors';
 
 	type Subscription = typeof trackedSubscriptionTable.$inferSelect;
-	const colorPalette = ['blue', 'green', 'red', 'yellow', 'purple', 'orange'] as const;
-	type EventColor = (typeof colorPalette)[number];
 	const cycleToMonths: Record<string, number> = {
 		monthly: 1,
 		quarterly: 3,
@@ -21,7 +24,7 @@
 		title: string;
 		date: string;
 		amount: number;
-		color: EventColor;
+		color: SubscriptionColor;
 		description?: string | null;
 	};
 
@@ -58,7 +61,7 @@
 				}
 			}
 
-			const color = colorPalette[index % colorPalette.length];
+			const color = resolveSubscriptionColor(sub.color, getFallbackSubscriptionColor(index));
 			while (occurrence.isSame(rangeEnd, 'day') || occurrence.isBefore(rangeEnd, 'day')) {
 				events.push({
 					id: `sub-${sub.id}-${occurrence.format('YYYY-MM-DD')}`,

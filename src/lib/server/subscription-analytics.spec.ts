@@ -8,9 +8,9 @@ describe('subscription analytics', () => {
 
 	it('normalizes monthly and yearly values by cycle', () => {
 		const analytics = buildSubscriptionAnalytics([
-			{ serviceName: 'Netflix', cycle: 'monthly', amount: 1000 },
-			{ serviceName: 'Notion', cycle: 'yearly', amount: 12000 },
-			{ serviceName: 'Figma', cycle: 'quarterly', amount: 9000 }
+			{ serviceName: 'Netflix', color: 'red', cycle: 'monthly', amount: 1000 },
+			{ serviceName: 'Notion', color: 'blue', cycle: 'yearly', amount: 12000 },
+			{ serviceName: 'Figma', color: 'purple', cycle: 'quarterly', amount: 9000 }
 		]);
 
 		expect(analytics.monthly.total).toBe(5000);
@@ -29,16 +29,28 @@ describe('subscription analytics', () => {
 
 	it('merges duplicate service names into a single breakdown row', () => {
 		const analytics = buildSubscriptionAnalytics([
-			{ serviceName: 'Spotify', cycle: 'monthly', amount: 980 },
-			{ serviceName: 'Spotify', cycle: 'yearly', amount: 12000 }
+			{ serviceName: 'Spotify', color: 'green', cycle: 'monthly', amount: 980 },
+			{ serviceName: 'Spotify', color: 'yellow', cycle: 'yearly', amount: 12000 }
 		]);
 
 		expect(analytics.monthly.items).toHaveLength(1);
 		expect(analytics.monthly.items[0]).toMatchObject({
 			serviceName: 'Spotify',
+			color: 'green',
 			amount: 1980,
 			subscriptionCount: 2
 		});
 		expect(analytics.yearly.items[0].amount).toBe(23760);
+	});
+
+	it('keeps the first available color for grouped services', () => {
+		const analytics = buildSubscriptionAnalytics([
+			{ serviceName: 'YouTube', color: 'red', cycle: 'monthly', amount: 1280 },
+			{ serviceName: 'YouTube', color: 'blue', cycle: 'monthly', amount: 500 },
+			{ serviceName: 'Dropbox', color: null, cycle: 'monthly', amount: 1500 }
+		]);
+
+		expect(analytics.monthly.items.find((item) => item.serviceName === 'YouTube')?.color).toBe('red');
+		expect(analytics.monthly.items.find((item) => item.serviceName === 'Dropbox')?.color).toBeNull();
 	});
 });

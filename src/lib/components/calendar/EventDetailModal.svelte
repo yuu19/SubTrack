@@ -1,10 +1,13 @@
 <script lang="ts">
 	import { formatCalendarDate, formatCurrencyYen } from '$lib/locale';
+	import { m } from '$lib/paraglide/messages.js';
+	import { getSubscriptionColorStyle, type SubscriptionColor } from '$lib/subscription-colors';
 
 	type CalendarEvent = {
 		id: string;
 		title: string;
 		amount: number;
+		color: SubscriptionColor;
 	};
 
 	let { isOpen, locale, date, events, onClose } = $props();
@@ -39,12 +42,10 @@
 		}
 	}
 
-	const paymentInfoLabel = $derived(locale === 'en' ? 'Payments' : '支払い情報');
-	const closeLabel = $derived(locale === 'en' ? 'Close' : '閉じる');
-	const scheduledPaymentsLabel = $derived(locale === 'en' ? 'Scheduled payments' : '支払い予定');
-	const emptyDayLabel = $derived(
-		locale === 'en' ? 'No scheduled payments for this day.' : 'この日の支払い予定はありません。'
-	);
+	const paymentInfoLabel = $derived(m.calendar_detail_title());
+	const closeLabel = $derived(m.calendar_detail_close());
+	const scheduledPaymentsLabel = $derived(m.calendar_detail_scheduled_payments());
+	const emptyDayLabel = $derived(m.calendar_detail_empty());
 </script>
 
 {#if isOpen}
@@ -135,7 +136,13 @@
 									? 'border-border border-b'
 									: ''}"
 							>
-								<span class="text-foreground truncate text-sm">{item.title}</span>
+								<div class="flex min-w-0 items-center gap-2">
+									<span
+										class="size-2.5 shrink-0 rounded-full"
+										style:background-color={getSubscriptionColorStyle(item.color)}
+									></span>
+									<span class="text-foreground truncate text-sm">{item.title}</span>
+								</div>
 								<span class="text-foreground text-sm font-semibold">
 									{formatCurrency(item.amount)}
 								</span>
