@@ -8,18 +8,14 @@ import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 import { sveltekitCookies } from 'better-auth/svelte-kit';
 import { getRequestEvent } from '$app/server';
 import { parseAdminUserIds } from '$lib/server/admin';
+import { handleStripeLifetimeCheckoutEvent } from '$lib/server/stripe-lifetime';
+import {
+	PREMIUM_ANNUAL_LOOKUP_KEY,
+	PREMIUM_MONTHLY_LOOKUP_KEY,
+	TEST_DAILY_LOOKUP_KEY
+} from '$lib/server/stripe-products';
 import * as schema from './server/db/schema';
 type Schema = typeof import('./server/db/schema');
-
-/**
- * stripeの管理画面から作成した商品の商品ID
- * annualは割引の場合(後で設定するかも)
- */
-const PREMIUM_PRICE_ID = {
-	default: 'price_1SjMfPFomgCAvvs0P7MKz8GT',
-	annual: "price_1SjMfPFomgCAvvs0V4y8b8lG",
-} as const;
-const TEST_PRICE_LOOKUP_KEY = 'test_daily';
 
 const stripeSecretKey = process.env.SECRET_STRIPE_KEY;
 const authBaseUrl =
@@ -79,7 +75,7 @@ export function createAuth(
 		},
 		socialProviders: {
 			google: {
-				prompt: "select_account", 
+				prompt: 'select_account',
 				clientId: process.env.GOOGLE_CLIENT_ID!,
 				clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
 				redirectURI: resolveAuthRedirectURI(options.requestOrigin, 'google')
@@ -94,6 +90,9 @@ export function createAuth(
 				stripeClient,
 				stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET!,
 				createCustomerOnSignUp: true,
+				onEvent: async (event) => {
+					await handleStripeLifetimeCheckoutEvent(db, event);
+				},
 				subscription: {
 					enabled: true,
 					allowReTrialsForDifferentPlans: true,
@@ -108,15 +107,15 @@ export function createAuth(
 						},
 						{
 							name: 'Premium',
-							priceId: PREMIUM_PRICE_ID.default,
-							annualDiscountPriceId: PREMIUM_PRICE_ID.annual,
+							lookupKey: PREMIUM_MONTHLY_LOOKUP_KEY,
+							annualDiscountLookupKey: PREMIUM_ANNUAL_LOOKUP_KEY,
 							freeTrial: {
 								days: 7
 							}
 						},
 						{
 							name: 'Test 1 Day',
-							lookupKey: TEST_PRICE_LOOKUP_KEY,
+							lookupKey: TEST_DAILY_LOOKUP_KEY,
 							freeTrial: {
 								days: 1
 							}

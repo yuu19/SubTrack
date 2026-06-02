@@ -59,6 +59,51 @@ const readConfig = async (filePath) => {
 
 const normalizeLookup = (value) => (value ? String(value).trim() : undefined);
 
+const normalizeRecurring = (recurring) =>
+	recurring
+		? {
+				interval: recurring.interval,
+				interval_count: recurring.interval_count ?? 1
+			}
+		: null;
+
+const formatRecurring = (recurring) => {
+	const normalized = normalizeRecurring(recurring);
+	if (!normalized) return 'one_time';
+	return `${normalized.interval}:${normalized.interval_count}`;
+};
+
+const assertPriceMatchesConfig = (existing, desired) => {
+	const errors = [];
+	const desiredLookupKey = normalizeLookup(desired.lookup_key);
+	const existingLookupKey = normalizeLookup(existing.lookup_key);
+
+	if (existing.active === false) {
+		errors.push('existing price is inactive');
+	}
+	if (desiredLookupKey && existingLookupKey !== desiredLookupKey) {
+		errors.push(`lookup_key=${existingLookupKey ?? 'none'}`);
+	}
+	if (existing.unit_amount !== desired.unit_amount) {
+		errors.push(`unit_amount=${existing.unit_amount ?? 'null'}`);
+	}
+	if (existing.currency !== desired.currency) {
+		errors.push(`currency=${existing.currency}`);
+	}
+	if (formatRecurring(existing.recurring) !== formatRecurring(desired.recurring)) {
+		errors.push(`recurring=${formatRecurring(existing.recurring)}`);
+	}
+
+	if (errors.length > 0) {
+		const label = desiredLookupKey ? `lookup_key "${desiredLookupKey}"` : `price "${existing.id}"`;
+		throw new Error(
+			`Existing Stripe price for ${label} does not match scripts/stripe-products.json: ${errors.join(
+				', '
+			)}`
+		);
+	}
+};
+
 const findExistingProduct = async (product) => {
 	if (product.id) {
 		return stripe.products.retrieve(product.id);
@@ -117,6 +162,7 @@ const ensureProduct = async (product) => {
 const ensurePrice = async (productId, price) => {
 	const existing = await findExistingPrice(productId, price);
 	if (existing) {
+		assertPriceMatchesConfig(existing, price);
 		return { price: existing, created: false };
 	}
 	if (dryRun) {

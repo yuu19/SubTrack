@@ -1,4 +1,11 @@
 import Stripe from 'stripe';
+import {
+	PREMIUM_LIFETIME_LOOKUP_KEY,
+	PREMIUM_LIFETIME_PRICE_AMOUNT,
+	PREMIUM_LIFETIME_PRICE_CURRENCY
+} from './stripe-products';
+
+export { PREMIUM_LIFETIME_LOOKUP_KEY, PREMIUM_LIFETIME_PRICE_AMOUNT } from './stripe-products';
 
 const stripeSecretKey = process.env.SECRET_STRIPE_KEY;
 const stripeWebhookSecret =
@@ -8,10 +15,13 @@ const stripeClient = stripeSecretKey
 	? new Stripe(stripeSecretKey, { apiVersion: '2025-11-17.clover' })
 	: null;
 
-export const PREMIUM_LIFETIME_LOOKUP_KEY = 'premium_lifetime';
-export const PREMIUM_LIFETIME_PRICE_AMOUNT = 6000;
+const lookupKeyCache = new Map<string, Stripe.Price>();
 
-const lookupKeyCache = new Map<string, string>();
+type ExpectedStripePrice = {
+	unitAmount?: number;
+	currency?: string;
+	recurring?: boolean;
+};
 
 export function getStripeClient() {
 	return stripeClient;
@@ -21,7 +31,22 @@ export function getStripeWebhookSecret() {
 	return stripeWebhookSecret;
 }
 
-export async function getPriceIdByLookupKey(lookupKey: string) {
+export function getStripePriceMismatch(price: Stripe.Price, expected: ExpectedStripePrice) {
+	const mismatches: string[] = [];
+	if (expected.unitAmount !== undefined && price.unit_amount !== expected.unitAmount) {
+		mismatches.push(`unit_amount=${price.unit_amount ?? 'null'}`);
+	}
+	if (expected.currency !== undefined && price.currency !== expected.currency.toLowerCase()) {
+		mismatches.push(`currency=${price.currency}`);
+	}
+	if (expected.recurring !== undefined && Boolean(price.recurring) !== expected.recurring) {
+		mismatches.push(`recurring=${price.recurring ? price.recurring.interval : 'none'}`);
+	}
+
+	return mismatches;
+}
+
+export async function getPriceByLookupKey(lookupKey: string) {
 	if (!stripeClient) return null;
 	if (lookupKeyCache.has(lookupKey)) {
 		return lookupKeyCache.get(lookupKey) ?? null;
@@ -32,11 +57,30 @@ export async function getPriceIdByLookupKey(lookupKey: string) {
 		active: true,
 		limit: 1
 	});
-	const priceId = list.data[0]?.id ?? null;
-	if (priceId) {
-		lookupKeyCache.set(lookupKey, priceId);
+	const price = list.data[0] ?? null;
+	if (price) {
+		lookupKeyCache.set(lookupKey, price);
 	}
-	return priceId;
+	return price;
+}
+
+export async function getPriceIdByLookupKey(lookupKey: string, expected?: ExpectedStripePrice) {
+	const price = await getPriceByLookupKey(lookupKey);
+	if (!price) return null;
+
+	if (expected) {
+		const mismatches = getStripePriceMismatch(price, expected);
+		if (mismatches.length > 0) {
+			console.error('[stripe] price lookup key resolved to an unexpected price', {
+				lookupKey,
+				priceId: price.id,
+				mismatches
+			});
+			return null;
+		}
+	}
+
+	return price.id;
 }
 
 export async function createOneTimeCheckoutUrl({
@@ -61,7 +105,11 @@ export async function createOneTimeCheckoutUrl({
 		return null;
 	}
 
-	const priceId = await getPriceIdByLookupKey(lookupKey);
+	const priceId = await getPriceIdByLookupKey(lookupKey, {
+		unitAmount: PREMIUM_LIFETIME_PRICE_AMOUNT,
+		currency: PREMIUM_LIFETIME_PRICE_CURRENCY,
+		recurring: false
+	});
 	if (!priceId) {
 		console.error('[stripe] failed to resolve price by lookup key', lookupKey);
 		return null;

@@ -1,15 +1,8 @@
 import type { RequestHandler } from './$types';
 import { error, json } from '@sveltejs/kit';
 import Stripe from 'stripe';
-import {
-	grantStripeCheckoutEntitlement,
-	PREMIUM_LIFETIME_ENTITLEMENT_KEY
-} from '$lib/server/entitlements';
-import {
-	getStripeClient,
-	getStripeWebhookSecret,
-	PREMIUM_LIFETIME_LOOKUP_KEY
-} from '$lib/server/stripe';
+import { handlePremiumLifetimeCheckoutSessionCompleted } from '$lib/server/stripe-lifetime';
+import { getStripeClient, getStripeWebhookSecret } from '$lib/server/stripe';
 
 export const POST: RequestHandler = async ({ request, locals }) => {
 	const stripeClient = getStripeClient();
@@ -36,27 +29,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
 	if (event.type === 'checkout.session.completed') {
 		const session = event.data.object as Stripe.Checkout.Session;
-		const metadata = session.metadata ?? {};
-		const isOneTimePurchase = metadata.purchase_type === 'one_time';
-		const isPremiumLifetime =
-			metadata.entitlement === PREMIUM_LIFETIME_ENTITLEMENT_KEY ||
-			metadata.lookup_key === PREMIUM_LIFETIME_LOOKUP_KEY;
-		const userId = metadata.userId;
-
-		if (isOneTimePurchase && isPremiumLifetime && userId && session.payment_status === 'paid') {
-			await grantStripeCheckoutEntitlement(locals.db, {
-				userId,
-				key: PREMIUM_LIFETIME_ENTITLEMENT_KEY,
-				stripeSessionId: session.id,
-				stripePaymentIntentId:
-					typeof session.payment_intent === 'string' ? session.payment_intent : null,
-				metadata: {
-					mode: session.mode,
-					lookupKey: metadata.lookup_key ?? PREMIUM_LIFETIME_LOOKUP_KEY,
-					customerId: typeof session.customer === 'string' ? session.customer : null
-				}
-			});
-		}
+		await handlePremiumLifetimeCheckoutSessionCompleted(locals.db, session);
 	}
 
 	return json({ received: true });
