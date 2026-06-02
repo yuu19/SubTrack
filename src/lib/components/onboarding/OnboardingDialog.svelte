@@ -18,7 +18,6 @@
 		alwaysShow?: boolean;
 	};
 
-	type FeatureValue = string | number | boolean;
 	type OnboardingCopy = {
 		tutorialBadge: string;
 		tutorialProgressLabel: string;
@@ -92,21 +91,19 @@
 					badge: 'サブスク一覧',
 					previewAlt: 'SubTrackのサブスク一覧画面',
 					previewLabel: '一覧画面',
-					previewTitle: '登録したサブスクをそのまま確認',
-					previewHintMobile: '一覧と操作ボタンが見えるように調整しています。',
-					previewHint:
-						'上部の操作ボタンとカード全体が見えるよう、PC向けの横長バランスにしています。'
+					previewTitle: '支払い額・周期・通知日を一覧で確認',
+					previewHintMobile: '登録後すぐに、支払い予定とタグを見比べられます。',
+					previewHint: '登録後すぐに、月額・年額の支払い予定とタグを見比べられます。'
 				},
 				{
 					title: '支払い日をカレンダーで確認',
-					description:
-						'支払いが重なる時期を見つけやすくなり、出費の多い月を前もって把握できます。',
+					description: '支払いが重なる時期を見つけやすくなり、出費の多い月を前もって把握できます。',
 					badge: '支払いカレンダー',
 					previewAlt: 'SubTrackのカレンダー画面',
 					previewLabel: 'カレンダー',
 					previewTitle: '1か月の支払い予定をまとめて確認',
-					previewHintMobile: '日付と予定の位置関係が見やすい高さです。',
-					previewHint: '横幅を活かしつつ、予定ラベルと日付の密度が崩れない高さに抑えています。'
+					previewHintMobile: '支払いが集中する日を、カレンダー上で確認できます。',
+					previewHint: '支払いが集中する日や出費が重なる週を、カレンダー上で確認できます。'
 				},
 				{
 					title: '通知で見落としを防ぐ',
@@ -115,9 +112,9 @@
 					badge: 'リマインダー',
 					previewAlt: 'SubTrackのPush通知ガイド画面',
 					previewLabel: '通知設定',
-					previewTitle: '通知の設定手順を画面で確認',
-					previewHintMobile: '通知の設定手順が見やすい位置で表示されます。',
-					previewHint: '説明ブロックとCTAが見える位置を優先して、縦方向に少し余裕を持たせています。'
+					previewTitle: '更新前に確認するタイミングを設定',
+					previewHintMobile: '通知を有効にすると、更新前に確認できます。',
+					previewHint: '通知を有効にすると、更新前に確認して解約や見直しの判断をしやすくなります。'
 				},
 				{
 					title: 'ホーム画面からすぐ開ける',
@@ -126,10 +123,9 @@
 					badge: 'PWA / Push',
 					previewAlt: 'SubTrackのPushガイド下部画面',
 					previewLabel: 'PWA / Push',
-					previewTitle: '設定後の使い方まで続けて確認できる',
-					previewHintMobile: '縦方向の情報量を保ったまま詰めています。',
-					previewHint:
-						'スマホ寄りの情報量に合わせて、縦長に寄せたプレビューで読める密度を保っています。'
+					previewTitle: 'ホーム画面追加と通知設定を確認',
+					previewHintMobile: 'スマホから開きやすくして、通知設定も続けて確認できます。',
+					previewHint: 'ホーム画面から素早く開けるようにして、通知設定も同じ流れで確認できます。'
 				}
 			]
 		},
@@ -150,7 +146,8 @@
 				'Remove ads and keep managing subscriptions without limits on registrations or reminder settings.',
 			planRoleLabel: 'Who each plan is for',
 			planFreeTitle: 'Free',
-			planFreeDescription: 'For lighter usage when you only need to manage a small set of subscriptions.',
+			planFreeDescription:
+				'For lighter usage when you only need to manage a small set of subscriptions.',
 			planPremiumTitle: 'Premium',
 			planPremiumDescription:
 				'For people who want to keep many subscriptions organized and maintained over time.',
@@ -170,10 +167,10 @@
 					badge: 'Subscriptions',
 					previewAlt: 'SubTrack subscriptions screen',
 					previewLabel: 'List view',
-					previewTitle: 'Review everything you added at a glance',
-					previewHintMobile: 'Framed to keep the list and action buttons visible.',
+					previewTitle: 'Check amount, cycle, and reminder dates in one list',
+					previewHintMobile: 'Compare upcoming payments and tags as soon as you add them.',
 					previewHint:
-						'Sized to keep the top controls and the full card layout readable on desktop.'
+						'Compare monthly and annual payment schedules, reminder timing, and tags as soon as you add them.'
 				},
 				{
 					title: 'See renewal dates on a calendar',
@@ -183,8 +180,8 @@
 					previewAlt: 'SubTrack calendar screen',
 					previewLabel: 'Calendar',
 					previewTitle: 'Scan upcoming payments month by month',
-					previewHintMobile: 'Tuned so date placement and event positions stay easy to read.',
-					previewHint: 'Keeps the layout wide enough for labels while preserving readable density.'
+					previewHintMobile: 'Spot crowded billing days directly on the calendar.',
+					previewHint: 'Spot crowded billing days and heavier weeks directly on the calendar.'
 				},
 				{
 					title: 'Avoid missed renewals with reminders',
@@ -193,9 +190,10 @@
 					badge: 'Reminders',
 					previewAlt: 'SubTrack push guide screen',
 					previewLabel: 'Notification setup',
-					previewTitle: 'Follow the notification flow on a real screen',
-					previewHintMobile: 'Prioritizes the notification path so the key controls stay visible.',
-					previewHint: 'Leaves enough vertical room for the explanation blocks and the CTA.'
+					previewTitle: 'Choose when to check before a renewal',
+					previewHintMobile: 'Turn on reminders to review renewals before they happen.',
+					previewHint:
+						'Turn on reminders so you can review, cancel, or adjust a subscription before it renews.'
 				},
 				{
 					title: 'Launch quickly with PWA',
@@ -204,9 +202,10 @@
 					badge: 'PWA / Push',
 					previewAlt: 'Lower section of the SubTrack push guide',
 					previewLabel: 'PWA / Push',
-					previewTitle: 'See the post-setup flow as it is',
-					previewHintMobile: 'Keeps the vertical information density readable on smaller screens.',
-					previewHint: 'Uses a taller preview so the mobile-oriented content still reads clearly.'
+					previewTitle: 'Set up home screen access and notifications',
+					previewHintMobile: 'Open SubTrack faster from mobile and review notification setup.',
+					previewHint:
+						'Open SubTrack faster from your home screen and review notification setup in the same flow.'
 				}
 			]
 		}
@@ -377,8 +376,10 @@
 			<div class="border-b px-4 py-4 sm:px-6 md:px-8">
 				<div class="flex items-start justify-between gap-4">
 					<div class="min-w-0 flex-1 space-y-3">
-						<div class="text-muted-foreground flex flex-wrap items-center gap-3 text-[11px] tracking-[0.3em] uppercase">
-							<span class="bg-primary/10 text-primary rounded-full border px-3 py-1 font-semibold">
+						<div class="text-muted-foreground flex flex-wrap items-center gap-2 text-xs">
+							<span
+								class="bg-primary/10 text-primary rounded-full border px-3 py-1 text-[11px] font-semibold"
+							>
 								{copy.tutorialBadge}
 							</span>
 							<span>{copy.tutorialProgressLabel}</span>
@@ -402,12 +403,12 @@
 					</Button>
 				</div>
 
-				<div class="-mb-1 mt-4 flex gap-2 overflow-x-auto pb-1">
+				<div class="mt-4 -mb-1 hidden gap-2 overflow-x-auto pb-1 sm:flex">
 					{#each steps as item, index (index)}
 						<button
 							type="button"
 							class={cn(
-								'min-h-11 min-w-[9.5rem] shrink-0 rounded-2xl border px-3 py-2 text-left transition-colors sm:min-w-0 sm:flex-1',
+								'min-h-11 min-w-[9.5rem] shrink-0 rounded-xl border px-3 py-2 text-left transition-colors sm:min-w-0 sm:flex-1',
 								index === stepIndex
 									? 'border-primary bg-primary/8 text-foreground'
 									: 'bg-background text-muted-foreground hover:bg-muted/70'
@@ -434,47 +435,55 @@
 			</div>
 
 			<div class="flex-1 overflow-y-auto px-4 py-4 sm:px-6 md:px-8 md:py-6">
-				<div class="grid items-start gap-5 lg:grid-cols-[minmax(0,0.9fr)_minmax(340px,1.1fr)] lg:gap-6">
-					<section class="order-2 min-w-0 space-y-4 lg:order-1 lg:space-y-5">
+				<div
+					class="grid items-start gap-5 lg:grid-cols-[minmax(0,0.9fr)_minmax(340px,1.1fr)] lg:gap-6"
+				>
+					<section class="order-1 min-w-0 space-y-4 lg:space-y-5">
 						{#key stepIndex}
 							<div
-								in:fly={{ x: direction * motion.offset, duration: motion.duration, easing: cubicOut }}
+								in:fly={{
+									x: direction * motion.offset,
+									duration: motion.duration,
+									easing: cubicOut
+								}}
 								class="space-y-3"
 							>
 								<Dialog.Title
-									class="font-display text-[clamp(1.85rem,6vw,3.2rem)] leading-[1.08] font-semibold tracking-tight"
+									class="font-display text-[clamp(1.75rem,4vw,2.65rem)] leading-[1.14] font-semibold tracking-tight"
 								>
 									{step.title}
 								</Dialog.Title>
-								<Dialog.Description class="text-muted-foreground max-w-[36rem] text-sm leading-7 md:text-base">
+								<Dialog.Description
+									class="text-muted-foreground max-w-[36rem] text-sm leading-7 md:text-base"
+								>
 									{step.description}
 								</Dialog.Description>
 							</div>
 						{/key}
 
-						<div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-							<div class="bg-muted/30 rounded-2xl border p-4">
-								<p class="text-foreground text-sm font-semibold">{step.previewLabel}</p>
-								<p class="text-muted-foreground mt-2 text-sm leading-6">
-									{step.previewHint}
-								</p>
+						<div class="bg-muted/30 rounded-xl border p-4">
+							<div class="flex items-center gap-2">
+								<step.icon class="text-primary size-4" />
+								<p class="text-foreground text-sm font-semibold">{step.previewTitle}</p>
+								<span
+									class="bg-background/80 text-muted-foreground ml-auto hidden shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-semibold whitespace-nowrap sm:inline-flex"
+								>
+									{step.previewLabel}
+								</span>
 							</div>
-							<div class="bg-background rounded-2xl border p-4">
-								<div class="flex items-center gap-2">
-									<step.icon class="text-primary size-4" />
-									<p class="text-foreground text-sm font-semibold">{step.badge}</p>
-								</div>
-								<p class="text-muted-foreground mt-2 text-sm leading-6">
-									{step.previewTitle}
-								</p>
-							</div>
+							<p class="text-muted-foreground mt-2 hidden text-sm leading-6 sm:block">
+								{step.previewHint}
+							</p>
+							<p class="text-muted-foreground mt-2 text-sm leading-6 sm:hidden">
+								{step.previewHintMobile}
+							</p>
 						</div>
 
 						{#if stepIndex === lastStepIndex}
 							<div
 								in:fly={{ y: 8, duration: motion.duration, easing: cubicOut }}
 								out:fly={{ y: 8, duration: motion.outDuration, easing: cubicIn }}
-								class="bg-muted/30 text-muted-foreground rounded-2xl border p-4 text-sm leading-relaxed"
+								class="bg-muted/30 text-muted-foreground rounded-xl border p-4 text-sm leading-relaxed"
 							>
 								<p class="text-foreground font-semibold">{copy.pwaInfoTitle}</p>
 								<p class="mt-2">{copy.pwaInfoBody1}</p>
@@ -483,7 +492,7 @@
 						{/if}
 					</section>
 
-					<section class="order-1 min-w-0 overflow-hidden rounded-[28px] border lg:order-2">
+					<section class="order-2 min-w-0 overflow-hidden rounded-2xl border">
 						<div class={cn('relative h-full bg-gradient-to-br p-4 sm:p-5 md:p-6', step.accent)}>
 							<div
 								class="bg-background/80 inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold"
@@ -494,18 +503,22 @@
 
 							{#key stepIndex}
 								<div
-									in:fly={{ x: direction * motion.offset, duration: motion.duration, easing: cubicOut }}
+									in:fly={{
+										x: direction * motion.offset,
+										duration: motion.duration,
+										easing: cubicOut
+									}}
 									class="mt-4 space-y-3"
 								>
 									<div
 										class={cn(
-											'bg-background/90 rounded-[24px] border border-white/60 p-2.5 shadow-[0_24px_60px_-38px_rgba(15,23,42,0.45)] backdrop-blur sm:p-3 md:p-4',
+											'bg-background/90 rounded-xl border border-white/60 p-2.5 shadow-[0_24px_60px_-38px_rgba(15,23,42,0.45)] backdrop-blur sm:p-3 md:p-4',
 											step.previewShellClass
 										)}
 									>
 										<div
 											class={cn(
-												'relative overflow-hidden rounded-[20px] border bg-white shadow-[0_18px_36px_-28px_rgba(15,23,42,0.55)]',
+												'relative overflow-hidden rounded-lg border bg-white shadow-[0_18px_36px_-28px_rgba(15,23,42,0.55)]',
 												step.previewFrameClass
 											)}
 										>
@@ -518,23 +531,6 @@
 											<div
 												class="pointer-events-none absolute inset-x-0 top-0 h-14 bg-gradient-to-b from-white/25 to-transparent md:h-20"
 											></div>
-										</div>
-
-										<div class="mt-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-											<div class="min-w-0 space-y-1">
-												<p class="text-foreground text-sm font-semibold">{step.previewTitle}</p>
-												<p class="text-muted-foreground text-[11px] leading-5 sm:hidden">
-													{step.previewHintMobile}
-												</p>
-												<p class="text-muted-foreground hidden text-xs leading-6 sm:block">
-													{step.previewHint}
-												</p>
-											</div>
-											<span
-												class="bg-background/80 text-muted-foreground inline-flex w-fit shrink-0 self-start rounded-full border px-2.5 py-1 text-[11px] font-semibold whitespace-nowrap"
-											>
-												{step.previewLabel}
-											</span>
 										</div>
 									</div>
 								</div>
@@ -571,10 +567,14 @@
 </Dialog.Root>
 
 <Dialog.Root bind:open={planOpen}>
-	<Dialog.Content class="w-[min(960px,calc(100vw-1rem))] !max-w-[calc(100vw-1rem)] p-0 sm:!max-w-[960px]">
+	<Dialog.Content
+		class="w-[min(960px,calc(100vw-1rem))] !max-w-[calc(100vw-1rem)] p-0 sm:!max-w-[960px]"
+	>
 		<div class="max-h-[min(92vh,860px)] overflow-y-auto">
 			<div class="space-y-5 p-5 sm:p-6 md:p-8">
-				<div class="flex max-w-[640px] flex-col items-center gap-2 text-center sm:items-start sm:text-left">
+				<div
+					class="flex max-w-[640px] flex-col items-center gap-2 text-center sm:items-start sm:text-left"
+				>
 					<span class="rounded-full bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-600">
 						{copy.planBadge}
 					</span>
@@ -585,7 +585,7 @@
 				</div>
 
 				<div class="grid gap-4 md:grid-cols-2">
-					<div class="rounded-2xl border bg-muted/30 p-4 sm:p-5">
+					<div class="bg-muted/30 rounded-2xl border p-4 sm:p-5">
 						<p class="text-muted-foreground text-xs font-semibold tracking-[0.2em] uppercase">
 							{copy.planRoleLabel}
 						</p>
@@ -596,7 +596,7 @@
 									{copy.planFreeDescription}
 								</p>
 							</div>
-							<div class="bg-primary/6 rounded-2xl border border-primary/20 p-4">
+							<div class="bg-primary/6 border-primary/20 rounded-2xl border p-4">
 								<p class="text-sm font-semibold">{copy.planPremiumTitle}</p>
 								<p class="text-muted-foreground mt-2 text-sm leading-6">
 									{copy.planPremiumDescription}
@@ -606,7 +606,9 @@
 					</div>
 
 					<div class="bg-muted/30 flex h-full flex-col rounded-2xl border p-4 text-sm sm:p-5">
-						<div class="text-muted-foreground flex items-center justify-between gap-4 pb-3 font-semibold">
+						<div
+							class="text-muted-foreground flex items-center justify-between gap-4 pb-3 font-semibold"
+						>
 							<span>{copy.planFeatureTitle}</span>
 							<div class="flex items-center gap-2 sm:gap-3">
 								<span class="bg-muted rounded-full px-2.5 py-1 text-[11px]">{m.plan_free()}</span>
@@ -624,7 +626,9 @@
 										<div class="flex items-center justify-between gap-3 py-2">
 											<span class="text-foreground pr-3 leading-6">{feature.label}</span>
 											<div class="flex items-center gap-3">
-												<span class="text-muted-foreground flex w-10 items-center justify-center text-base">
+												<span
+													class="text-muted-foreground flex w-10 items-center justify-center text-base"
+												>
 													{#if typeof feature.free === 'boolean'}
 														{#if feature.free}
 															<Check class="h-3.5 w-3.5 text-emerald-500" />
@@ -656,7 +660,9 @@
 				</div>
 
 				<div class="grid items-stretch gap-4 lg:grid-cols-[minmax(0,1.14fr)_minmax(320px,0.86fr)]">
-					<div class="bg-background/80 text-muted-foreground rounded-2xl border p-4 text-sm leading-7 sm:p-5">
+					<div
+						class="bg-background/80 text-muted-foreground rounded-2xl border p-4 text-sm leading-7 sm:p-5"
+					>
 						<ul class="space-y-2">
 							<li class="flex items-start gap-2">
 								<span class="bg-primary mt-2 h-2 w-2 rounded-full"></span>
@@ -670,7 +676,9 @@
 					</div>
 
 					<div class="flex h-full flex-col gap-4">
-						<div class="bg-background/80 text-muted-foreground rounded-2xl border p-4 text-sm leading-7 sm:p-5">
+						<div
+							class="bg-background/80 text-muted-foreground rounded-2xl border p-4 text-sm leading-7 sm:p-5"
+						>
 							<p class="text-foreground text-sm font-semibold">{copy.planPremiumTitle}</p>
 							<p class="mt-2">
 								{copy.planPremiumDescription}
@@ -684,9 +692,9 @@
 							<div
 								class="text-primary flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs font-semibold sm:justify-start"
 							>
-								<a class="hover:underline" href="/faq">{copy.faqLink}</a>
-								<a class="hover:underline" href="/terms">{copy.termsLink}</a>
-								<a class="hover:underline" href="/privacy">{copy.privacyLink}</a>
+								<a class="hover:underline" href={resolve('/faq')}>{copy.faqLink}</a>
+								<a class="hover:underline" href={resolve('/terms')}>{copy.termsLink}</a>
+								<a class="hover:underline" href={resolve('/privacy')}>{copy.privacyLink}</a>
 							</div>
 						</div>
 					</div>

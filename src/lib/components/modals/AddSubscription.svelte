@@ -17,6 +17,7 @@
 	import {
 		defaultSubscriptionColor,
 		getSubscriptionColorLabel,
+		getSubscriptionColorSurfaceStyle,
 		getSubscriptionColorStyle,
 		subscriptionColors
 	} from '$lib/subscription-colors';
@@ -33,7 +34,8 @@
 		subscriptionColors.map((value) => ({
 			value,
 			label: getSubscriptionColorLabel(value, currentLocale),
-			style: getSubscriptionColorStyle(value)
+			style: getSubscriptionColorStyle(value),
+			surface: getSubscriptionColorSurfaceStyle(value)
 		}))
 	);
 	const notifyOptions = $derived([1, 3, 7]);
@@ -132,8 +134,11 @@
 								onclick={() => ($colorField = option.value)}
 								class="flex items-center gap-2 rounded-full border px-3 py-2 text-sm transition-colors {option.value ===
 								$colorField
-									? 'border-primary bg-primary/5 ring-primary/30 ring-2'
+									? 'outline outline-2 outline-offset-2'
 									: 'border-border hover:bg-muted/60'}"
+								style:border-color={option.value === $colorField ? option.style : undefined}
+								style:background-color={option.value === $colorField ? option.surface : undefined}
+								style:outline-color={option.value === $colorField ? option.style : undefined}
 								role="radio"
 								aria-checked={option.value === $colorField}
 								aria-label={option.label}
@@ -143,7 +148,7 @@
 									class="size-4 rounded-full border border-black/10"
 									style:background-color={option.style}
 								></span>
-								<span>{option.label}</span>
+								<span class:font-semibold={option.value === $colorField}>{option.label}</span>
 							</button>
 						{/each}
 					</div>
