@@ -6,6 +6,9 @@ node_modules
 .vercel
 /.svelte-kit
 /build
+outputs/**/final_runs/
+outputs/**/live-explore/
+outputs/**/local-preview/
 
 # OS
 .DS_Store
