@@ -130,13 +130,9 @@ const serverDsn = process.env.SENTRY_DSN;
 const sentryHandleConfigured: Handle | undefined = serverDsn
 	? initCloudflareSentryHandle({
 			dsn: serverDsn,
-			// Adds request headers and IP for users, for more info visit:
-			// https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#sendDefaultPii
-			sendDefaultPii: true,
-			// Capture 100% of transactions for tracing (tune in prod)
-			tracesSampleRate: 1.0,
-			// Enable logs to be sent to Sentry
-			enableLogs: true
+			sendDefaultPii: false,
+			tracesSampleRate: 0.1,
+			enableLogs: false
 		})
 	: undefined;
 const noopHandle: Handle = async ({ event, resolve }) => resolve(event);

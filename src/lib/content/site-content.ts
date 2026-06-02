@@ -109,7 +109,9 @@ const parseListItem = (line: string) => {
 
 const parseDocument = (source: string): MarkdownDocument => {
 	const lines = source.split(/\r?\n/);
-	const title = normalizeInline(lines.find((line) => line.startsWith('# '))?.replace(/^#\s+/, '') ?? '');
+	const title = normalizeInline(
+		lines.find((line) => line.startsWith('# '))?.replace(/^#\s+/, '') ?? ''
+	);
 	const updatedAt = extractUpdatedAt(lines);
 
 	const sections: ContentSection[] = [];
@@ -119,7 +121,9 @@ const parseDocument = (source: string): MarkdownDocument => {
 	const flushBlock = () => {
 		if (!currentSection || blockLines.length === 0) return;
 
-		const filtered = blockLines.map((line) => line.trimEnd()).filter((line) => line.trim().length > 0);
+		const filtered = blockLines
+			.map((line) => line.trimEnd())
+			.filter((line) => line.trim().length > 0);
 		blockLines = [];
 		if (filtered.length === 0) return;
 
@@ -403,32 +407,59 @@ export const commercePageCopy: Record<'ja' | 'en', CommercePageCopy> = {
 		title: '特定商取引法に基づく表記',
 		description: 'SubTrack の有料プランに関する販売条件を記載しています。',
 		rows: [
-			{ label: '販売事業者', value: 'SubTrack' },
-			{ label: '運営責任者', value: '請求があった場合は遅滞なく開示いたします。' },
-			{ label: '所在地', value: '請求があった場合は遅滞なく開示いたします。' },
-			{ label: '電話番号', value: '請求があった場合は遅滞なく開示いたします。' },
+			{ label: '販売事業者', value: 'SubTrack 運営者' },
+			{
+				label: '運営責任者',
+				value: '請求があった場合、法令に基づき遅滞なく電子メールで開示いたします。'
+			},
+			{
+				label: '所在地',
+				value: '請求があった場合、法令に基づき遅滞なく電子メールで開示いたします。'
+			},
+			{
+				label: '電話番号',
+				value: '請求があった場合、法令に基づき遅滞なく電子メールで開示いたします。'
+			},
 			{
 				label: 'お問い合わせ先',
-				value: '本サービス上のお問い合わせ窓口またはご案内する連絡先よりお問い合わせください。'
+				value: 'legal@subtracknotify.com'
 			},
-			{ label: '販売価格', value: '各プランの購入画面または設定画面に表示する金額です。' },
+			{
+				label: '販売価格',
+				value:
+					'Premium 月額300円（税込）、年額3,000円（税込）、Premium 買い切り6,000円（税込）。購入画面に異なる表示がある場合は、購入画面の表示を優先します。'
+			},
 			{
 				label: '商品代金以外の必要料金',
 				value: 'インターネット接続に必要な通信料はお客様のご負担となります。'
 			},
-			{ label: '代金の支払方法', value: 'クレジットカード決済など、購入画面で案内する方法によりお支払いいただきます。' },
-			{ label: '代金の支払時期', value: '有料プランのお申し込み時、または契約更新時に課金されます。' },
+			{
+				label: '代金の支払方法',
+				value: 'クレジットカード決済など、購入画面で案内する方法によりお支払いいただきます。'
+			},
+			{
+				label: '代金の支払時期',
+				value:
+					'サブスクリプションは、無料お試しが適用される場合は無料お試し終了後、その後は各更新時に課金されます。買い切りはお申し込み時に課金されます。'
+			},
 			{ label: 'サービスの提供時期', value: '決済完了後、直ちにご利用いただけます。' },
 			{
+				label: '契約期間・自動更新',
+				value:
+					'サブスクリプションは月単位または年単位で自動更新されます。無料お試しは初回アップグレード時に7日間適用される場合があります。'
+			},
+			{
 				label: '返品・キャンセルについて',
-				value: 'デジタルサービスの性質上、決済完了後の返品はお受けしていません。解約は次回更新日までにお支払い管理ページからお手続きください。'
+				value:
+					'サブスクリプションの解約は、次回更新日の24時間前までにお支払い管理ページからお手続きください。デジタルサービスの性質上、決済完了後の返金は原則として行いません。ただし、法令上必要な場合を除きます。'
 			},
 			{
 				label: '動作環境',
-				value: '最新の主要ブラウザでの利用を想定しています。ご利用環境により一部機能が異なる場合があります。'
+				value:
+					'最新の主要ブラウザでの利用を想定しています。ご利用環境により一部機能が異なる場合があります。'
 			}
 		],
-		note: '表記内容は必要に応じて更新されることがあります。'
+		note: '運営責任者、所在地、電話番号の開示を希望される場合は、legal@subtracknotify.com までご請求ください。購入の判断に必要な時間を確保できるよう、法令に基づき遅滞なく電子メールで開示します。'
 	},
 	en: {
 		headTitle: 'Legal Notice for Commercial Transactions | SubTrack',
@@ -437,34 +468,66 @@ export const commercePageCopy: Record<'ja' | 'en', CommercePageCopy> = {
 		title: 'Legal Notice for Commercial Transactions',
 		description: 'This page describes sales terms related to paid plans in SubTrack.',
 		rows: [
-			{ label: 'Seller', value: 'SubTrack' },
-			{ label: 'Responsible person', value: 'Will be disclosed without delay upon request.' },
-			{ label: 'Address', value: 'Will be disclosed without delay upon request.' },
-			{ label: 'Phone number', value: 'Will be disclosed without delay upon request.' },
+			{ label: 'Seller', value: 'SubTrack Operator' },
+			{
+				label: 'Responsible person',
+				value:
+					'Will be disclosed by email without delay upon request in accordance with applicable law.'
+			},
+			{
+				label: 'Address',
+				value:
+					'Will be disclosed by email without delay upon request in accordance with applicable law.'
+			},
+			{
+				label: 'Phone number',
+				value:
+					'Will be disclosed by email without delay upon request in accordance with applicable law.'
+			},
 			{
 				label: 'Contact',
-				value: 'Please contact us through the in-service inquiry channel or the contact method provided by the service.'
+				value: 'legal@subtracknotify.com'
 			},
-			{ label: 'Sales price', value: 'The amount shown on the purchase screen or settings page for each plan.' },
+			{
+				label: 'Sales price',
+				value:
+					'Premium is JPY 300 per month including tax or JPY 3,000 per year including tax. Premium Lifetime is JPY 6,000 including tax. If the purchase screen shows different details, the purchase screen prevails.'
+			},
 			{
 				label: 'Additional fees',
-				value: 'Internet connection and communication charges are the responsibility of the customer.'
+				value:
+					'Internet connection and communication charges are the responsibility of the customer.'
 			},
 			{
 				label: 'Payment method',
-				value: 'Payment is made using the methods shown on the purchase screen, such as credit card payment.'
+				value:
+					'Payment is made using the methods shown on the purchase screen, such as credit card payment.'
 			},
-			{ label: 'Payment timing', value: 'Charges apply when a paid plan is started or renewed.' },
-			{ label: 'Service delivery timing', value: 'The service becomes available immediately after payment is completed.' },
+			{
+				label: 'Payment timing',
+				value:
+					'Subscriptions are charged after the free trial ends when a free trial applies, and then at each renewal. Lifetime Purchase is charged at the time of application.'
+			},
+			{
+				label: 'Service delivery timing',
+				value: 'The service becomes available immediately after payment is completed.'
+			},
+			{
+				label: 'Term and renewal',
+				value:
+					'Subscriptions renew automatically monthly or yearly. A 7-day free trial may apply to the first upgrade.'
+			},
 			{
 				label: 'Returns and cancellation',
-				value: 'Because this is a digital service, returns are not accepted after payment is completed. Cancellation should be completed from the billing management page before the next renewal date.'
+				value:
+					'Subscription cancellation should be completed from the billing management page at least 24 hours before the next renewal date. Due to the nature of digital services, payments are generally non-refundable after completion, except when required by law.'
 			},
 			{
 				label: 'Recommended environment',
-				value: 'Use on the latest major browsers is expected. Some functions may vary depending on the environment.'
+				value:
+					'Use on the latest major browsers is expected. Some functions may vary depending on the environment.'
 			}
 		],
-		note: 'These details may be updated when needed.'
+		note: 'To request disclosure of the responsible person, address, or phone number, contact legal@subtracknotify.com. The information will be disclosed by email without delay in accordance with applicable law so that there is sufficient time for purchase decisions.'
 	}
 };

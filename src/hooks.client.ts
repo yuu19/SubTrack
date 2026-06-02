@@ -6,10 +6,9 @@ const clientDsn = publicEnv.PUBLIC_SENTRY_DSN || undefined;
 if (clientDsn) {
 	Sentry.init({
 		dsn: clientDsn,
-		sendDefaultPii: true,
-		tracesSampleRate: 1.0,
+		sendDefaultPii: false,
+		tracesSampleRate: 0.1,
 		integrations: [
-			Sentry.replayIntegration(),
 			Sentry.feedbackIntegration({
 				colorScheme: 'system',
 				buttonLabel: '不具合を報告',
@@ -25,9 +24,7 @@ if (clientDsn) {
 				successMessageText: 'ご報告ありがとうございます。'
 			})
 		],
-		replaysSessionSampleRate: 0.1,
-		replaysOnErrorSampleRate: 1.0,
-		enableLogs: true
+		enableLogs: false
 	});
 } else {
 	console.warn('[Sentry] PUBLIC_SENTRY_DSN not set; client telemetry disabled.');
