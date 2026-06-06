@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import { cubicIn, cubicOut } from 'svelte/easing';
 	import { prefersReducedMotion } from 'svelte/motion';
 	import { fly } from 'svelte/transition';
@@ -228,7 +228,7 @@
 			previewHintMobile: copy.steps[0].previewHintMobile,
 			previewHint: copy.steps[0].previewHint,
 			previewShellClass: 'bg-sky-50/70',
-			previewFrameClass: 'h-[190px] sm:h-[280px] md:h-[340px]',
+			previewFrameClass: 'h-[190px] sm:h-[280px] md:h-[300px] lg:h-[340px]',
 			previewImageClass: 'h-full w-full object-cover object-top'
 		},
 		{
@@ -245,7 +245,7 @@
 			previewHintMobile: copy.steps[1].previewHintMobile,
 			previewHint: copy.steps[1].previewHint,
 			previewShellClass: 'bg-amber-50/70',
-			previewFrameClass: 'h-[180px] sm:h-[270px] md:h-[320px]',
+			previewFrameClass: 'h-[180px] sm:h-[270px] md:h-[290px] lg:h-[320px]',
 			previewImageClass: 'h-full w-full object-cover object-[center_12%]'
 		},
 		{
@@ -262,7 +262,7 @@
 			previewHintMobile: copy.steps[2].previewHintMobile,
 			previewHint: copy.steps[2].previewHint,
 			previewShellClass: 'bg-emerald-50/70',
-			previewFrameClass: 'h-[220px] sm:h-[320px] md:h-[390px]',
+			previewFrameClass: 'h-[200px] sm:h-[300px] md:h-[330px] lg:h-[390px]',
 			previewImageClass: 'h-full w-full object-cover object-top'
 		},
 		{
@@ -279,7 +279,7 @@
 			previewHintMobile: copy.steps[3].previewHintMobile,
 			previewHint: copy.steps[3].previewHint,
 			previewShellClass: 'bg-violet-50/75',
-			previewFrameClass: 'h-[240px] sm:h-[360px] md:h-[430px]',
+			previewFrameClass: 'h-[205px] sm:h-[320px] md:h-[360px] lg:h-[430px]',
 			previewImageClass: 'h-full w-full object-cover object-[center_18%]'
 		}
 	]);
@@ -301,6 +301,7 @@
 	let open = $state(false);
 	let planOpen = $state(false);
 	let stepIndex = $state(0);
+	let planScrollElement = $state<HTMLDivElement | null>(null);
 	let hasOpened = false;
 	let direction = $state(1);
 
@@ -311,6 +312,15 @@
 		duration: prefersReducedMotion.current ? 0 : 240,
 		outDuration: prefersReducedMotion.current ? 0 : 200,
 		offset: prefersReducedMotion.current ? 0 : 18
+	});
+
+	$effect(() => {
+		if (!planOpen) return;
+
+		void tick().then(() => {
+			planScrollElement?.scrollTo({ top: 0, left: 0 });
+			requestAnimationFrame(() => planScrollElement?.scrollTo({ top: 0, left: 0 }));
+		});
 	});
 
 	onMount(() => {
@@ -373,7 +383,7 @@
 		class="w-[min(1120px,calc(100vw-1rem))] !max-w-[calc(100vw-1rem)] overflow-hidden p-0 sm:!max-w-[1120px]"
 	>
 		<div class="flex max-h-[min(92vh,860px)] min-h-0 flex-col overflow-hidden">
-			<div class="border-b px-4 py-4 sm:px-6 md:px-8">
+			<div class="border-b px-4 py-3 sm:px-6 sm:py-4 md:px-8">
 				<div class="flex items-start justify-between gap-4">
 					<div class="min-w-0 flex-1 space-y-3">
 						<div class="text-muted-foreground flex flex-wrap items-center gap-2 text-xs">
@@ -408,7 +418,7 @@
 						<button
 							type="button"
 							class={cn(
-								'min-h-11 min-w-[9.5rem] shrink-0 rounded-xl border px-3 py-2 text-left transition-colors sm:min-w-0 sm:flex-1',
+								'min-h-11 min-w-[9.5rem] shrink-0 rounded-lg border px-3 py-2 text-left transition-colors sm:min-w-0 sm:flex-1',
 								index === stepIndex
 									? 'border-primary bg-primary/8 text-foreground'
 									: 'bg-background text-muted-foreground hover:bg-muted/70'
@@ -434,11 +444,11 @@
 				</div>
 			</div>
 
-			<div class="flex-1 overflow-y-auto px-4 py-4 sm:px-6 md:px-8 md:py-6">
+			<div class="flex-1 overflow-y-auto px-4 py-3 sm:px-6 sm:py-4 md:px-8 md:py-6">
 				<div
-					class="grid items-start gap-5 lg:grid-cols-[minmax(0,0.9fr)_minmax(340px,1.1fr)] lg:gap-6"
+					class="grid items-start gap-5 md:grid-cols-[minmax(0,0.92fr)_minmax(300px,1.08fr)] lg:grid-cols-[minmax(0,0.9fr)_minmax(340px,1.1fr)] lg:gap-6"
 				>
-					<section class="order-1 min-w-0 space-y-4 lg:space-y-5">
+					<section class="order-1 min-w-0 space-y-4 md:space-y-5">
 						{#key stepIndex}
 							<div
 								in:fly={{
@@ -449,19 +459,19 @@
 								class="space-y-3"
 							>
 								<Dialog.Title
-									class="font-display text-[clamp(1.75rem,4vw,2.65rem)] leading-[1.14] font-semibold tracking-tight"
+									class="font-display text-2xl leading-tight font-semibold sm:text-3xl lg:text-4xl xl:text-[2.65rem]"
 								>
 									{step.title}
 								</Dialog.Title>
 								<Dialog.Description
-									class="text-muted-foreground max-w-[36rem] text-sm leading-7 md:text-base"
+									class="text-muted-foreground max-w-[36rem] text-sm leading-6 md:leading-7 lg:text-base"
 								>
 									{step.description}
 								</Dialog.Description>
 							</div>
 						{/key}
 
-						<div class="bg-muted/30 rounded-xl border p-4">
+						<div class="bg-muted/30 rounded-lg border p-4">
 							<div class="flex items-center gap-2">
 								<step.icon class="text-primary size-4" />
 								<p class="text-foreground text-sm font-semibold">{step.previewTitle}</p>
@@ -483,7 +493,7 @@
 							<div
 								in:fly={{ y: 8, duration: motion.duration, easing: cubicOut }}
 								out:fly={{ y: 8, duration: motion.outDuration, easing: cubicIn }}
-								class="bg-muted/30 text-muted-foreground rounded-xl border p-4 text-sm leading-relaxed"
+								class="bg-muted/30 text-muted-foreground hidden rounded-lg border p-4 text-sm leading-relaxed md:block"
 							>
 								<p class="text-foreground font-semibold">{copy.pwaInfoTitle}</p>
 								<p class="mt-2">{copy.pwaInfoBody1}</p>
@@ -492,7 +502,7 @@
 						{/if}
 					</section>
 
-					<section class="order-2 min-w-0 overflow-hidden rounded-2xl border">
+					<section class="order-2 min-w-0 overflow-hidden rounded-lg border">
 						<div class={cn('relative h-full bg-gradient-to-br p-4 sm:p-5 md:p-6', step.accent)}>
 							<div
 								class="bg-background/80 inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold"
@@ -512,13 +522,13 @@
 								>
 									<div
 										class={cn(
-											'bg-background/90 rounded-xl border border-white/60 p-2.5 shadow-[0_24px_60px_-38px_rgba(15,23,42,0.45)] backdrop-blur sm:p-3 md:p-4',
+											'bg-background/90 rounded-lg border border-white/60 p-2.5 shadow-[0_24px_60px_-38px_rgba(15,23,42,0.45)] backdrop-blur sm:p-3 md:p-4',
 											step.previewShellClass
 										)}
 									>
 										<div
 											class={cn(
-												'relative overflow-hidden rounded-lg border bg-white shadow-[0_18px_36px_-28px_rgba(15,23,42,0.55)]',
+												'relative overflow-hidden rounded-md border bg-white shadow-[0_18px_36px_-28px_rgba(15,23,42,0.55)]',
 												step.previewFrameClass
 											)}
 										>
@@ -552,11 +562,13 @@
 							></span>
 						{/each}
 					</div>
-					<div class="flex items-center justify-end gap-2">
-						<Button variant="ghost" class="min-h-11 min-w-24" onclick={handleBack}>
+					<div
+						class="grid w-full grid-cols-[1fr_1.2fr] items-center gap-2 sm:flex sm:w-auto sm:justify-end"
+					>
+						<Button variant="ghost" class="min-h-11 min-w-0 sm:min-w-24" onclick={handleBack}>
 							{stepIndex === 0 ? copy.close : copy.back}
 						</Button>
-						<Button class="min-h-11 min-w-28" onclick={handleNext}>
+						<Button class="min-h-11 min-w-0 sm:min-w-28" onclick={handleNext}>
 							{stepIndex === lastStepIndex ? copy.start : copy.continue}
 						</Button>
 					</div>
@@ -570,7 +582,7 @@
 	<Dialog.Content
 		class="w-[min(960px,calc(100vw-1rem))] !max-w-[calc(100vw-1rem)] p-0 sm:!max-w-[960px]"
 	>
-		<div class="max-h-[min(92vh,860px)] overflow-y-auto">
+		<div bind:this={planScrollElement} class="max-h-[min(92vh,860px)] overflow-y-auto">
 			<div class="space-y-5 p-5 sm:p-6 md:p-8">
 				<div
 					class="flex max-w-[640px] flex-col items-center gap-2 text-center sm:items-start sm:text-left"
