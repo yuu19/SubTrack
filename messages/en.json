@@ -231,6 +231,7 @@
 	"calendar_grid_event_label": "Payment: {title}",
 	"calendar_grid_more_events": "+{count} more",
 	"calendar_detail_title": "Payments",
+	"calendar_detail_back": "Back to day",
 	"calendar_detail_close": "Close",
 	"calendar_detail_scheduled_payments": "Scheduled payments",
 	"calendar_detail_empty": "No scheduled payments for this day.",

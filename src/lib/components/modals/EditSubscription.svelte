@@ -20,7 +20,7 @@
 		subscriptionColors
 	} from '$lib/subscription-colors';
 
-	let { subscription, onServerResult, onClose } = $props();
+	let { subscription, onServerResult, onClose, action = '?/update' } = $props();
 	const userConfig = UserConfigContext.get();
 	const currentLocale = $derived(resolveLocale(getLocale()));
 	const cycleOptions = $derived([
@@ -98,12 +98,7 @@
 </script>
 
 {#if subscription}
-	<form
-		method="post"
-		action="?/update"
-		class="space-y-4"
-		{@attach fromAction(enhance, () => enhanceEvents)}
-	>
+	<form method="post" {action} class="space-y-4" {@attach fromAction(enhance, () => enhanceEvents)}>
 		<input type="hidden" name="id" value={subscription.id} />
 
 		<Field {form} name="text">

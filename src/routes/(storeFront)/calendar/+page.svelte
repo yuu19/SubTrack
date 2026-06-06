@@ -3,7 +3,11 @@
 	import CalendarHeader from '$lib/components/calendar/CalendarHeader.svelte';
 	import CalendarGrid from '$lib/components/calendar/CalendarGrid.svelte';
 	import EventDetailModal from '$lib/components/calendar/EventDetailModal.svelte';
+	import EditSubscription from '$lib/components/modals/EditSubscription.svelte';
+	import * as AlertDialog from '$lib/components/ui/alert-dialog';
+	import * as Dialog from '$lib/components/ui/dialog';
 	import { resolveLocale } from '$lib/locale';
+	import { m } from '$lib/paraglide/messages.js';
 	import { getLocale } from '$lib/paraglide/runtime';
 	import type { trackedSubscriptionTable } from '$lib/server/db/schema';
 	import {
@@ -11,6 +15,10 @@
 		resolveSubscriptionColor,
 		type SubscriptionColor
 	} from '$lib/subscription-colors';
+	import { enhance as kitEnhance } from '$app/forms';
+	import { base } from '$app/paths';
+	import { fromAction } from 'svelte/attachments';
+	import { toast } from 'svelte-sonner';
 
 	type Subscription = typeof trackedSubscriptionTable.$inferSelect;
 	const cycleToMonths: Record<string, number> = {
@@ -21,6 +29,7 @@
 
 	type CalendarEvent = {
 		id: string;
+		subscriptionId: number;
 		title: string;
 		date: string;
 		amount: number;
@@ -29,7 +38,15 @@
 	};
 
 	let { data } = $props<{ data: { subscriptions: Subscription[] } }>();
+
+	function getInitialSubscriptions() {
+		return data.subscriptions ?? [];
+	}
+
+	let subscriptions = $state<Subscription[]>(getInitialSubscriptions());
 	const locale = $derived(resolveLocale(getLocale()));
+	const subscriptionsUpdateAction = $derived(`${base}/subscriptions?/update`);
+	const subscriptionsDeleteAction = $derived(`${base}/subscriptions?/delete`);
 
 	const getGridRange = (date: dayjs.Dayjs) => {
 		const startOfMonth = date.startOf('month');
@@ -65,6 +82,7 @@
 			while (occurrence.isSame(rangeEnd, 'day') || occurrence.isBefore(rangeEnd, 'day')) {
 				events.push({
 					id: `sub-${sub.id}-${occurrence.format('YYYY-MM-DD')}`,
+					subscriptionId: sub.id,
 					title: sub.serviceName,
 					date: occurrence.format('YYYY-MM-DD'),
 					amount: Number(sub.amount ?? 0),
@@ -81,13 +99,17 @@
 
 	const events = $derived.by(() => {
 		const { gridStart, gridEnd } = getGridRange(currentDate);
-		return buildEventsForRange(data.subscriptions ?? [], gridStart, gridEnd).sort(
+		return buildEventsForRange(subscriptions, gridStart, gridEnd).sort(
 			(a, b) => a.date.localeCompare(b.date) || a.title.localeCompare(b.title)
 		);
 	});
 
 	let isDetailModalOpen = $state(false);
+	let editOpen = $state(false);
+	let deleteOpen = $state(false);
 	let selectedDate = $state<string | null>(null);
+	let selectedSubscription = $state<Subscription | null>(null);
+	const canMutateSelected = $derived(Boolean(selectedSubscription));
 
 	const selectedEvents = $derived.by(() =>
 		selectedDate ? events.filter((event) => event.date === selectedDate) : []
@@ -107,18 +129,79 @@
 
 	function handleDateClick(date: dayjs.Dayjs) {
 		selectedDate = dayjs(date).format('YYYY-MM-DD');
+		selectedSubscription = null;
 		isDetailModalOpen = true;
 	}
 
 	function handleEventClick(event: CalendarEvent) {
 		selectedDate = event.date;
+		selectedSubscription = null;
 		isDetailModalOpen = true;
+	}
+
+	function handleCalendarEventSelect(event: CalendarEvent) {
+		selectedSubscription =
+			subscriptions.find((subscription) => subscription.id === event.subscriptionId) ?? null;
+	}
+
+	function backToDateList() {
+		selectedSubscription = null;
 	}
 
 	function closeDetailModal() {
 		isDetailModalOpen = false;
 		selectedDate = null;
+		selectedSubscription = null;
 	}
+
+	function openEdit() {
+		if (!selectedSubscription) return;
+		isDetailModalOpen = false;
+		editOpen = true;
+	}
+
+	function openDelete() {
+		if (!selectedSubscription) return;
+		isDetailModalOpen = false;
+		deleteOpen = true;
+	}
+
+	function closeEdit() {
+		editOpen = false;
+		if (selectedSubscription && selectedDate) {
+			isDetailModalOpen = true;
+		}
+	}
+
+	function applyServerSubscriptions(serverSubscriptions: Subscription[]) {
+		const selectedId = selectedSubscription?.id;
+		subscriptions = serverSubscriptions;
+		if (selectedId !== undefined) {
+			selectedSubscription =
+				serverSubscriptions.find((subscription) => subscription.id === selectedId) ?? null;
+		}
+	}
+
+	const handleUpdateResult = async (serverSubscriptions: Subscription[]) => {
+		applyServerSubscriptions(serverSubscriptions);
+		toast.success(m.subscription_updated_toast());
+	};
+
+	const deleteEnhance = () => {
+		return async ({ result }: { result: { type: string; data?: unknown } }) => {
+			if (result.type !== 'success') return;
+			const resultData = result.data as { subscriptions?: Subscription[] };
+			if (resultData?.subscriptions) {
+				applyServerSubscriptions(resultData.subscriptions);
+			}
+			toast.success(m.subscription_deleted_toast());
+			deleteOpen = false;
+			selectedSubscription = null;
+			if (selectedDate) {
+				isDetailModalOpen = true;
+			}
+		};
+	};
 </script>
 
 <div class="bg-background flex h-screen flex-col">
@@ -145,6 +228,57 @@
 		{locale}
 		date={selectedDate}
 		events={selectedEvents}
+		{selectedSubscription}
+		{canMutateSelected}
 		onClose={closeDetailModal}
+		onBackToList={backToDateList}
+		onEventSelect={handleCalendarEventSelect}
+		onEdit={openEdit}
+		onDelete={openDelete}
 	/>
 </div>
+
+<Dialog.Root bind:open={editOpen}>
+	<Dialog.Content class="max-h-[90vh] w-full max-w-3xl overflow-y-auto p-6">
+		<Dialog.Header class="space-y-1">
+			<Dialog.Title class="text-2xl font-bold">{m.subscription_edit_title()}</Dialog.Title>
+			<Dialog.Description class="text-muted-foreground text-sm">
+				{m.subscription_edit_description()}
+			</Dialog.Description>
+		</Dialog.Header>
+		<div class="mt-6">
+			{#key selectedSubscription?.id}
+				<EditSubscription
+					subscription={selectedSubscription}
+					action={subscriptionsUpdateAction}
+					onServerResult={handleUpdateResult}
+					onClose={closeEdit}
+				/>
+			{/key}
+		</div>
+	</Dialog.Content>
+</Dialog.Root>
+
+<AlertDialog.Root bind:open={deleteOpen}>
+	<AlertDialog.Content>
+		<AlertDialog.Header>
+			<AlertDialog.Title>{m.subscription_delete_title()}</AlertDialog.Title>
+			<AlertDialog.Description>
+				{m.subscription_delete_description()}
+			</AlertDialog.Description>
+		</AlertDialog.Header>
+		<form
+			method="post"
+			action={subscriptionsDeleteAction}
+			{@attach fromAction(kitEnhance, () => deleteEnhance)}
+		>
+			<input type="hidden" name="id" value={selectedSubscription?.id ?? ''} />
+			<AlertDialog.Footer class="mt-4">
+				<AlertDialog.Cancel type="button">{m.common_cancel()}</AlertDialog.Cancel>
+				<AlertDialog.Action type="submit" class="bg-destructive hover:bg-destructive/90 text-white">
+					{m.common_delete()}
+				</AlertDialog.Action>
+			</AlertDialog.Footer>
+		</form>
+	</AlertDialog.Content>
+</AlertDialog.Root>

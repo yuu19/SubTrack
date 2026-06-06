@@ -231,6 +231,7 @@
 	"calendar_grid_event_label": "支払い予定: {title}",
 	"calendar_grid_more_events": "+{count}件",
 	"calendar_detail_title": "支払い情報",
+	"calendar_detail_back": "日付の一覧に戻る",
 	"calendar_detail_close": "閉じる",
 	"calendar_detail_scheduled_payments": "支払い予定",
 	"calendar_detail_empty": "この日の支払い予定はありません。",

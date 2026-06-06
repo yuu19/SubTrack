@@ -1,6 +1,7 @@
 <script lang="ts">
 	import AddSubscription from '$lib/components/modals/AddSubscription.svelte';
 	import EditSubscription from '$lib/components/modals/EditSubscription.svelte';
+	import SubscriptionDetailPanel from '$lib/components/subscriptions/SubscriptionDetailPanel.svelte';
 	import * as AlertDialog from '$lib/components/ui/alert-dialog';
 	import { Badge, badgeVariants } from '$lib/components/ui/badge';
 	import Button from '$lib/components/ui/button/button.svelte';
@@ -39,7 +40,6 @@
 	import { page } from '$app/state';
 	import { fromAction } from 'svelte/attachments';
 	import { cn } from '$lib/utils';
-	import { Bell, CalendarDays, Repeat } from 'lucide-svelte';
 	import { onMount } from 'svelte';
 	import { toast } from 'svelte-sonner';
 	import type { trackedSubscriptionTable } from '$lib/server/db/schema';
@@ -626,71 +626,13 @@
 			</Dialog.Title>
 		</div>
 		{#if selectedSubscription}
-			<div class="space-y-4 p-4">
-				<div class="bg-card rounded-xl border px-4 py-5 text-center">
-					<p class="text-muted-foreground text-xs">{m.subscription_amount_label()}</p>
-					<p class="text-3xl font-bold">
-						{formatCurrencyYen(selectedSubscription.amount, currentLocale)}
-					</p>
-					<div class="text-muted-foreground mt-4 flex items-center justify-center gap-2 text-sm">
-						<Repeat class="size-4" />
-						<span>{getCycleLabel(selectedSubscription.cycle, currentLocale)}</span>
-					</div>
-					<div class="text-muted-foreground mt-2 flex items-center justify-center gap-2 text-sm">
-						<CalendarDays class="size-4" />
-						<span>{formatBillingDate(selectedSubscription.nextBillingAt)}</span>
-					</div>
-				</div>
-
-				<div class="bg-card space-y-3 rounded-xl border px-4 py-4 text-sm">
-					<div class="flex items-center justify-between">
-						<span class="text-muted-foreground">{m.subscription_days_until_label()}</span>
-						<span class="font-semibold"
-							>{m.subscription_due_in_days({
-								days: selectedSubscription.daysUntilNextBilling
-							})}</span
-						>
-					</div>
-					<div class="flex items-center justify-between">
-						<span class="text-muted-foreground">{m.subscription_first_payment_label()}</span>
-						<span>{formatBillingDate(selectedSubscription.firstPaymentDate)}</span>
-					</div>
-					<div class="flex items-center justify-between">
-						<span class="text-muted-foreground flex items-center gap-2">
-							<Bell class="size-4" />
-							{m.subscription_notify_label()}
-						</span>
-						<span>
-							{formatNotifyDays(selectedSubscription.notifyDaysBefore, currentLocale)}
-						</span>
-					</div>
-				</div>
-
-				{#if !canMutateSelected}
-					<p class="text-muted-foreground text-xs">
-						{m.subscription_cannot_edit_offline()}
-					</p>
-				{/if}
-
-				<div class="flex flex-col gap-3">
-					<Button
-						variant="outline"
-						disabled={!canMutateSelected}
-						onclick={openEdit}
-						class="h-12 w-full text-base sm:h-10 sm:text-sm"
-					>
-						{m.subscription_edit_button()}
-					</Button>
-					<Button
-						variant="destructive"
-						disabled={!canMutateSelected}
-						onclick={openDelete}
-						class="h-12 w-full text-base sm:h-10 sm:text-sm"
-					>
-						{m.subscription_delete_button()}
-					</Button>
-				</div>
-			</div>
+			<SubscriptionDetailPanel
+				subscription={selectedSubscription}
+				locale={currentLocale}
+				canMutate={canMutateSelected}
+				onEdit={openEdit}
+				onDelete={openDelete}
+			/>
 		{/if}
 	</Dialog.Content>
 </Dialog.Root>
