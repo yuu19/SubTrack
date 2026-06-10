@@ -3,15 +3,9 @@
 	import { resolve } from '$app/paths';
 	import { m } from '$lib/paraglide/messages.js';
 	import { cn } from '$lib/utils';
-	import { CalendarDays, CreditCard, LayoutGrid, PieChart } from 'lucide-svelte';
+	import { CalendarDays, CreditCard, PieChart, Settings } from 'lucide-svelte';
 
 	const items = [
-		{
-			href: resolve('/'),
-			label: () => m.mobile_nav_home(),
-			icon: LayoutGrid,
-			exact: true
-		},
 		{
 			href: resolve('/subscriptions'),
 			label: () => m.mobile_nav_subscriptions(),
@@ -26,13 +20,17 @@
 			href: resolve('/analysis'),
 			label: () => m.mobile_nav_analysis(),
 			icon: PieChart
+		},
+		{
+			href: resolve('/me/settings'),
+			label: () => m.nav_settings(),
+			icon: Settings
 		}
 	];
 
 	const pathname = $derived(page.url.pathname);
 
-	const isActive = (href: string, exact = false) => {
-		if (exact) return pathname === href;
+	const isActive = (href: string) => {
 		return pathname === href || pathname.startsWith(`${href}/`);
 	};
 </script>
@@ -43,7 +41,7 @@
 			class="bg-background/90 pointer-events-auto flex items-center justify-between rounded-full border px-3 py-2 shadow-lg shadow-black/10 backdrop-blur"
 		>
 			{#each items as item (item.href)}
-				{@const active = isActive(item.href, item.exact)}
+				{@const active = isActive(item.href)}
 				{@const Icon = item.icon}
 				<a
 					href={item.href}

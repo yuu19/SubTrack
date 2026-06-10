@@ -18,11 +18,6 @@
 	// const session = authClient.useSession();
 	const mainNavItems = [
 		{
-			title: () => m.mobile_nav_home(),
-			href: resolve('/'),
-			exact: true
-		},
-		{
 			title: () => m.mobile_nav_subscriptions(),
 			href: resolve('/subscriptions')
 		},
@@ -44,9 +39,9 @@
 	];
 
 	const pathname = $derived(page.url.pathname);
+	const logoHref = $derived(page.data.user ? resolve('/subscriptions') : resolve('/'));
 
-	const isActive = (href: string, exact = false) => {
-		if (exact) return pathname === href;
+	const isActive = (href: string) => {
 		return pathname === href || pathname.startsWith(`${href}/`);
 	};
 </script>
@@ -56,14 +51,14 @@
 		'bg-background sticky top-0 left-0 z-50 flex items-center gap-4 border px-3 py-3 md:px-10'
 	)}
 >
-	<a href={resolve('/')} class="text-2xl capitalize">
+	<a href={logoHref} class="text-2xl capitalize">
 		<span class="text-primary font-bold">SubTrack</span>
 	</a>
 
 	{#if page.data.user}
 		<nav class="hidden items-center gap-1 md:flex" aria-label="Primary">
 			{#each mainNavItems as item (item.href)}
-				{@const active = isActive(item.href, item.exact)}
+				{@const active = isActive(item.href)}
 				<a
 					href={item.href}
 					class={cn(
