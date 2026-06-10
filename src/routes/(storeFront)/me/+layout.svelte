@@ -4,7 +4,7 @@
 	let { children } = $props();
 </script>
 
-<div class="mx-auto w-full max-w-5xl px-4 pt-8 md:pt-10">
+<div class="mx-auto w-full max-w-5xl px-4 pt-6 sm:px-6 md:pt-10 lg:px-8">
 	<div class="space-y-2">
 		<h1 class="text-2xl font-semibold tracking-tight md:text-3xl">
 			{m.nav_settings()}
@@ -15,6 +15,6 @@
 	</div>
 </div>
 
-<div class="mx-auto my-8 w-full max-w-5xl px-4 md:my-10">
+<div class="mx-auto my-6 w-full max-w-5xl px-4 sm:my-8 sm:px-6 md:my-10 lg:px-8">
 	{@render children()}
 </div>

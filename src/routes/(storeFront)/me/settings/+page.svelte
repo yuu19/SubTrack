@@ -56,6 +56,19 @@
 		return formatCurrencyYen(300, currentLocale);
 	});
 	const premiumPlanName = 'Premium';
+	const sectionGridClass = 'grid gap-4 lg:grid-cols-[minmax(0,12rem)_1fr] lg:gap-8';
+	const sectionHeaderClass = 'space-y-1.5';
+	const sectionDividerClass = 'border-b pb-6 sm:pb-8';
+	const settingsCardClass = 'bg-background overflow-hidden rounded-lg border';
+	const settingRowClass =
+		'flex flex-col gap-3 px-4 py-4 sm:px-5 md:flex-row md:items-center md:justify-between';
+	const settingRowWithBorderClass = `${settingRowClass} border-t`;
+	const settingTextClass = 'min-w-0 space-y-1';
+	const settingActionClass = 'self-start md:self-center';
+	const planDetailRowClass =
+		'flex flex-col gap-1 px-4 py-3 sm:px-5 md:flex-row md:items-center md:justify-between md:gap-4';
+	const planDetailValueClass = 'break-words font-medium md:text-right';
+	const responsiveButtonClass = 'h-auto min-h-9 whitespace-normal py-2 text-center leading-snug';
 	const premiumFeatures = $derived([
 		{ label: m.premium_feature_subscription_limit(), free: '5', premium: '∞' },
 		{ label: m.premium_feature_category_limit(), free: '3', premium: '∞' },
@@ -167,19 +180,21 @@
 	}
 </script>
 
-<div class="space-y-10">
-	<section class="border-b pb-8">
-		<div class="grid gap-5 md:grid-cols-[minmax(0,12rem)_1fr] md:gap-8">
-			<div class="space-y-1">
+<div class="space-y-7 sm:space-y-9">
+	<section class={sectionDividerClass}>
+		<div class={sectionGridClass}>
+			<div class={sectionHeaderClass}>
 				<h2 class="text-muted-foreground text-sm font-semibold tracking-wide uppercase">
 					{m.settings_account_title()}
 				</h2>
 				<p class="text-muted-foreground text-sm">{m.settings_account_description()}</p>
 			</div>
-			<div class="bg-background overflow-hidden rounded-lg border">
-				<div class="flex flex-col gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
-					<div class="flex min-w-0 items-center gap-4">
-						<div class="bg-muted flex h-14 w-14 shrink-0 items-center justify-center rounded-full">
+			<div class={settingsCardClass}>
+				<div class={settingRowClass}>
+					<div class="flex min-w-0 items-center gap-3 sm:gap-4">
+						<div
+							class="bg-muted flex h-12 w-12 shrink-0 items-center justify-center rounded-full sm:h-14 sm:w-14"
+						>
 							<p class="text-muted-foreground text-xl font-semibold capitalize">
 								{getUserInitial(user?.name ?? '')}
 							</p>
@@ -189,16 +204,14 @@
 							<p class="text-muted-foreground truncate text-sm">{user?.email}</p>
 						</div>
 					</div>
-					<div class="self-start sm:self-center">
+					<div class={settingActionClass}>
 						<UpdateNameModal />
 					</div>
 				</div>
-				<div
-					class="flex flex-col gap-2 border-t px-4 py-4 sm:flex-row sm:items-center sm:justify-between"
-				>
-					<div>
+				<div class={settingRowWithBorderClass}>
+					<div class={settingTextClass}>
 						<p class="text-sm font-medium">{m.profile_email_label()}</p>
-						<p class="text-muted-foreground text-sm">{user?.email}</p>
+						<p class="text-muted-foreground text-sm break-all">{user?.email}</p>
 					</div>
 					<p class="text-muted-foreground text-sm">{m.settings_readonly_label()}</p>
 				</div>
@@ -206,9 +219,9 @@
 		</div>
 	</section>
 
-	<section id="plan-info" class="border-b pb-8">
-		<div class="grid gap-5 md:grid-cols-[minmax(0,12rem)_1fr] md:gap-8">
-			<div class="space-y-1">
+	<section id="plan-info" class={sectionDividerClass}>
+		<div class={sectionGridClass}>
+			<div class={sectionHeaderClass}>
 				<h2 class="text-muted-foreground text-sm font-semibold tracking-wide uppercase">
 					{m.settings_plan_info_title()}
 				</h2>
@@ -223,15 +236,17 @@
 				</p>
 			</div>
 
-			<div class="bg-background overflow-hidden rounded-lg border">
+			<div class={settingsCardClass}>
 				{#if isPremium && isPendingCancel}
-					<div class="border-b border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-						<div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+					<div
+						class="border-b border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 sm:px-5"
+					>
+						<div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 							<p class="font-medium">{m.settings_plan_pending_cancel_title()}</p>
 							<Button
 								variant="outline"
 								size="sm"
-								class="border-amber-200 bg-white text-amber-900 hover:bg-amber-100"
+								class={`${responsiveButtonClass} w-full border-amber-200 bg-white text-amber-900 hover:bg-amber-100 sm:w-auto`}
 								onclick={handleRestoreCancel}
 								disabled={isRestoringCancel}
 							>
@@ -250,43 +265,47 @@
 				{/if}
 
 				<div class="divide-y text-sm">
-					<div class="flex items-center justify-between gap-4 px-4 py-3">
+					<div class={planDetailRowClass}>
 						<span class="text-muted-foreground">{m.settings_plan_current_label()}</span>
-						<span class="font-medium">{planLabel}</span>
+						<span class={planDetailValueClass}>{planLabel}</span>
 					</div>
 					{#if isPremium}
-						<div class="flex items-center justify-between gap-4 px-4 py-3">
+						<div class={planDetailRowClass}>
 							<span class="text-muted-foreground">{m.settings_plan_status_label()}</span>
-							<span class="font-medium">{statusLabel}</span>
+							<span class={planDetailValueClass}>{statusLabel}</span>
 						</div>
 					{/if}
 					{#if hasSubscriptionAccess}
-						<div class="flex items-center justify-between gap-4 px-4 py-3">
+						<div class={planDetailRowClass}>
 							<span class="text-muted-foreground">{m.settings_plan_expiry_label()}</span>
-							<span class="font-medium">{periodEndLabel}</span>
+							<span class={planDetailValueClass}>{periodEndLabel}</span>
 						</div>
-						<div class="flex items-center justify-between gap-4 px-4 py-3">
+						<div class={planDetailRowClass}>
 							<span class="text-muted-foreground">
 								{isPendingCancel
 									? m.settings_plan_end_date_label()
 									: m.settings_plan_next_billing_label()}
 							</span>
-							<span class="font-medium">{nextBillingLabel}</span>
+							<span class={planDetailValueClass}>{nextBillingLabel}</span>
 						</div>
-						<div class="flex items-center justify-between gap-4 px-4 py-3">
+						<div class={planDetailRowClass}>
 							<span class="text-muted-foreground">{m.settings_plan_billing_amount_label()}</span>
-							<span class="font-medium">{billingAmountLabel}</span>
+							<span class={planDetailValueClass}>{billingAmountLabel}</span>
 						</div>
 					{/if}
 				</div>
 
-				<div class="border-t px-4 py-4">
+				<div class="border-t px-4 py-4 sm:px-5">
 					{#if isPremium}
 						<div
-							class="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between"
+							class="flex flex-col items-start gap-3 md:flex-row md:items-center md:justify-between"
 						>
 							{#if hasSubscriptionAccess}
-								<Button class="w-full sm:w-auto" onclick={handleManagePlan} disabled={isUpgrading}>
+								<Button
+									class={`${responsiveButtonClass} w-full md:w-auto`}
+									onclick={handleManagePlan}
+									disabled={isUpgrading}
+								>
 									{#if isUpgrading}
 										<Loader2 class="size-4 animate-spin" />
 									{/if}
@@ -300,9 +319,12 @@
 							<span class="text-muted-foreground text-xs">{m.settings_plan_refund_policy()}</span>
 						</div>
 					{:else}
-						<div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+						<div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
 							<p class="text-muted-foreground text-sm">{m.settings_plan_info_desc_free()}</p>
-							<Button class="w-full sm:w-auto" onclick={() => (isPremiumModalOpen = true)}>
+							<Button
+								class={`${responsiveButtonClass} w-full md:w-auto`}
+								onclick={() => (isPremiumModalOpen = true)}
+							>
 								{m.settings_plan_upgrade_button()}
 							</Button>
 						</div>
@@ -313,34 +335,32 @@
 		</div>
 	</section>
 
-	<section class="border-b pb-8">
-		<div class="grid gap-5 md:grid-cols-[minmax(0,12rem)_1fr] md:gap-8">
-			<div class="space-y-1">
+	<section class={sectionDividerClass}>
+		<div class={sectionGridClass}>
+			<div class={sectionHeaderClass}>
 				<h2 class="text-muted-foreground text-sm font-semibold tracking-wide uppercase">
 					{m.settings_notifications_title()}
 				</h2>
 				<p class="text-muted-foreground text-sm">{m.settings_notifications_description()}</p>
 			</div>
-			<div class="bg-background overflow-hidden rounded-lg border">
-				<div class="flex flex-col gap-2 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
-					<div>
+			<div class={settingsCardClass}>
+				<div class={settingRowClass}>
+					<div class={settingTextClass}>
 						<p class="text-sm font-medium">{m.settings_default_notify_label()}</p>
 						<p class="text-muted-foreground text-sm">{m.settings_default_notify_description()}</p>
 					</div>
-					<div class="self-start sm:self-center">
+					<div class={settingActionClass}>
 						<DefaultNotifyModal />
 					</div>
 				</div>
-				<div
-					class="flex flex-col gap-2 border-t px-4 py-4 sm:flex-row sm:items-center sm:justify-between"
-				>
-					<div>
+				<div class={settingRowWithBorderClass}>
+					<div class={settingTextClass}>
 						<p class="text-sm font-medium">{m.settings_notification_method_label()}</p>
 						<p class="text-muted-foreground text-sm">
 							{m.settings_notification_method_description()}
 						</p>
 					</div>
-					<div class="self-start sm:self-center">
+					<div class={settingActionClass}>
 						<NotificationMethodModal />
 					</div>
 				</div>
@@ -348,29 +368,27 @@
 		</div>
 	</section>
 
-	<section class="border-b pb-8">
-		<div class="grid gap-5 md:grid-cols-[minmax(0,12rem)_1fr] md:gap-8">
-			<div class="space-y-1">
+	<section class={sectionDividerClass}>
+		<div class={sectionGridClass}>
+			<div class={sectionHeaderClass}>
 				<h2 class="text-muted-foreground text-sm font-semibold tracking-wide uppercase">
 					{m.settings_appearance_title()}
 				</h2>
 				<p class="text-muted-foreground text-sm">{m.settings_appearance_description()}</p>
 			</div>
-			<div class="bg-background overflow-hidden rounded-lg border">
-				<div class="flex flex-col gap-2 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+			<div class={settingsCardClass}>
+				<div class={settingRowClass}>
 					<p class="text-sm font-medium">{m.settings_language_label()}</p>
-					<div class="self-start sm:self-center">
+					<div class={settingActionClass}>
 						<LanguageSwitcher />
 					</div>
 				</div>
-				<div
-					class="flex flex-col gap-2 border-t px-4 py-4 sm:flex-row sm:items-center sm:justify-between"
-				>
-					<div>
+				<div class={settingRowWithBorderClass}>
+					<div class={settingTextClass}>
 						<p class="text-sm font-medium">{m.settings_theme_label()}</p>
 						<p class="text-muted-foreground text-sm">{m.settings_theme_title()}</p>
 					</div>
-					<div class="self-start sm:self-center">
+					<div class={settingActionClass}>
 						<ThemeSelectModal />
 					</div>
 				</div>
@@ -379,19 +397,19 @@
 	</section>
 
 	<section>
-		<div class="grid gap-5 md:grid-cols-[minmax(0,12rem)_1fr] md:gap-8">
-			<div class="space-y-1">
+		<div class={sectionGridClass}>
+			<div class={sectionHeaderClass}>
 				<h2 class="text-muted-foreground text-sm font-semibold tracking-wide uppercase">
 					{m.settings_session_title()}
 				</h2>
 				<p class="text-muted-foreground text-sm">{m.settings_session_description()}</p>
 			</div>
-			<div class="bg-background overflow-hidden rounded-lg border">
-				<div class="flex flex-col gap-2 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+			<div class={settingsCardClass}>
+				<div class={settingRowClass}>
 					<p class="text-sm font-medium">{m.settings_logout_label()}</p>
 					<Button
 						variant="outline"
-						class="w-full sm:w-auto"
+						class={`${responsiveButtonClass} w-full md:w-auto`}
 						onclick={() => {
 							authClient.signOut();
 							invalidateAll();
@@ -404,7 +422,7 @@
 
 	{#if !isPremium}
 		<Dialog.Root bind:open={isPremiumModalOpen}>
-			<Dialog.Content class="w-full max-w-[420px] p-6 sm:p-7">
+			<Dialog.Content class="w-full max-w-[420px] p-4 sm:p-7">
 				<div class="flex flex-col items-center gap-4 text-center">
 					<span class="rounded-full bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-600">
 						{m.premium_modal_badge()}
@@ -418,12 +436,12 @@
 					</p>
 				</div>
 
-				<div class="bg-muted/30 mt-6 rounded-xl border p-4 text-sm">
+				<div class="bg-muted/30 mt-6 rounded-xl border p-3 text-sm sm:p-4">
 					<div
-						class="text-muted-foreground flex items-center justify-between pb-3 text-xs font-semibold"
+						class="text-muted-foreground flex items-center justify-between gap-3 pb-3 text-xs font-semibold"
 					>
-						<span>{m.premium_modal_feature_label()}</span>
-						<div class="flex items-center gap-4">
+						<span class="min-w-0">{m.premium_modal_feature_label()}</span>
+						<div class="flex shrink-0 items-center gap-2 sm:gap-4">
 							<span class="bg-muted rounded-full px-2 py-0.5">{m.plan_free()}</span>
 							<span class="bg-primary text-primary-foreground rounded-full px-2 py-0.5">
 								{m.plan_premium()}
@@ -432,9 +450,9 @@
 					</div>
 					<div class="divide-y">
 						{#each premiumFeatures as feature (feature.label)}
-							<div class="flex items-center justify-between py-2">
-								<span class="text-foreground">{feature.label}</span>
-								<div class="flex items-center gap-6">
+							<div class="flex items-center justify-between gap-3 py-2">
+								<span class="text-foreground min-w-0 flex-1 leading-snug">{feature.label}</span>
+								<div class="flex shrink-0 items-center gap-4 sm:gap-6">
 									<span class="text-muted-foreground flex w-12 items-center justify-center">
 										{#if typeof feature.free === 'boolean'}
 											{#if feature.free}
@@ -464,14 +482,18 @@
 				</div>
 
 				<div class="mt-6 flex flex-col gap-3">
-					<Button class="w-full" onclick={handleUpgrade} disabled={isUpgrading}>
+					<Button
+						class={`${responsiveButtonClass} w-full`}
+						onclick={handleUpgrade}
+						disabled={isUpgrading}
+					>
 						{#if isUpgrading}
 							<Loader2 class="size-4 animate-spin" />
 						{/if}
 						{m.premium_modal_cta()}
 					</Button>
 					<Button
-						class="w-full"
+						class={`${responsiveButtonClass} w-full`}
 						variant="outline"
 						onclick={handleLifetimeCheckout}
 						disabled={isCreatingLifetimeCheckout}
@@ -484,7 +506,9 @@
 					<p class="text-muted-foreground text-center text-xs">
 						{m.premium_modal_lifetime_caption()}
 					</p>
-					<div class="text-muted-foreground flex items-center justify-center gap-6 text-xs">
+					<div
+						class="text-muted-foreground flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-center text-xs"
+					>
 						<a
 							class="underline-offset-4 hover:underline"
 							href={resolve('/commercial-transactions')}
