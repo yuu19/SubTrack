@@ -16,28 +16,69 @@
 			.join('');
 	}
 	// const session = authClient.useSession();
-	const accountPages = [
+	const mainNavItems = [
 		{
-			title: () => m.analysis_page_title(),
-			href: resolve('/analysis')
+			title: () => m.mobile_nav_home(),
+			href: resolve('/'),
+			exact: true
 		},
+		{
+			title: () => m.mobile_nav_subscriptions(),
+			href: resolve('/subscriptions')
+		},
+		{
+			title: () => m.mobile_nav_calendar(),
+			href: resolve('/calendar')
+		},
+		{
+			title: () => m.mobile_nav_analysis(),
+			href: resolve('/analysis')
+		}
+	];
+
+	const accountPages = [
 		{
 			title: () => m.nav_settings(),
 			href: resolve('/me/settings')
 		}
 	];
+
+	const pathname = $derived(page.url.pathname);
+
+	const isActive = (href: string, exact = false) => {
+		if (exact) return pathname === href;
+		return pathname === href || pathname.startsWith(`${href}/`);
+	};
 </script>
 
 <header
 	class={cn(
-		'bg-background sticky top-0 left-0 z-50 flex items-center justify-between border px-3 py-3 md:px-10'
+		'bg-background sticky top-0 left-0 z-50 flex items-center gap-4 border px-3 py-3 md:px-10'
 	)}
 >
 	<a href={resolve('/')} class="text-2xl capitalize">
 		<span class="text-primary font-bold">SubTrack</span>
 	</a>
 
-	<div class="flex items-center gap-2 md:gap-6">
+	{#if page.data.user}
+		<nav class="hidden items-center gap-1 md:flex" aria-label="Primary">
+			{#each mainNavItems as item (item.href)}
+				{@const active = isActive(item.href, item.exact)}
+				<a
+					href={item.href}
+					class={cn(
+						'text-muted-foreground hover:bg-muted hover:text-foreground rounded-md px-3 py-2 text-sm font-medium transition-colors',
+						active && 'bg-muted text-foreground'
+					)}
+					aria-current={active ? 'page' : undefined}
+				>
+					{item.title()}
+				</a>
+			{/each}
+		</nav>
+	{/if}
+
+	<div class="ml-auto flex items-center gap-2 md:gap-6">
 		{#if page.data.user}
 			<DropdownMenu.Root>
 				<DropdownMenu.Trigger
@@ -84,9 +125,8 @@
 		{:else}
 			<div class="flex items-center"></div>
 		{/if}
-<!-- todo 将来的に多言語対応を整備する -->
+		<!-- todo 将来的に多言語対応を整備する -->
 		<!-- <LanguageSwitcher /> -->
-
 	</div>
 </header>
 <!-- 

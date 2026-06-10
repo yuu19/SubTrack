@@ -3,7 +3,7 @@
 	import { resolve } from '$app/paths';
 	import { m } from '$lib/paraglide/messages.js';
 	import { cn } from '$lib/utils';
-	import { CalendarDays, CreditCard, LayoutGrid, PieChart, Settings } from 'lucide-svelte';
+	import { CalendarDays, CreditCard, LayoutGrid, PieChart } from 'lucide-svelte';
 
 	const items = [
 		{
@@ -18,19 +18,14 @@
 			icon: CreditCard
 		},
 		{
-			href: resolve('/analysis'),
-			label: () => m.mobile_nav_analysis(),
-			icon: PieChart
-		},
-		{
 			href: resolve('/calendar'),
 			label: () => m.mobile_nav_calendar(),
 			icon: CalendarDays
 		},
 		{
-			href: resolve('/me/settings'),
-			label: () => m.nav_settings(),
-			icon: Settings
+			href: resolve('/analysis'),
+			label: () => m.mobile_nav_analysis(),
+			icon: PieChart
 		}
 	];
 
@@ -45,25 +40,25 @@
 <nav class="pointer-events-none fixed inset-x-0 bottom-0 z-40 md:hidden" aria-label="Primary">
 	<div class="mx-auto w-full max-w-[420px] px-4 pb-[calc(env(safe-area-inset-bottom)+0.75rem)]">
 		<div
-			class="pointer-events-auto flex items-center justify-between rounded-full border bg-background/90 px-3 py-2 shadow-lg shadow-black/10 backdrop-blur"
+			class="bg-background/90 pointer-events-auto flex items-center justify-between rounded-full border px-3 py-2 shadow-lg shadow-black/10 backdrop-blur"
 		>
-		{#each items as item (item.href)}
-			{@const active = isActive(item.href, item.exact)}
-			{@const Icon = item.icon}
-			<a
-				href={item.href}
-				class={cn(
-					'flex h-11 w-11 items-center justify-center rounded-full transition-all duration-200',
-					active
-						? 'bg-primary text-primary-foreground shadow-md shadow-black/20'
-						: 'text-muted-foreground hover:text-foreground'
-				)}
-				aria-current={active ? 'page' : undefined}
-			>
-				<Icon class="size-5" />
-				<span class="sr-only">{item.label()}</span>
-			</a>
-		{/each}
+			{#each items as item (item.href)}
+				{@const active = isActive(item.href, item.exact)}
+				{@const Icon = item.icon}
+				<a
+					href={item.href}
+					class={cn(
+						'flex h-11 w-11 items-center justify-center rounded-full transition-all duration-200',
+						active
+							? 'bg-primary text-primary-foreground shadow-md shadow-black/20'
+							: 'text-muted-foreground hover:text-foreground'
+					)}
+					aria-current={active ? 'page' : undefined}
+				>
+					<Icon class="size-5" />
+					<span class="sr-only">{item.label()}</span>
+				</a>
+			{/each}
 		</div>
 	</div>
 </nav>
