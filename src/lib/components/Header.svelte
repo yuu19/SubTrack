@@ -8,6 +8,8 @@
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
 	import { m } from '$lib/paraglide/messages.js';
+	import { getLocale } from '$lib/paraglide/runtime';
+	import { resolveLocale } from '$lib/locale';
 
 	function getUserInitial(name: string) {
 		return name
@@ -37,9 +39,37 @@
 			href: resolve('/me/settings')
 		}
 	];
+	const landingNavCopy = {
+		ja: [
+			{ title: '機能', href: '#features' },
+			{ title: '料金', href: '#pricing' },
+			{ title: 'FAQ', href: '#faq' },
+			{ title: '始める', href: '#start', primary: true }
+		],
+		en: [
+			{ title: 'Features', href: '#features' },
+			{ title: 'Pricing', href: '#pricing' },
+			{ title: 'FAQ', href: '#faq' },
+			{ title: 'Start', href: '#start', primary: true }
+		]
+	};
 
 	const pathname = $derived(page.url.pathname);
 	const logoHref = $derived(page.data.user ? resolve('/subscriptions') : resolve('/'));
+	const homeHref = resolve('/');
+	const currentLocale = $derived(resolveLocale(getLocale()));
+	const landingNavItems = $derived(landingNavCopy[currentLocale]);
+	const publicLandingPathnames = $derived.by(() => {
+		const paths = ['/', `/${currentLocale}`, `/${currentLocale}/`, homeHref];
+		if (homeHref !== '/' && homeHref.endsWith('/')) {
+			paths.push(homeHref.slice(0, -1));
+		}
+		if (homeHref !== '/' && !homeHref.endsWith('/')) {
+			paths.push(`${homeHref}/`);
+		}
+		return paths;
+	});
+	const isPublicLanding = $derived(!page.data.user && publicLandingPathnames.includes(pathname));
 
 	const isActive = (href: string) => {
 		return pathname === href || pathname.startsWith(`${href}/`);
@@ -117,6 +147,21 @@
 					>
 				</DropdownMenu.Content>
 			</DropdownMenu.Root>
+		{:else if isPublicLanding}
+			<nav class="hidden items-center gap-1 md:flex" aria-label="Landing page">
+				{#each landingNavItems as item (item.href)}
+					<a
+						href={item.href}
+						class={cn(
+							'text-muted-foreground hover:bg-muted hover:text-foreground rounded-md px-3 py-2 text-sm font-medium transition-colors',
+							item.primary &&
+								'bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground'
+						)}
+					>
+						{item.title}
+					</a>
+				{/each}
+			</nav>
 		{:else}
 			<div class="flex items-center"></div>
 		{/if}
