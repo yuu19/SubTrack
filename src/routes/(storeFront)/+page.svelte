@@ -14,6 +14,9 @@
 		<p class="text-muted-foreground max-w-xl text-base md:text-lg">
 			{m.hero_desc()}
 		</p>
+		<p class="text-muted-foreground max-w-xl text-sm md:text-base">
+			{m.hero_note()}
+		</p>
 	</div>
 	<div class="flex flex-wrap gap-3">
 		<GoogleAuthButton label={m.hero_cta_login_register()} />
