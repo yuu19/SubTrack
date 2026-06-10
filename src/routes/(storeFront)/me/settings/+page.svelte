@@ -23,36 +23,12 @@
 	import X from 'lucide-svelte/icons/x';
 	import { Loader2 } from 'lucide-svelte';
 	import { toast } from 'svelte-sonner';
-	import { onMount } from 'svelte';
 
 	let { user, subscription, currentPlan } = $derived(page.data);
 	const currentLocale = $derived.by(() => {
 		page.url;
 		return resolveLocale(getLocale());
 	});
-	const lifetimeInfoLabel = $derived(
-		currentLocale === 'ja'
-			? 'Premium 買い切りをご利用中です。継続課金はありません。'
-			: 'You have Premium Lifetime. There is no recurring billing.'
-	);
-	const lifetimeStatusLabel = $derived(currentLocale === 'ja' ? '購入済み' : 'Purchased');
-	const lifetimePurchasedLabel = $derived(
-		currentLocale === 'ja' ? '買い切り購入済み' : 'Lifetime purchased'
-	);
-	const lifetimeCheckoutErrorLabel = $derived(
-		currentLocale === 'ja'
-			? '買い切りのチェックアウト作成に失敗しました。'
-			: 'Failed to create the lifetime checkout session.'
-	);
-	const lifetimeCtaLabel = $derived(
-		currentLocale === 'ja' ? '6,000円で買い切る' : 'Buy lifetime for ¥6,000'
-	);
-	const lifetimeCaptionLabel = $derived(
-		currentLocale === 'ja'
-			? '一度の支払いで Premium 機能を継続利用できます。'
-			: 'Pay once and keep Premium features available over time.'
-	);
-
 	const isPremium = $derived(currentPlan?.isPremium ?? false);
 	const hasSubscriptionAccess = $derived(currentPlan?.hasSubscriptionAccess ?? false);
 	const hasLifetimeEntitlement = $derived(currentPlan?.hasLifetimeEntitlement ?? false);
@@ -62,7 +38,7 @@
 	);
 	const statusLabel = $derived(
 		hasLifetimeEntitlement && !hasSubscriptionAccess
-			? lifetimeStatusLabel
+			? m.settings_plan_status_lifetime()
 			: isPendingCancel && isPremium
 				? getSubscriptionStatusLabel('pending_cancel', currentLocale)
 				: getSubscriptionStatusLabel(subscription?.status, currentLocale)
@@ -94,12 +70,6 @@
 	let isUpgrading = $state(false);
 	let isCreatingLifetimeCheckout = $state(false);
 	let isRestoringCancel = $state(false);
-
-	onMount(() => {
-		if (!isPremium) {
-			isPremiumModalOpen = true;
-		}
-	});
 
 	async function handleUpgrade() {
 		if (isUpgrading) return;
@@ -149,12 +119,12 @@
 		try {
 			await startLifetimeCheckout({
 				returnPath: page.url.pathname,
-				errorMessage: lifetimeCheckoutErrorLabel,
-				purchasedMessage: lifetimePurchasedLabel
+				errorMessage: m.settings_lifetime_checkout_error(),
+				purchasedMessage: m.settings_plan_lifetime_purchased()
 			});
 		} catch (error) {
 			console.error('Failed to create lifetime checkout', error);
-			toast.error(lifetimeCheckoutErrorLabel);
+			toast.error(m.settings_lifetime_checkout_error());
 		} finally {
 			isCreatingLifetimeCheckout = false;
 		}
@@ -197,166 +167,237 @@
 	}
 </script>
 
-<div class="space-y-16">
-	<section class="space-y-6">
-		<h2 class="text-base font-semibold md:text-lg">{m.nav_profile()}</h2>
-		<div class="flex flex-col gap-6 sm:flex-row sm:items-center sm:gap-10">
-			<div class="flex flex-col items-center gap-3">
-				<div
-					class="h-[3.75rem] w-[3.75rem] rounded-full bg-white p-1 shadow-lg md:h-[6.25rem] md:w-[6.25rem]"
-				>
-					<div
-						class="relative flex h-full w-full items-center justify-center rounded-full bg-[#FAE9C7]"
-					>
-						<p class="text-2xl font-medium text-[#b6b5b1] capitalize lg:text-4xl">
-							{getUserInitial(user?.name ?? '')}
-						</p>
+<div class="space-y-10">
+	<section class="border-b pb-8">
+		<div class="grid gap-5 md:grid-cols-[minmax(0,12rem)_1fr] md:gap-8">
+			<div class="space-y-1">
+				<h2 class="text-muted-foreground text-sm font-semibold tracking-wide uppercase">
+					{m.settings_account_title()}
+				</h2>
+				<p class="text-muted-foreground text-sm">{m.settings_account_description()}</p>
+			</div>
+			<div class="bg-background overflow-hidden rounded-lg border">
+				<div class="flex flex-col gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+					<div class="flex min-w-0 items-center gap-4">
+						<div class="bg-muted flex h-14 w-14 shrink-0 items-center justify-center rounded-full">
+							<p class="text-muted-foreground text-xl font-semibold capitalize">
+								{getUserInitial(user?.name ?? '')}
+							</p>
+						</div>
+						<div class="min-w-0 space-y-1">
+							<p class="truncate text-base font-semibold">{user?.name}</p>
+							<p class="text-muted-foreground truncate text-sm">{user?.email}</p>
+						</div>
+					</div>
+					<div class="self-start sm:self-center">
+						<UpdateNameModal />
 					</div>
 				</div>
-			</div>
-			<div class="flex flex-col gap-3">
-				<h1 class="font-display text-lg font-semibold capitalize md:text-2xl">
-					{user?.name}
-				</h1>
-				<div class="flex flex-col">
-					<h2 class="text-sm font-semibold md:text-base">{m.profile_email_label()}</h2>
-					<p class="text-sm font-normal md:text-base">{user?.email}</p>
+				<div
+					class="flex flex-col gap-2 border-t px-4 py-4 sm:flex-row sm:items-center sm:justify-between"
+				>
+					<div>
+						<p class="text-sm font-medium">{m.profile_email_label()}</p>
+						<p class="text-muted-foreground text-sm">{user?.email}</p>
+					</div>
+					<p class="text-muted-foreground text-sm">{m.settings_readonly_label()}</p>
 				</div>
 			</div>
 		</div>
 	</section>
 
-	<section id="plan-info" class="bg-card rounded-2xl border p-6 shadow-sm">
-		<div class="flex flex-col gap-1">
-			<h2 class="text-base font-semibold md:text-lg">{m.settings_plan_info_title()}</h2>
-			<p class="text-muted-foreground text-sm">
-				{#if hasLifetimeEntitlement && !hasSubscriptionAccess}
-					{lifetimeInfoLabel}
-				{:else if isPremium}
-					{m.settings_plan_info_desc_premium()}
-				{:else}
-					{m.settings_plan_info_desc_free()}
-				{/if}
-			</p>
-		</div>
+	<section id="plan-info" class="border-b pb-8">
+		<div class="grid gap-5 md:grid-cols-[minmax(0,12rem)_1fr] md:gap-8">
+			<div class="space-y-1">
+				<h2 class="text-muted-foreground text-sm font-semibold tracking-wide uppercase">
+					{m.settings_plan_info_title()}
+				</h2>
+				<p class="text-muted-foreground text-sm">
+					{#if hasLifetimeEntitlement && !hasSubscriptionAccess}
+						{m.settings_plan_info_desc_lifetime()}
+					{:else if isPremium}
+						{m.settings_plan_info_desc_premium()}
+					{:else}
+						{m.settings_plan_info_desc_free()}
+					{/if}
+				</p>
+			</div>
 
-		{#if isPremium}
-			{#if isPendingCancel}
-				<div
-					class="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"
-				>
-					<div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-						<p class="font-medium">{m.settings_plan_pending_cancel_title()}</p>
-						<Button
-							variant="outline"
-							size="sm"
-							class="border-amber-200 bg-white text-amber-900 hover:bg-amber-100"
-							onclick={handleRestoreCancel}
-							disabled={isRestoringCancel}
-						>
-							{#if isRestoringCancel}
-								<Loader2 class="size-4 animate-spin" />
-							{/if}
-							{m.settings_plan_pending_cancel_button()}
-						</Button>
+			<div class="bg-background overflow-hidden rounded-lg border">
+				{#if isPremium && isPendingCancel}
+					<div class="border-b border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+						<div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+							<p class="font-medium">{m.settings_plan_pending_cancel_title()}</p>
+							<Button
+								variant="outline"
+								size="sm"
+								class="border-amber-200 bg-white text-amber-900 hover:bg-amber-100"
+								onclick={handleRestoreCancel}
+								disabled={isRestoringCancel}
+							>
+								{#if isRestoringCancel}
+									<Loader2 class="size-4 animate-spin" />
+								{/if}
+								{m.settings_plan_pending_cancel_button()}
+							</Button>
+						</div>
+						{#if hasBillingDate}
+							<p class="mt-1 text-amber-800">
+								{m.settings_plan_pending_cancel_until({ date: nextBillingLabel })}
+							</p>
+						{/if}
 					</div>
-					{#if hasBillingDate}
-						<p class="mt-1 text-amber-800">
-							{m.settings_plan_pending_cancel_until({ date: nextBillingLabel })}
-						</p>
+				{/if}
+
+				<div class="divide-y text-sm">
+					<div class="flex items-center justify-between gap-4 px-4 py-3">
+						<span class="text-muted-foreground">{m.settings_plan_current_label()}</span>
+						<span class="font-medium">{planLabel}</span>
+					</div>
+					{#if isPremium}
+						<div class="flex items-center justify-between gap-4 px-4 py-3">
+							<span class="text-muted-foreground">{m.settings_plan_status_label()}</span>
+							<span class="font-medium">{statusLabel}</span>
+						</div>
+					{/if}
+					{#if hasSubscriptionAccess}
+						<div class="flex items-center justify-between gap-4 px-4 py-3">
+							<span class="text-muted-foreground">{m.settings_plan_expiry_label()}</span>
+							<span class="font-medium">{periodEndLabel}</span>
+						</div>
+						<div class="flex items-center justify-between gap-4 px-4 py-3">
+							<span class="text-muted-foreground">
+								{isPendingCancel
+									? m.settings_plan_end_date_label()
+									: m.settings_plan_next_billing_label()}
+							</span>
+							<span class="font-medium">{nextBillingLabel}</span>
+						</div>
+						<div class="flex items-center justify-between gap-4 px-4 py-3">
+							<span class="text-muted-foreground">{m.settings_plan_billing_amount_label()}</span>
+							<span class="font-medium">{billingAmountLabel}</span>
+						</div>
 					{/if}
 				</div>
-			{/if}
-			<div class="mt-5 divide-y rounded-lg border text-sm">
-				<div class="flex items-center justify-between px-4 py-3">
-					<span class="text-muted-foreground">{m.settings_plan_current_label()}</span>
-					<span class="font-medium">{planLabel}</span>
+
+				<div class="border-t px-4 py-4">
+					{#if isPremium}
+						<div
+							class="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between"
+						>
+							{#if hasSubscriptionAccess}
+								<Button class="w-full sm:w-auto" onclick={handleManagePlan} disabled={isUpgrading}>
+									{#if isUpgrading}
+										<Loader2 class="size-4 animate-spin" />
+									{/if}
+									{m.settings_plan_manage_button()}
+								</Button>
+							{:else if hasLifetimeEntitlement}
+								<div class="rounded-full border px-4 py-2 text-sm font-medium">
+									{m.settings_plan_lifetime_purchased()}
+								</div>
+							{/if}
+							<span class="text-muted-foreground text-xs">{m.settings_plan_refund_policy()}</span>
+						</div>
+					{:else}
+						<div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+							<p class="text-muted-foreground text-sm">{m.settings_plan_info_desc_free()}</p>
+							<Button class="w-full sm:w-auto" onclick={() => (isPremiumModalOpen = true)}>
+								{m.settings_plan_upgrade_button()}
+							</Button>
+						</div>
+						<p class="text-muted-foreground mt-3 text-xs">{m.settings_plan_refund_policy()}</p>
+					{/if}
 				</div>
-				<div class="flex items-center justify-between px-4 py-3">
-					<span class="text-muted-foreground">{m.settings_plan_status_label()}</span>
-					<span class="font-medium">{statusLabel}</span>
-				</div>
-				{#if hasSubscriptionAccess}
-					<div class="flex items-center justify-between px-4 py-3">
-						<span class="text-muted-foreground">{m.settings_plan_expiry_label()}</span>
-						<span class="font-medium">{periodEndLabel}</span>
-					</div>
-					<div class="flex items-center justify-between px-4 py-3">
-						<span class="text-muted-foreground">
-							{isPendingCancel
-								? m.settings_plan_end_date_label()
-								: m.settings_plan_next_billing_label()}
-						</span>
-						<span class="font-medium">{nextBillingLabel}</span>
-					</div>
-					<div class="flex items-center justify-between px-4 py-3">
-						<span class="text-muted-foreground">{m.settings_plan_billing_amount_label()}</span>
-						<span class="font-medium">{billingAmountLabel}</span>
-					</div>
-				{/if}
 			</div>
-			<div class="mt-6 flex flex-col items-center gap-3">
-				{#if hasSubscriptionAccess}
-					<Button class="w-full sm:w-auto" onclick={handleManagePlan} disabled={isUpgrading}>
-						{#if isUpgrading}
-							<Loader2 class="size-4 animate-spin" />
-						{/if}
-						{m.settings_plan_manage_button()}
-					</Button>
-				{:else if hasLifetimeEntitlement}
-					<div class="rounded-full border px-4 py-2 text-sm font-medium">
-						{lifetimePurchasedLabel}
-					</div>
-				{/if}
-				<span class="text-muted-foreground text-xs">{m.settings_plan_refund_policy()}</span>
-			</div>
-		{/if}
+		</div>
 	</section>
 
-	<section class="bg-card rounded-2xl border p-6 shadow-sm">
-		<div class="flex items-center justify-between">
-			<h2 class="text-base font-semibold md:text-lg">{m.nav_settings()}</h2>
-		</div>
-		<div class="mt-4 divide-y">
-			<div class="flex w-full justify-between gap-5 py-3">
-				<p class="text-base font-semibold md:text-lg">{m.settings_language_label()}</p>
-				<LanguageSwitcher />
+	<section class="border-b pb-8">
+		<div class="grid gap-5 md:grid-cols-[minmax(0,12rem)_1fr] md:gap-8">
+			<div class="space-y-1">
+				<h2 class="text-muted-foreground text-sm font-semibold tracking-wide uppercase">
+					{m.settings_notifications_title()}
+				</h2>
+				<p class="text-muted-foreground text-sm">{m.settings_notifications_description()}</p>
 			</div>
-
-			<div class="flex w-full justify-between gap-5 py-3">
-				<p class="text-base font-semibold md:text-lg">{m.settings_name()}</p>
-				<UpdateNameModal />
-			</div>
-
-			<div class="flex w-full justify-between gap-5 py-3">
-				<p class="text-base font-semibold md:text-lg">{m.settings_theme_label()}</p>
-				<ThemeSelectModal />
-			</div>
-
-			<div class="flex w-full justify-between gap-5 py-3">
-				<p class="text-base font-semibold md:text-lg">{m.settings_default_notify_label()}</p>
-				<DefaultNotifyModal />
-			</div>
-
-			<div class="flex w-full justify-between gap-5 py-3">
-				<p class="text-base font-semibold md:text-lg">{m.settings_notification_method_label()}</p>
-				<NotificationMethodModal />
-			</div>
-
-			<div class="flex w-full justify-between gap-5 py-3">
-				<p class="text-base font-semibold md:text-lg">{m.settings_premium_status_label()}</p>
-				<Button variant="link" href="#plan-info">{m.settings_premium_status_action()}</Button>
-			</div>
-
-			<div class="flex w-full justify-between gap-5 py-3">
-				<p class="text-base font-semibold md:text-lg">{m.settings_logout_label()}</p>
-				<Button
-					variant="link"
-					onclick={() => {
-						authClient.signOut();
-						invalidateAll();
-					}}>{m.settings_logout_button()}</Button
+			<div class="bg-background overflow-hidden rounded-lg border">
+				<div class="flex flex-col gap-2 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+					<div>
+						<p class="text-sm font-medium">{m.settings_default_notify_label()}</p>
+						<p class="text-muted-foreground text-sm">{m.settings_default_notify_description()}</p>
+					</div>
+					<div class="self-start sm:self-center">
+						<DefaultNotifyModal />
+					</div>
+				</div>
+				<div
+					class="flex flex-col gap-2 border-t px-4 py-4 sm:flex-row sm:items-center sm:justify-between"
 				>
+					<div>
+						<p class="text-sm font-medium">{m.settings_notification_method_label()}</p>
+						<p class="text-muted-foreground text-sm">
+							{m.settings_notification_method_description()}
+						</p>
+					</div>
+					<div class="self-start sm:self-center">
+						<NotificationMethodModal />
+					</div>
+				</div>
+			</div>
+		</div>
+	</section>
+
+	<section class="border-b pb-8">
+		<div class="grid gap-5 md:grid-cols-[minmax(0,12rem)_1fr] md:gap-8">
+			<div class="space-y-1">
+				<h2 class="text-muted-foreground text-sm font-semibold tracking-wide uppercase">
+					{m.settings_appearance_title()}
+				</h2>
+				<p class="text-muted-foreground text-sm">{m.settings_appearance_description()}</p>
+			</div>
+			<div class="bg-background overflow-hidden rounded-lg border">
+				<div class="flex flex-col gap-2 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+					<p class="text-sm font-medium">{m.settings_language_label()}</p>
+					<div class="self-start sm:self-center">
+						<LanguageSwitcher />
+					</div>
+				</div>
+				<div
+					class="flex flex-col gap-2 border-t px-4 py-4 sm:flex-row sm:items-center sm:justify-between"
+				>
+					<div>
+						<p class="text-sm font-medium">{m.settings_theme_label()}</p>
+						<p class="text-muted-foreground text-sm">{m.settings_theme_title()}</p>
+					</div>
+					<div class="self-start sm:self-center">
+						<ThemeSelectModal />
+					</div>
+				</div>
+			</div>
+		</div>
+	</section>
+
+	<section>
+		<div class="grid gap-5 md:grid-cols-[minmax(0,12rem)_1fr] md:gap-8">
+			<div class="space-y-1">
+				<h2 class="text-muted-foreground text-sm font-semibold tracking-wide uppercase">
+					{m.settings_session_title()}
+				</h2>
+				<p class="text-muted-foreground text-sm">{m.settings_session_description()}</p>
+			</div>
+			<div class="bg-background overflow-hidden rounded-lg border">
+				<div class="flex flex-col gap-2 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+					<p class="text-sm font-medium">{m.settings_logout_label()}</p>
+					<Button
+						variant="outline"
+						class="w-full sm:w-auto"
+						onclick={() => {
+							authClient.signOut();
+							invalidateAll();
+						}}>{m.settings_logout_button()}</Button
+					>
+				</div>
 			</div>
 		</div>
 	</section>
@@ -438,10 +479,10 @@
 						{#if isCreatingLifetimeCheckout}
 							<Loader2 class="size-4 animate-spin" />
 						{/if}
-						{lifetimeCtaLabel}
+						{m.premium_modal_cta_lifetime()}
 					</Button>
 					<p class="text-muted-foreground text-center text-xs">
-						{lifetimeCaptionLabel}
+						{m.premium_modal_lifetime_caption()}
 					</p>
 					<div class="text-muted-foreground flex items-center justify-center gap-6 text-xs">
 						<a
