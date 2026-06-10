@@ -16,6 +16,11 @@
 		Home,
 		Repeat
 	} from 'lucide-svelte';
+	import type { Attachment } from 'svelte/attachments';
+
+	type RevealOptions = {
+		delay?: number;
+	};
 
 	const locale = $derived(resolveLocale(getLocale()));
 	const copy = $derived(landingPageCopy[locale]);
@@ -33,6 +38,44 @@
 
 	const imageSrc = (src: string) => `${base}${src}`;
 	const pageHref = (href: string) => (href.startsWith('#') ? href : resolve(href));
+	const revealDelay = (index: number) => Math.min(index * 90, 360);
+
+	const reveal =
+		(options?: RevealOptions): Attachment<HTMLElement> =>
+		(node) => {
+			const delay = options?.delay ?? 0;
+			node.style.setProperty('--reveal-delay', `${delay}ms`);
+			node.classList.add('lp-reveal');
+
+			const show = () => node.classList.add('is-visible');
+			const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+			if (reduceMotion.matches || !('IntersectionObserver' in window)) {
+				show();
+				return;
+			}
+
+			const observer = new IntersectionObserver(
+				(entries) => {
+					for (const entry of entries) {
+						if (entry.isIntersecting) {
+							show();
+							observer.unobserve(entry.target);
+						}
+					}
+				},
+				{
+					rootMargin: '0px 0px -8% 0px',
+					threshold: 0.16
+				}
+			);
+
+			observer.observe(node);
+
+			return () => {
+				observer.disconnect();
+			};
+		};
 </script>
 
 <svelte:head>
@@ -45,7 +88,7 @@
 		<div
 			class="mx-auto grid max-w-6xl items-center gap-6 px-4 py-6 md:py-10 lg:grid-cols-[minmax(0,0.95fr)_minmax(320px,1.05fr)] lg:gap-10 lg:px-8 lg:py-12"
 		>
-			<div class="min-w-0 space-y-5 lg:space-y-6">
+			<div class="lp-hero-copy min-w-0 space-y-5 lg:space-y-6">
 				<div class="space-y-3 lg:space-y-4">
 					<p class="text-primary text-sm font-semibold">{copy.hero.eyebrow}</p>
 					<h1
@@ -73,7 +116,7 @@
 				>
 					{#each copy.hero.trustItems as item (item)}
 						<span
-							class="bg-muted text-muted-foreground inline-flex items-center gap-2 rounded-md px-3 py-2 text-xs sm:text-sm"
+							class="lp-trust-item bg-muted text-muted-foreground inline-flex items-center gap-2 rounded-md px-3 py-2 text-xs sm:text-sm"
 						>
 							<Check class="text-primary size-4" />
 							{item}
@@ -83,7 +126,9 @@
 				<p class="text-muted-foreground max-w-xl text-xs leading-6 sm:text-sm">{copy.hero.note}</p>
 			</div>
 
-			<figure class="bg-muted/30 min-w-0 overflow-hidden rounded-lg border shadow-sm">
+			<figure
+				class="lp-hero-visual bg-muted/30 min-w-0 overflow-hidden rounded-lg border shadow-sm"
+			>
 				<div class="bg-background border-b px-3 py-2">
 					<div class="flex items-center gap-2">
 						<span class="size-2 rounded-full bg-red-400"></span>
@@ -106,7 +151,7 @@
 					<span>{copy.hero.image.caption}</span>
 					<div class="mt-3 hidden grid-cols-3 gap-2 sm:grid md:mt-0 md:min-w-[260px]">
 						{#each copy.hero.metrics as metric (metric.label)}
-							<div class="bg-muted rounded-md px-3 py-2 text-center">
+							<div class="lp-metric bg-muted rounded-md px-3 py-2 text-center">
 								<div class="text-foreground text-sm font-semibold">{metric.value}</div>
 								<div class="mt-1 text-[11px] leading-4">{metric.label}</div>
 							</div>
@@ -119,7 +164,7 @@
 
 	<section class="bg-muted/30 py-14 md:py-18">
 		<div class="mx-auto max-w-6xl px-4 lg:px-8">
-			<div class="max-w-3xl space-y-3">
+			<div class="max-w-3xl space-y-3" {@attach reveal()}>
 				<p class="text-primary text-sm font-semibold">{copy.problems.eyebrow}</p>
 				<h2 class="text-3xl leading-tight font-semibold md:text-4xl">{copy.problems.title}</h2>
 				<p class="text-muted-foreground text-base leading-7">{copy.problems.description}</p>
@@ -128,7 +173,10 @@
 			<div class="mt-8 grid gap-4 md:grid-cols-3">
 				{#each copy.problems.items as item, index (item.title)}
 					{@const Icon = problemIcons[index] ?? Repeat}
-					<article class="bg-background rounded-lg border p-5 shadow-sm">
+					<article
+						class="lp-card-motion bg-background rounded-lg border p-5 shadow-sm"
+						{@attach reveal({ delay: revealDelay(index) })}
+					>
 						<div
 							class="bg-primary/10 text-primary flex size-10 items-center justify-center rounded-md"
 						>
@@ -144,7 +192,7 @@
 
 	<section class="py-14 md:py-18">
 		<div class="mx-auto max-w-6xl px-4 lg:px-8">
-			<div class="max-w-3xl space-y-3">
+			<div class="max-w-3xl space-y-3" {@attach reveal()}>
 				<p class="text-primary text-sm font-semibold">{copy.steps.eyebrow}</p>
 				<h2 class="text-3xl leading-tight font-semibold md:text-4xl">{copy.steps.title}</h2>
 				<p class="text-muted-foreground text-base leading-7">{copy.steps.description}</p>
@@ -153,7 +201,10 @@
 			<div class="mt-8 grid gap-5 lg:grid-cols-3">
 				{#each copy.steps.items as item, index (item.title)}
 					{@const Icon = stepIcons[index] ?? Check}
-					<article class="bg-background overflow-hidden rounded-lg border shadow-sm">
+					<article
+						class="lp-card-motion bg-background overflow-hidden rounded-lg border shadow-sm"
+						{@attach reveal({ delay: revealDelay(index) })}
+					>
 						<div class="space-y-4 p-5">
 							<div class="flex items-center gap-3">
 								<span
@@ -186,7 +237,7 @@
 	<section id="features" class="bg-muted/30 scroll-mt-20 border-y py-14 md:py-18">
 		<div class="mx-auto grid max-w-6xl gap-8 px-4 lg:grid-cols-[minmax(0,0.9fr)_340px] lg:px-8">
 			<div class="min-w-0">
-				<div class="max-w-3xl space-y-3">
+				<div class="max-w-3xl space-y-3" {@attach reveal()}>
 					<p class="text-primary text-sm font-semibold">{copy.features.eyebrow}</p>
 					<h2 class="text-3xl leading-tight font-semibold md:text-4xl">{copy.features.title}</h2>
 					<p class="text-muted-foreground text-base leading-7">{copy.features.description}</p>
@@ -195,7 +246,10 @@
 				<div class="mt-8 grid gap-4 md:grid-cols-2">
 					{#each copy.features.items as item, index (item.title)}
 						{@const Icon = featureIcons[index] ?? Check}
-						<article class="bg-background rounded-lg border p-5 shadow-sm">
+						<article
+							class="lp-card-motion bg-background rounded-lg border p-5 shadow-sm"
+							{@attach reveal({ delay: revealDelay(index) })}
+						>
 							<div class="flex items-start gap-4">
 								<div
 									class="bg-primary/10 text-primary flex size-10 shrink-0 items-center justify-center rounded-md"
@@ -214,7 +268,8 @@
 			</div>
 
 			<figure
-				class="bg-background overflow-hidden rounded-lg border shadow-sm lg:sticky lg:top-24 lg:self-start"
+				class="lp-side-visual bg-background overflow-hidden rounded-lg border shadow-sm lg:sticky lg:top-24 lg:self-start"
+				{@attach reveal({ delay: 160 })}
 			>
 				<div class="border-b px-4 py-3">
 					<p class="font-medium">{locale === 'en' ? 'Home-screen access' : 'ホーム画面から起動'}</p>
@@ -234,19 +289,20 @@
 
 	<section id="pricing" class="scroll-mt-20 py-14 md:py-18">
 		<div class="mx-auto max-w-6xl px-4 lg:px-8">
-			<div class="max-w-3xl space-y-3">
+			<div class="max-w-3xl space-y-3" {@attach reveal()}>
 				<p class="text-primary text-sm font-semibold">{copy.pricing.eyebrow}</p>
 				<h2 class="text-3xl leading-tight font-semibold md:text-4xl">{copy.pricing.title}</h2>
 				<p class="text-muted-foreground text-base leading-7">{copy.pricing.description}</p>
 			</div>
 
 			<div class="mt-8 grid gap-4 lg:grid-cols-3">
-				{#each copy.pricing.plans as plan (plan.name)}
+				{#each copy.pricing.plans as plan, index (plan.name)}
 					<article
 						class={cn(
-							'bg-background flex rounded-lg border p-5 shadow-sm',
-							plan.featured && 'border-primary shadow-md'
+							'lp-card-motion bg-background flex rounded-lg border p-5 shadow-sm',
+							plan.featured && 'lp-featured-plan border-primary shadow-md'
 						)}
+						{@attach reveal({ delay: revealDelay(index) })}
 					>
 						<div class="flex w-full flex-col">
 							<div class="flex items-start justify-between gap-3">
@@ -290,7 +346,7 @@
 
 	<section id="faq" class="bg-muted/30 scroll-mt-20 border-y py-14 md:py-18">
 		<div class="mx-auto grid max-w-6xl gap-8 px-4 lg:grid-cols-[360px_minmax(0,1fr)] lg:px-8">
-			<div class="space-y-3">
+			<div class="space-y-3" {@attach reveal()}>
 				<p class="text-primary text-sm font-semibold">{copy.faq.eyebrow}</p>
 				<h2 class="text-3xl leading-tight font-semibold md:text-4xl">{copy.faq.title}</h2>
 				<p class="text-muted-foreground text-base leading-7">{copy.faq.description}</p>
@@ -300,8 +356,11 @@
 			</div>
 
 			<div class="space-y-3">
-				{#each copy.faq.items as item (item.question)}
-					<details class="group bg-background rounded-lg border p-5 shadow-sm">
+				{#each copy.faq.items as item, index (item.question)}
+					<details
+						class="lp-card-motion group bg-background rounded-lg border p-5 shadow-sm"
+						{@attach reveal({ delay: revealDelay(index) })}
+					>
 						<summary class="flex cursor-pointer list-none items-center justify-between gap-4">
 							<span class="font-semibold">{item.question}</span>
 							<span
@@ -310,7 +369,7 @@
 								+
 							</span>
 						</summary>
-						<div class="text-muted-foreground mt-4 leading-7">
+						<div class="lp-faq-answer text-muted-foreground mt-4 leading-7">
 							<p>{item.answer}</p>
 							{#if item.href && item.linkLabel}
 								<a
@@ -328,7 +387,7 @@
 	</section>
 
 	<section class="py-14 md:py-18">
-		<div class="mx-auto max-w-4xl px-4 text-center lg:px-8">
+		<div class="mx-auto max-w-4xl px-4 text-center lg:px-8" {@attach reveal()}>
 			<div class="space-y-4">
 				<h2 class="text-3xl leading-tight font-semibold md:text-4xl">{copy.finalCta.title}</h2>
 				<p class="text-muted-foreground mx-auto max-w-2xl text-base leading-7">
@@ -341,3 +400,174 @@
 		</div>
 	</section>
 </main>
+
+<style>
+	.lp-hero-copy > * {
+		animation: lp-fade-up 640ms cubic-bezier(0.22, 1, 0.36, 1) both;
+	}
+
+	.lp-hero-copy > *:nth-child(2) {
+		animation-delay: 90ms;
+	}
+
+	.lp-hero-copy > *:nth-child(3) {
+		animation-delay: 180ms;
+	}
+
+	.lp-hero-copy > *:nth-child(4) {
+		animation-delay: 270ms;
+	}
+
+	.lp-hero-visual {
+		transform-origin: center;
+		animation:
+			lp-visual-in 760ms cubic-bezier(0.22, 1, 0.36, 1) 180ms both,
+			lp-soft-float 8s ease-in-out 1.2s infinite;
+	}
+
+	.lp-side-visual {
+		transition:
+			transform 240ms ease,
+			box-shadow 240ms ease;
+	}
+
+	.lp-side-visual:hover {
+		transform: translateY(-3px);
+		box-shadow: 0 18px 45px hsl(var(--foreground) / 0.08);
+	}
+
+	.lp-metric {
+		transform-origin: bottom;
+		animation: lp-metric-pop 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
+	}
+
+	.lp-metric:nth-child(2) {
+		animation-delay: 120ms;
+	}
+
+	.lp-metric:nth-child(3) {
+		animation-delay: 240ms;
+	}
+
+	.lp-trust-item,
+	.lp-card-motion {
+		transition:
+			transform 220ms ease,
+			box-shadow 220ms ease,
+			border-color 220ms ease,
+			background-color 220ms ease;
+	}
+
+	.lp-trust-item:hover,
+	.lp-card-motion:hover {
+		transform: translateY(-3px);
+	}
+
+	.lp-card-motion:hover {
+		border-color: hsl(var(--primary) / 0.32);
+		box-shadow: 0 16px 38px hsl(var(--foreground) / 0.07);
+	}
+
+	.lp-featured-plan {
+		animation: lp-featured-breathe 5.5s ease-in-out infinite;
+	}
+
+	:global(.lp-reveal) {
+		transition:
+			opacity 620ms cubic-bezier(0.22, 1, 0.36, 1) var(--reveal-delay, 0ms),
+			transform 620ms cubic-bezier(0.22, 1, 0.36, 1) var(--reveal-delay, 0ms);
+	}
+
+	:global(.lp-reveal:not(.is-visible)) {
+		opacity: 0;
+		transform: translateY(24px) scale(0.985);
+	}
+
+	details[open] .lp-faq-answer {
+		animation: lp-faq-open 180ms ease-out both;
+	}
+
+	@keyframes lp-fade-up {
+		from {
+			opacity: 0;
+			transform: translateY(18px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
+	@keyframes lp-visual-in {
+		from {
+			opacity: 0;
+			transform: translateY(20px) scale(0.98);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0) scale(1);
+		}
+	}
+
+	@keyframes lp-soft-float {
+		0%,
+		100% {
+			transform: translateY(0);
+		}
+		50% {
+			transform: translateY(-8px);
+		}
+	}
+
+	@keyframes lp-metric-pop {
+		from {
+			opacity: 0;
+			transform: translateY(8px) scale(0.96);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0) scale(1);
+		}
+	}
+
+	@keyframes lp-featured-breathe {
+		0%,
+		100% {
+			box-shadow: 0 12px 32px hsl(var(--primary) / 0.08);
+		}
+		50% {
+			box-shadow: 0 18px 42px hsl(var(--primary) / 0.16);
+		}
+	}
+
+	@keyframes lp-faq-open {
+		from {
+			opacity: 0;
+			transform: translateY(-4px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.lp-hero-copy > *,
+		.lp-hero-visual,
+		.lp-metric,
+		.lp-featured-plan,
+		details[open] .lp-faq-answer,
+		:global(.lp-reveal) {
+			animation: none;
+			transition: none;
+		}
+
+		.lp-trust-item:hover,
+		.lp-card-motion:hover,
+		.lp-side-visual:hover,
+		:global(.lp-reveal:not(.is-visible)) {
+			opacity: 1;
+			transform: none;
+		}
+	}
+</style>
