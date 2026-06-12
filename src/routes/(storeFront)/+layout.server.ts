@@ -6,10 +6,28 @@ import { computeNextBilling } from '$lib/server/subscriptions';
 import { isAdminUser, parseAdminUserIds } from '$lib/server/admin';
 import { listActiveEntitlementsForUser } from '$lib/server/entitlements';
 import { getCurrentPlan } from '$lib/server/plan';
+import { isPublicDemoPathname } from '$lib/server/public-routes';
 import { subscriptionColors } from '$lib/subscription-colors';
 import { eq } from 'drizzle-orm';
 
-export const load = async ({ request, locals }) => {
+export const load = async ({ request, locals, url }) => {
+	if (isPublicDemoPathname(url.pathname)) {
+		return {
+			user: null,
+			userConfig: userConfigSchema.parse({}),
+			isAdmin: false,
+			currentPlan: {
+				planName: 'Free',
+				isPremium: false,
+				isPendingCancel: false,
+				status: null,
+				accessEndsAt: null,
+				hasSubscriptionAccess: false,
+				hasLifetimeEntitlement: false
+			}
+		};
+	}
+
 	const { db } = locals;
 	const auth = createAuth(db);
 	const session = await auth.api.getSession({

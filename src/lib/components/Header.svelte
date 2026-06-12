@@ -42,12 +42,14 @@
 	const landingNavCopy = {
 		ja: [
 			{ title: '機能', href: '#features' },
+			{ title: 'デモ', href: resolve('/demo') },
 			{ title: '料金', href: '#pricing' },
 			{ title: 'FAQ', href: '#faq' },
 			{ title: '始める', href: '#start', primary: true }
 		],
 		en: [
 			{ title: 'Features', href: '#features' },
+			{ title: 'Demo', href: resolve('/demo') },
 			{ title: 'Pricing', href: '#pricing' },
 			{ title: 'FAQ', href: '#faq' },
 			{ title: 'Start', href: '#start', primary: true }

@@ -97,6 +97,176 @@ export type LandingPricingPlan = {
 	featured?: boolean;
 };
 
+export type DemoSubscriptionCycle = 'monthly' | 'yearly';
+
+export type DemoSubscriptionSample = {
+	id: string;
+	serviceName: string;
+	category: string;
+	amount: number;
+	cycle: DemoSubscriptionCycle;
+	nextBillingLabel: string;
+	calendarDay: number;
+	notifyDaysBefore: number;
+	color: string;
+	note: string;
+};
+
+export type DemoPageCopy = {
+	headTitle: string;
+	headDescription: string;
+	badge: string;
+	noticeTitle: string;
+	notice: string;
+	hero: {
+		eyebrow: string;
+		title: string;
+		description: string;
+		primaryAction: string;
+		secondaryAction: string;
+	};
+	tabs: {
+		dashboard: string;
+		subscriptions: string;
+		calendar: string;
+		analytics: string;
+		notifications: string;
+	};
+	common: {
+		monthlyTotal: string;
+		yearlyTotal: string;
+		activeSubscriptions: string;
+		nextBilling: string;
+		amount: string;
+		cycle: string;
+		category: string;
+		notification: string;
+	};
+	cycleLabels: Record<DemoSubscriptionCycle, string>;
+	dashboard: {
+		title: string;
+		description: string;
+		overviewTitle: string;
+		upcomingTitle: string;
+		quickActionsTitle: string;
+		addAction: string;
+		calendarAction: string;
+		notificationAction: string;
+	};
+	subscriptions: {
+		title: string;
+		description: string;
+		addTitle: string;
+		addDescription: string;
+		addAction: string;
+		addedAction: string;
+		resetAction: string;
+		tableTitle: string;
+	};
+	calendar: {
+		title: string;
+		description: string;
+		monthLabel: string;
+		weekdays: string[];
+		selectedTitle: string;
+		emptyDay: string;
+	};
+	analytics: {
+		title: string;
+		description: string;
+		monthly: string;
+		yearly: string;
+		totalLabel: string;
+		breakdownTitle: string;
+		shareLabel: string;
+	};
+	notifications: {
+		title: string;
+		description: string;
+		confirmAction: string;
+		resendAction: string;
+		statusPending: string;
+		statusAcknowledged: string;
+		statusSnoozed: string;
+	};
+	operations: {
+		addedMessage: string;
+		resetMessage: string;
+		acknowledgedMessage: string;
+		renotifiedMessage: string;
+		selectedEventMessage: string;
+	};
+	samples: {
+		initialSubscriptions: DemoSubscriptionSample[];
+		addCandidate: DemoSubscriptionSample;
+	};
+};
+
+export type LandingMotionDemoCopy = {
+	hero: {
+		ariaLabel: string;
+		windowTitle: string;
+		totalLabel: string;
+		totalBefore: string;
+		totalAfter: string;
+		totalHint: string;
+		nextBillLabel: string;
+		nextBillService: string;
+		nextBillDate: string;
+		nextBillAmount: string;
+		notificationTitle: string;
+		notificationBody: string;
+		calendarTitle: string;
+		calendarItems: string[];
+		statusLabel: string;
+	};
+	add: {
+		ariaLabel: string;
+		title: string;
+		subtitle: string;
+		serviceLabel: string;
+		serviceName: string;
+		amountLabel: string;
+		amount: string;
+		cycleLabel: string;
+		cycle: string;
+		button: string;
+		addedLabel: string;
+		totalLabel: string;
+		totalBefore: string;
+		totalAfter: string;
+	};
+	notification: {
+		ariaLabel: string;
+		title: string;
+		subtitle: string;
+		cards: Array<{
+			title: string;
+			body: string;
+			meta: string;
+		}>;
+		settings: string[];
+	};
+	analytics: {
+		ariaLabel: string;
+		title: string;
+		subtitle: string;
+		totalLabel: string;
+		total: string;
+		reviewLabel: string;
+		items: Array<{
+			label: string;
+			amount: string;
+			share: number;
+		}>;
+	};
+	ticker: {
+		ariaLabel: string;
+		categories: string[];
+		cycles: string[];
+	};
+};
+
 export type LandingFAQItem = {
 	question: string;
 	answer: string;
@@ -121,6 +291,7 @@ export type LandingPageCopy = {
 		}>;
 		image: LandingImage;
 	};
+	motionDemo: LandingMotionDemoCopy;
 	problems: {
 		eyebrow: string;
 		title: string;
@@ -159,6 +330,7 @@ export type LandingPageCopy = {
 		title: string;
 		description: string;
 		cta: string;
+		secondaryCta: string;
 	};
 };
 
@@ -333,7 +505,7 @@ export const landingPageCopy: Record<AppLocale, LandingPageCopy> = {
 				'契約中のサービス、支払い額、次回更新日をまとめて記録。通知とカレンダーで見落としを減らし、分析で固定費を見直せます。',
 			note: '銀行連携は不要です。カード番号は SubTrack に保存されません。',
 			cta: 'Googleアカウントでログイン/登録する',
-			secondaryCta: '機能を見る',
+			secondaryCta: 'デモを見る',
 			trustItems: ['銀行連携不要', 'カード情報非保存', 'ホーム画面に追加可能'],
 			metrics: [
 				{ value: '5件', label: '無料で登録' },
@@ -344,6 +516,82 @@ export const landingPageCopy: Record<AppLocale, LandingPageCopy> = {
 				src: '/images/onboarding/subscriptions-real.png',
 				alt: 'SubTrack のサブスク一覧画面',
 				caption: '支払い額と次回更新日を一覧で確認'
+			}
+		},
+		motionDemo: {
+			hero: {
+				ariaLabel: 'SubTrack のダッシュボードで月額合計、次回請求、通知予定を見るデモ',
+				windowTitle: 'SubTrack ダッシュボード',
+				totalLabel: '今月の固定費',
+				totalBefore: '8,480円',
+				totalAfter: '7,280円',
+				totalHint: '見直し候補を1件停止した想定',
+				nextBillLabel: '次回請求',
+				nextBillService: 'クラウドストレージ',
+				nextBillDate: '6月18日',
+				nextBillAmount: '1,200円',
+				notificationTitle: '更新3日前に通知',
+				notificationBody: '動画サービスの年額更新を確認',
+				calendarTitle: '今週の予定',
+				calendarItems: ['動画 6/15', 'ストレージ 6/18', '音楽 6/21'],
+				statusLabel: '銀行連携なしで手入力'
+			},
+			add: {
+				ariaLabel: 'サービス名と金額を入力してサブスクを追加するデモ',
+				title: 'サブスク追加',
+				subtitle: '必要な項目だけを登録',
+				serviceLabel: 'サービス名',
+				serviceName: '動画サービス',
+				amountLabel: '金額',
+				amount: '1,200円',
+				cycleLabel: '支払い周期',
+				cycle: '月額',
+				button: '追加する',
+				addedLabel: '一覧に追加されました',
+				totalLabel: '月額合計',
+				totalBefore: '6,080円',
+				totalAfter: '7,280円'
+			},
+			notification: {
+				ariaLabel: '更新前通知が届く様子のデモ',
+				title: '更新前通知',
+				subtitle: '支払日前に確認',
+				cards: [
+					{
+						title: '動画サービス',
+						body: '3日後に年額プランが更新されます。',
+						meta: '6月15日 9:00'
+					},
+					{
+						title: 'クラウドストレージ',
+						body: '明日の請求予定を確認してください。',
+						meta: '6月17日 9:00'
+					},
+					{
+						title: 'デザインツール',
+						body: '今週の請求予定に追加されました。',
+						meta: '6月20日 9:00'
+					}
+				],
+				settings: ['アプリ通知', 'メール', '当日通知']
+			},
+			analytics: {
+				ariaLabel: 'カテゴリ別の支出内訳を確認する分析デモ',
+				title: '支出内訳',
+				subtitle: '月額換算で確認',
+				totalLabel: '合計',
+				total: '7,280円',
+				reviewLabel: '見直し候補',
+				items: [
+					{ label: '仕事', amount: '3,200円', share: 44 },
+					{ label: '動画・音楽', amount: '2,180円', share: 30 },
+					{ label: 'クラウド', amount: '1,900円', share: 26 }
+				]
+			},
+			ticker: {
+				ariaLabel: 'カテゴリと支払い周期の管理チップが流れるデモ',
+				categories: ['動画', '音楽', '仕事ツール', 'クラウド', '学習', 'ニュース'],
+				cycles: ['月額', '年額', '買い切り', '無料期間', '更新前通知', 'CSV']
 			}
 		},
 		problems: {
@@ -519,7 +767,8 @@ export const landingPageCopy: Record<AppLocale, LandingPageCopy> = {
 			title: '次の請求日を、今日から見える状態に。',
 			description:
 				'Google アカウントで始めて、まずはよく使うサブスクを5件だけ登録してみてください。',
-			cta: 'Googleアカウントでログイン/登録する'
+			cta: 'Googleアカウントでログイン/登録する',
+			secondaryCta: 'デモを見る'
 		}
 	},
 	en: {
@@ -533,7 +782,7 @@ export const landingPageCopy: Record<AppLocale, LandingPageCopy> = {
 				'Track services, costs, and upcoming renewals in one place. Use reminders, calendar views, and analytics to review recurring expenses before they pile up.',
 			note: 'No bank connection is required. SubTrack does not store card numbers.',
 			cta: 'Continue with Google',
-			secondaryCta: 'View features',
+			secondaryCta: 'View demo',
 			trustItems: ['No bank linking', 'Card details not stored', 'Add to home screen'],
 			metrics: [
 				{ value: '5', label: 'Free entries' },
@@ -544,6 +793,83 @@ export const landingPageCopy: Record<AppLocale, LandingPageCopy> = {
 				src: '/images/onboarding/subscriptions-real.png',
 				alt: 'SubTrack subscription list screen',
 				caption: 'Review costs and next billing dates at a glance'
+			}
+		},
+		motionDemo: {
+			hero: {
+				ariaLabel:
+					'Demo of the SubTrack dashboard showing monthly total, next billing, and reminder status',
+				windowTitle: 'SubTrack dashboard',
+				totalLabel: 'Monthly recurring cost',
+				totalBefore: 'JPY 8,480',
+				totalAfter: 'JPY 7,280',
+				totalHint: 'After reviewing one inactive service',
+				nextBillLabel: 'Next billing',
+				nextBillService: 'Cloud storage',
+				nextBillDate: 'Jun 18',
+				nextBillAmount: 'JPY 1,200',
+				notificationTitle: 'Reminder 3 days before',
+				notificationBody: 'Review the annual video plan renewal',
+				calendarTitle: 'This week',
+				calendarItems: ['Video Jun 15', 'Storage Jun 18', 'Music Jun 21'],
+				statusLabel: 'Manual tracking, no bank link'
+			},
+			add: {
+				ariaLabel: 'Demo of adding a subscription by entering service name and amount',
+				title: 'Add subscription',
+				subtitle: 'Track only what you need',
+				serviceLabel: 'Service',
+				serviceName: 'Video service',
+				amountLabel: 'Amount',
+				amount: 'JPY 1,200',
+				cycleLabel: 'Billing cycle',
+				cycle: 'Monthly',
+				button: 'Add',
+				addedLabel: 'Added to your list',
+				totalLabel: 'Monthly total',
+				totalBefore: 'JPY 6,080',
+				totalAfter: 'JPY 7,280'
+			},
+			notification: {
+				ariaLabel: 'Demo of renewal reminders arriving before payment dates',
+				title: 'Renewal reminders',
+				subtitle: 'Check before payment',
+				cards: [
+					{
+						title: 'Video service',
+						body: 'The annual plan renews in 3 days.',
+						meta: 'Jun 15, 9:00'
+					},
+					{
+						title: 'Cloud storage',
+						body: 'Review tomorrow’s scheduled charge.',
+						meta: 'Jun 17, 9:00'
+					},
+					{
+						title: 'Design tool',
+						body: 'Added to this week’s billing schedule.',
+						meta: 'Jun 20, 9:00'
+					}
+				],
+				settings: ['App notification', 'Email', 'Same-day reminder']
+			},
+			analytics: {
+				ariaLabel: 'Demo of reviewing spending breakdown by category',
+				title: 'Spending breakdown',
+				subtitle: 'Converted to monthly cost',
+				totalLabel: 'Total',
+				total: 'JPY 7,280',
+				reviewLabel: 'Review candidate',
+				items: [
+					{ label: 'Work', amount: 'JPY 3,200', share: 44 },
+					{ label: 'Video and music', amount: 'JPY 2,180', share: 30 },
+					{ label: 'Cloud', amount: 'JPY 1,900', share: 26 }
+				]
+			},
+			ticker: {
+				ariaLabel: 'Demo of category and billing-cycle chips scrolling',
+				categories: ['Video', 'Music', 'Work tools', 'Cloud', 'Learning', 'News'],
+				cycles: ['Monthly', 'Annual', 'Lifetime', 'Trial', 'Reminder', 'CSV']
 			}
 		},
 		problems: {
@@ -725,7 +1051,322 @@ export const landingPageCopy: Record<AppLocale, LandingPageCopy> = {
 			title: 'Make your next billing date visible today.',
 			description:
 				'Continue with Google and start by adding the five subscriptions you use most often.',
-			cta: 'Continue with Google'
+			cta: 'Continue with Google',
+			secondaryCta: 'View demo'
+		}
+	}
+};
+
+export const demoPageCopy: Record<AppLocale, DemoPageCopy> = {
+	ja: {
+		headTitle: '公開デモ | SubTrack',
+		headDescription:
+			'SubTrack の公開デモです。サンプルデータだけでサブスク一覧、カレンダー、分析、通知確認を疑似操作できます。',
+		badge: 'Demo Mode',
+		noticeTitle: '公開デモ',
+		notice:
+			'サンプルデータのみを使用します。保存、通知送信、Push登録、決済、実アカウントの更新は発生しません。',
+		hero: {
+			eyebrow: 'SubTrack の使用例',
+			title: 'ログイン前に、サブスク管理の流れを試せます。',
+			description:
+				'Netflix、Spotify、Notion、Adobe Creative Cloud などのサンプル契約を使って、追加、請求予定、通知確認、分析切替をブラウザ内だけで体験できます。',
+			primaryAction: '実際に始める',
+			secondaryAction: 'LPに戻る'
+		},
+		tabs: {
+			dashboard: 'Dashboard',
+			subscriptions: 'Subscriptions',
+			calendar: 'Calendar',
+			analytics: 'Analytics',
+			notifications: 'Notifications'
+		},
+		common: {
+			monthlyTotal: '月額換算',
+			yearlyTotal: '年額換算',
+			activeSubscriptions: '登録中',
+			nextBilling: '次回請求',
+			amount: '金額',
+			cycle: '周期',
+			category: 'カテゴリ',
+			notification: '通知'
+		},
+		cycleLabels: {
+			monthly: '月額',
+			yearly: '年額'
+		},
+		dashboard: {
+			title: 'ダッシュボード',
+			description: '月額換算、次回請求、確認待ち通知をまとめて見ます。',
+			overviewTitle: '支出サマリー',
+			upcomingTitle: '近い請求予定',
+			quickActionsTitle: '疑似操作',
+			addAction: 'サブスクを追加',
+			calendarAction: '予定を見る',
+			notificationAction: '通知を確認'
+		},
+		subscriptions: {
+			title: 'サブスク一覧',
+			description: 'サンプル契約だけを一覧化し、追加操作で合計が変わる様子を確認できます。',
+			addTitle: 'Google One を追加',
+			addDescription: 'この操作はデモ内の配列だけを更新します。リロードすると初期状態に戻ります。',
+			addAction: '追加する',
+			addedAction: '追加済み',
+			resetAction: 'リセット',
+			tableTitle: '登録済みサンプル'
+		},
+		calendar: {
+			title: 'カレンダー',
+			description: '請求予定をクリックすると、右側の詳細だけが切り替わります。',
+			monthLabel: '2026年6月',
+			weekdays: ['月', '火', '水', '木', '金', '土', '日'],
+			selectedTitle: '選択中の予定',
+			emptyDay: 'この日の予定はありません'
+		},
+		analytics: {
+			title: '分析',
+			description: '月額換算と年額換算を切り替え、カテゴリ別の割合を確認できます。',
+			monthly: '月額',
+			yearly: '年額',
+			totalLabel: '合計',
+			breakdownTitle: 'カテゴリ内訳',
+			shareLabel: '割合'
+		},
+		notifications: {
+			title: '通知',
+			description: '確認済みと再通知予定の状態をローカルで切り替えます。',
+			confirmAction: '確認済みにする',
+			resendAction: '再通知する',
+			statusPending: '未確認',
+			statusAcknowledged: '確認済み',
+			statusSnoozed: '再通知予定'
+		},
+		operations: {
+			addedMessage: 'Google One をデモ一覧に追加しました。',
+			resetMessage: 'デモを初期状態に戻しました。',
+			acknowledgedMessage: '通知を確認済みにしました。',
+			renotifiedMessage: '再通知予定に戻しました。',
+			selectedEventMessage: 'カレンダー予定を選択しました。'
+		},
+		samples: {
+			initialSubscriptions: [
+				{
+					id: 'netflix',
+					serviceName: 'Netflix',
+					category: '動画',
+					amount: 1490,
+					cycle: 'monthly',
+					nextBillingLabel: '6/15',
+					calendarDay: 15,
+					notifyDaysBefore: 3,
+					color: '#ef4444',
+					note: '週末前に視聴状況を確認'
+				},
+				{
+					id: 'spotify',
+					serviceName: 'Spotify',
+					category: '音楽',
+					amount: 980,
+					cycle: 'monthly',
+					nextBillingLabel: '6/21',
+					calendarDay: 21,
+					notifyDaysBefore: 1,
+					color: '#22c55e',
+					note: '家族プラン移行を検討'
+				},
+				{
+					id: 'notion',
+					serviceName: 'Notion',
+					category: '仕事',
+					amount: 12000,
+					cycle: 'yearly',
+					nextBillingLabel: '6/28',
+					calendarDay: 28,
+					notifyDaysBefore: 7,
+					color: '#111827',
+					note: '年額更新前にワークスペースを確認'
+				},
+				{
+					id: 'adobe-creative-cloud',
+					serviceName: 'Adobe Creative Cloud',
+					category: '制作',
+					amount: 3280,
+					cycle: 'monthly',
+					nextBillingLabel: '6/20',
+					calendarDay: 20,
+					notifyDaysBefore: 3,
+					color: '#f97316',
+					note: '使っているアプリを棚卸し'
+				}
+			],
+			addCandidate: {
+				id: 'google-one',
+				serviceName: 'Google One',
+				category: 'クラウド',
+				amount: 250,
+				cycle: 'monthly',
+				nextBillingLabel: '6/24',
+				calendarDay: 24,
+				notifyDaysBefore: 3,
+				color: '#3b82f6',
+				note: 'ストレージ容量を確認'
+			}
+		}
+	},
+	en: {
+		headTitle: 'Public Demo | SubTrack',
+		headDescription:
+			'Try the SubTrack public demo with sample-only subscriptions, calendar events, analytics, and reminder states.',
+		badge: 'Demo Mode',
+		noticeTitle: 'Public demo',
+		notice:
+			'This uses sample data only. It does not save data, send reminders, register push notifications, start payments, or update a real account.',
+		hero: {
+			eyebrow: 'SubTrack example workflow',
+			title: 'Try the subscription workflow before signing in.',
+			description:
+				'Use sample subscriptions such as Netflix, Spotify, Notion, and Adobe Creative Cloud to try adding an item, reviewing billing dates, checking reminders, and switching analytics views in your browser only.',
+			primaryAction: 'Start for real',
+			secondaryAction: 'Back to landing'
+		},
+		tabs: {
+			dashboard: 'Dashboard',
+			subscriptions: 'Subscriptions',
+			calendar: 'Calendar',
+			analytics: 'Analytics',
+			notifications: 'Notifications'
+		},
+		common: {
+			monthlyTotal: 'Monthly equivalent',
+			yearlyTotal: 'Yearly equivalent',
+			activeSubscriptions: 'Active',
+			nextBilling: 'Next billing',
+			amount: 'Amount',
+			cycle: 'Cycle',
+			category: 'Category',
+			notification: 'Reminder'
+		},
+		cycleLabels: {
+			monthly: 'Monthly',
+			yearly: 'Yearly'
+		},
+		dashboard: {
+			title: 'Dashboard',
+			description: 'Review monthly cost, upcoming billing, and reminders in one place.',
+			overviewTitle: 'Cost summary',
+			upcomingTitle: 'Upcoming billing',
+			quickActionsTitle: 'Demo actions',
+			addAction: 'Add subscription',
+			calendarAction: 'View calendar',
+			notificationAction: 'Check reminders'
+		},
+		subscriptions: {
+			title: 'Subscriptions',
+			description: 'Review sample subscriptions and see totals change after the add action.',
+			addTitle: 'Add Google One',
+			addDescription:
+				'This only updates the demo array in the browser. Reloading the page restores the initial state.',
+			addAction: 'Add',
+			addedAction: 'Added',
+			resetAction: 'Reset',
+			tableTitle: 'Sample subscriptions'
+		},
+		calendar: {
+			title: 'Calendar',
+			description: 'Click a billing date to change only the local detail panel.',
+			monthLabel: 'June 2026',
+			weekdays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+			selectedTitle: 'Selected event',
+			emptyDay: 'No billing event on this day'
+		},
+		analytics: {
+			title: 'Analytics',
+			description: 'Switch between monthly and yearly equivalents and review category shares.',
+			monthly: 'Monthly',
+			yearly: 'Yearly',
+			totalLabel: 'Total',
+			breakdownTitle: 'Category breakdown',
+			shareLabel: 'Share'
+		},
+		notifications: {
+			title: 'Notifications',
+			description: 'Toggle reminder cards between acknowledged and scheduled-again states locally.',
+			confirmAction: 'Mark done',
+			resendAction: 'Remind again',
+			statusPending: 'Pending',
+			statusAcknowledged: 'Acknowledged',
+			statusSnoozed: 'Scheduled again'
+		},
+		operations: {
+			addedMessage: 'Google One was added to the demo list.',
+			resetMessage: 'The demo was reset to its initial state.',
+			acknowledgedMessage: 'The reminder was marked as acknowledged.',
+			renotifiedMessage: 'The reminder was scheduled again.',
+			selectedEventMessage: 'Calendar event selected.'
+		},
+		samples: {
+			initialSubscriptions: [
+				{
+					id: 'netflix',
+					serviceName: 'Netflix',
+					category: 'Video',
+					amount: 1490,
+					cycle: 'monthly',
+					nextBillingLabel: 'Jun 15',
+					calendarDay: 15,
+					notifyDaysBefore: 3,
+					color: '#ef4444',
+					note: 'Review watch usage before the weekend'
+				},
+				{
+					id: 'spotify',
+					serviceName: 'Spotify',
+					category: 'Music',
+					amount: 980,
+					cycle: 'monthly',
+					nextBillingLabel: 'Jun 21',
+					calendarDay: 21,
+					notifyDaysBefore: 1,
+					color: '#22c55e',
+					note: 'Consider whether a family plan fits'
+				},
+				{
+					id: 'notion',
+					serviceName: 'Notion',
+					category: 'Work',
+					amount: 12000,
+					cycle: 'yearly',
+					nextBillingLabel: 'Jun 28',
+					calendarDay: 28,
+					notifyDaysBefore: 7,
+					color: '#111827',
+					note: 'Review workspace usage before annual renewal'
+				},
+				{
+					id: 'adobe-creative-cloud',
+					serviceName: 'Adobe Creative Cloud',
+					category: 'Creative',
+					amount: 3280,
+					cycle: 'monthly',
+					nextBillingLabel: 'Jun 20',
+					calendarDay: 20,
+					notifyDaysBefore: 3,
+					color: '#f97316',
+					note: 'Check which apps are still in use'
+				}
+			],
+			addCandidate: {
+				id: 'google-one',
+				serviceName: 'Google One',
+				category: 'Cloud',
+				amount: 250,
+				cycle: 'monthly',
+				nextBillingLabel: 'Jun 24',
+				calendarDay: 24,
+				notifyDaysBefore: 3,
+				color: '#3b82f6',
+				note: 'Review storage usage'
+			}
 		}
 	}
 };

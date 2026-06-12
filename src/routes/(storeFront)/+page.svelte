@@ -1,6 +1,7 @@
 <script lang="ts">
-	import { base, resolve } from '$app/paths';
+	import { base } from '$app/paths';
 	import GoogleAuthButton from '$lib/components/GoogleAuthButton.svelte';
+	import LandingMotionDemo from '$lib/components/landing/LandingMotionDemo.svelte';
 	import Button from '$lib/components/ui/button/button.svelte';
 	import { landingPageCopy } from '$lib/content/site-content';
 	import { resolveLocale } from '$lib/locale';
@@ -26,6 +27,7 @@
 	const copy = $derived(landingPageCopy[locale]);
 	const problemIcons = [CreditCard, Bell, ChartPie];
 	const stepIcons = [Check, Bell, CalendarDays];
+	const stepDemoVariants = ['add', 'notification', 'analytics'] as const;
 	const featureIcons = [Check, CalendarDays, Bell, ChartPie, Download, Home];
 	const pricingStartLabel = $derived(locale === 'en' ? 'Start with Google' : 'Googleで始める');
 	const pwaImage = $derived({
@@ -37,7 +39,8 @@
 	});
 
 	const imageSrc = (src: string) => `${base}${src}`;
-	const pageHref = (href: string) => (href.startsWith('#') ? href : resolve(href));
+	const pageHref = (href: string) =>
+		href.startsWith('#') || href.startsWith('http') ? href : `${base}${href}`;
 	const revealDelay = (index: number) => Math.min(index * 90, 360);
 
 	const reveal =
@@ -105,7 +108,7 @@
 					<div class="w-full sm:max-w-[330px]">
 						<GoogleAuthButton label={copy.hero.cta} />
 					</div>
-					<Button class="h-10" href="#features" variant="outline">
+					<Button class="h-10" href={pageHref('/demo')} variant="outline">
 						{copy.hero.secondaryCta}
 					</Button>
 				</div>
@@ -126,39 +129,9 @@
 				<p class="text-muted-foreground max-w-xl text-xs leading-6 sm:text-sm">{copy.hero.note}</p>
 			</div>
 
-			<figure
-				class="lp-hero-visual bg-muted/30 min-w-0 overflow-hidden rounded-lg border shadow-sm"
-			>
-				<div class="bg-background border-b px-3 py-2">
-					<div class="flex items-center gap-2">
-						<span class="size-2 rounded-full bg-red-400"></span>
-						<span class="size-2 rounded-full bg-yellow-400"></span>
-						<span class="size-2 rounded-full bg-green-400"></span>
-					</div>
-				</div>
-				<div class="p-3 md:p-4">
-					<img
-						class="mx-auto max-h-[150px] w-full rounded-md object-contain sm:max-h-[260px] lg:max-h-[420px]"
-						src={imageSrc(copy.hero.image.src)}
-						alt={copy.hero.image.alt}
-						loading="eager"
-						decoding="async"
-					/>
-				</div>
-				<figcaption
-					class="bg-background text-muted-foreground border-t px-3 py-2 text-xs sm:flex sm:items-center sm:justify-between sm:px-4 sm:py-3 sm:text-sm"
-				>
-					<span>{copy.hero.image.caption}</span>
-					<div class="mt-3 hidden grid-cols-3 gap-2 sm:grid md:mt-0 md:min-w-[260px]">
-						{#each copy.hero.metrics as metric (metric.label)}
-							<div class="lp-metric bg-muted rounded-md px-3 py-2 text-center">
-								<div class="text-foreground text-sm font-semibold">{metric.value}</div>
-								<div class="mt-1 text-[11px] leading-4">{metric.label}</div>
-							</div>
-						{/each}
-					</div>
-				</figcaption>
-			</figure>
+			<div class="lp-hero-visual min-w-0">
+				<LandingMotionDemo copy={copy.motionDemo} variant="hero" />
+			</div>
 		</div>
 	</section>
 
@@ -198,9 +171,10 @@
 				<p class="text-muted-foreground text-base leading-7">{copy.steps.description}</p>
 			</div>
 
-			<div class="mt-8 grid gap-5 lg:grid-cols-3">
+			<div class="mt-8 grid items-start gap-5 lg:grid-cols-3">
 				{#each copy.steps.items as item, index (item.title)}
 					{@const Icon = stepIcons[index] ?? Check}
+					{@const demoVariant = stepDemoVariants[index] ?? 'add'}
 					<article
 						class="lp-card-motion bg-background overflow-hidden rounded-lg border shadow-sm"
 						{@attach reveal({ delay: revealDelay(index) })}
@@ -220,13 +194,7 @@
 							</div>
 						</div>
 						<div class="bg-muted/30 border-t p-3">
-							<img
-								class="mx-auto h-[180px] w-full rounded-md object-contain md:h-[220px]"
-								src={imageSrc(item.image.src)}
-								alt={item.image.alt}
-								loading="lazy"
-								decoding="async"
-							/>
+							<LandingMotionDemo copy={copy.motionDemo} variant={demoVariant} />
 						</div>
 					</article>
 				{/each}
@@ -241,6 +209,10 @@
 					<p class="text-primary text-sm font-semibold">{copy.features.eyebrow}</p>
 					<h2 class="text-3xl leading-tight font-semibold md:text-4xl">{copy.features.title}</h2>
 					<p class="text-muted-foreground text-base leading-7">{copy.features.description}</p>
+				</div>
+
+				<div class="mt-6" {@attach reveal({ delay: 80 })}>
+					<LandingMotionDemo copy={copy.motionDemo} variant="ticker" />
 				</div>
 
 				<div class="mt-8 grid gap-4 md:grid-cols-2">
@@ -394,8 +366,15 @@
 					{copy.finalCta.description}
 				</p>
 			</div>
-			<div class="mx-auto mt-7 w-full max-w-[360px]">
-				<GoogleAuthButton label={copy.finalCta.cta} />
+			<div
+				class="mx-auto mt-7 flex w-full max-w-[520px] flex-col items-center gap-3 sm:flex-row sm:justify-center"
+			>
+				<div class="w-full sm:max-w-[340px]">
+					<GoogleAuthButton label={copy.finalCta.cta} />
+				</div>
+				<Button class="h-10 w-full sm:w-auto" href={pageHref('/demo')} variant="outline">
+					{copy.finalCta.secondaryCta}
+				</Button>
 			</div>
 		</div>
 	</section>
@@ -433,7 +412,7 @@
 
 	.lp-side-visual:hover {
 		transform: translateY(-3px);
-		box-shadow: 0 18px 45px hsl(var(--foreground) / 0.08);
+		box-shadow: 0 18px 45px color-mix(in oklab, var(--foreground) 8%, transparent);
 	}
 
 	.lp-metric {
@@ -464,8 +443,8 @@
 	}
 
 	.lp-card-motion:hover {
-		border-color: hsl(var(--primary) / 0.32);
-		box-shadow: 0 16px 38px hsl(var(--foreground) / 0.07);
+		border-color: color-mix(in oklab, var(--primary) 32%, var(--border));
+		box-shadow: 0 16px 38px color-mix(in oklab, var(--foreground) 7%, transparent);
 	}
 
 	.lp-featured-plan {
@@ -533,10 +512,10 @@
 	@keyframes lp-featured-breathe {
 		0%,
 		100% {
-			box-shadow: 0 12px 32px hsl(var(--primary) / 0.08);
+			box-shadow: 0 12px 32px color-mix(in oklab, var(--primary) 8%, transparent);
 		}
 		50% {
-			box-shadow: 0 18px 42px hsl(var(--primary) / 0.16);
+			box-shadow: 0 18px 42px color-mix(in oklab, var(--primary) 16%, transparent);
 		}
 	}
 

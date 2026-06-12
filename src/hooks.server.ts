@@ -10,6 +10,7 @@ import { svelteKitHandler } from 'better-auth/svelte-kit';
 import { createDb } from '$lib/server/db';
 import { createAuth } from '$lib/auth';
 import { THEMES } from '$lib/constant';
+import { isPublicDemoPathname } from '$lib/server/public-routes';
 import Database from 'better-sqlite3';
 import { drizzle as drizzleSqlite } from 'drizzle-orm/better-sqlite3';
 import * as schema from '$lib/server/db/schema';
@@ -32,6 +33,11 @@ const upsertCookieHeader = (header: string, name: string, value: string) => {
 
 const handleAuth: Handle = async ({ event, resolve }) => {
 	const { locals, url, request } = event;
+
+	if (isPublicDemoPathname(url.pathname)) {
+		return resolve(event);
+	}
+
 	const { db } = locals;
 	const auth = createAuth(db, { requestOrigin: event.url.origin });
 	const session = await auth.api.getSession({ headers: request.headers });
@@ -72,7 +78,7 @@ const handleLocalePreference: Handle = async ({ event, resolve }) => {
 	const accept = event.request.headers.get('accept') ?? '';
 	const isDocumentRequest = event.request.method === 'GET' && accept.includes('text/html');
 
-	if (!isDocumentRequest || !event.locals.db) {
+	if (!isDocumentRequest || !event.locals.db || isPublicDemoPathname(event.url.pathname)) {
 		return resolve(event);
 	}
 
@@ -153,25 +159,27 @@ const handleTheme: Handle = async ({ event, resolve }) => {
 	}
 
 	let activeTheme = 'rose';
-	try {
-		const auth = createAuth(event.locals.db, { requestOrigin: event.url.origin });
-		const session = await auth.api.getSession({
-			headers: event.request.headers
-		});
-		const userId = session?.user.id;
-		if (userId) {
-			const record = await event.locals.db.query.user.findFirst({
-				columns: {
-					activeTheme: true
-				},
-				where: (t, { eq }) => eq(t.id, userId)
+	if (!isPublicDemoPathname(event.url.pathname)) {
+		try {
+			const auth = createAuth(event.locals.db, { requestOrigin: event.url.origin });
+			const session = await auth.api.getSession({
+				headers: event.request.headers
 			});
-			if (record?.activeTheme && THEMES.includes(record.activeTheme)) {
-				activeTheme = record.activeTheme;
+			const userId = session?.user.id;
+			if (userId) {
+				const record = await event.locals.db.query.user.findFirst({
+					columns: {
+						activeTheme: true
+					},
+					where: (t, { eq }) => eq(t.id, userId)
+				});
+				if (record?.activeTheme && THEMES.includes(record.activeTheme)) {
+					activeTheme = record.activeTheme;
+				}
 			}
+		} catch {
+			// Keep default theme if anything fails
 		}
-	} catch {
-		// Keep default theme if anything fails
 	}
 
 	const themeClass = `theme-${activeTheme}`;
