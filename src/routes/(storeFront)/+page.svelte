@@ -30,15 +30,7 @@
 	const stepDemoVariants = ['add', 'notification', 'analytics'] as const;
 	const featureIcons = [Check, CalendarDays, Bell, ChartPie, Download, Home];
 	const pricingStartLabel = $derived(locale === 'en' ? 'Start with Google' : 'Googleで始める');
-	const pwaImage = $derived({
-		src: '/images/onboarding/pwa-real.png',
-		alt:
-			locale === 'en'
-				? 'SubTrack added to a phone home screen'
-				: 'SubTrack をスマホのホーム画面に追加した画面'
-	});
 
-	const imageSrc = (src: string) => `${base}${src}`;
 	const pageHref = (href: string) =>
 		href.startsWith('#') || href.startsWith('http') ? href : `${base}${href}`;
 	const revealDelay = (index: number) => Math.min(index * 90, 360);
@@ -203,59 +195,39 @@
 	</section>
 
 	<section id="features" class="bg-muted/30 scroll-mt-20 border-y py-14 md:py-18">
-		<div class="mx-auto grid max-w-6xl gap-8 px-4 lg:grid-cols-[minmax(0,0.9fr)_340px] lg:px-8">
-			<div class="min-w-0">
-				<div class="max-w-3xl space-y-3" {@attach reveal()}>
-					<p class="text-primary text-sm font-semibold">{copy.features.eyebrow}</p>
-					<h2 class="text-3xl leading-tight font-semibold md:text-4xl">{copy.features.title}</h2>
-					<p class="text-muted-foreground text-base leading-7">{copy.features.description}</p>
-				</div>
-
-				<div class="mt-6" {@attach reveal({ delay: 80 })}>
-					<LandingMotionDemo copy={copy.motionDemo} variant="ticker" />
-				</div>
-
-				<div class="mt-8 grid gap-4 md:grid-cols-2">
-					{#each copy.features.items as item, index (item.title)}
-						{@const Icon = featureIcons[index] ?? Check}
-						<article
-							class="lp-card-motion bg-background rounded-lg border p-5 shadow-sm"
-							{@attach reveal({ delay: revealDelay(index) })}
-						>
-							<div class="flex items-start gap-4">
-								<div
-									class="bg-primary/10 text-primary flex size-10 shrink-0 items-center justify-center rounded-md"
-								>
-									<Icon class="size-5" />
-								</div>
-								<div class="min-w-0">
-									<h3 class="font-semibold">{item.title}</h3>
-									<p class="text-muted-foreground mt-1 text-sm">{item.description}</p>
-									<p class="mt-3 leading-7">{item.detail}</p>
-								</div>
-							</div>
-						</article>
-					{/each}
-				</div>
+		<div class="mx-auto max-w-6xl px-4 lg:px-8">
+			<div class="max-w-3xl space-y-3" {@attach reveal()}>
+				<p class="text-primary text-sm font-semibold">{copy.features.eyebrow}</p>
+				<h2 class="text-3xl leading-tight font-semibold md:text-4xl">{copy.features.title}</h2>
+				<p class="text-muted-foreground text-base leading-7">{copy.features.description}</p>
 			</div>
 
-			<figure
-				class="lp-side-visual bg-background overflow-hidden rounded-lg border shadow-sm lg:sticky lg:top-24 lg:self-start"
-				{@attach reveal({ delay: 160 })}
-			>
-				<div class="border-b px-4 py-3">
-					<p class="font-medium">{locale === 'en' ? 'Home-screen access' : 'ホーム画面から起動'}</p>
-				</div>
-				<div class="bg-muted/30 p-4">
-					<img
-						class="mx-auto max-h-[420px] w-full rounded-md object-contain"
-						src={imageSrc(pwaImage.src)}
-						alt={pwaImage.alt}
-						loading="lazy"
-						decoding="async"
-					/>
-				</div>
-			</figure>
+			<div class="mt-6" {@attach reveal({ delay: 80 })}>
+				<LandingMotionDemo copy={copy.motionDemo} variant="ticker" />
+			</div>
+
+			<div class="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+				{#each copy.features.items as item, index (item.title)}
+					{@const Icon = featureIcons[index] ?? Check}
+					<article
+						class="lp-card-motion bg-background rounded-lg border p-5 shadow-sm"
+						{@attach reveal({ delay: revealDelay(index) })}
+					>
+						<div class="flex items-start gap-4">
+							<div
+								class="bg-primary/10 text-primary flex size-10 shrink-0 items-center justify-center rounded-md"
+							>
+								<Icon class="size-5" />
+							</div>
+							<div class="min-w-0">
+								<h3 class="font-semibold">{item.title}</h3>
+								<p class="text-muted-foreground mt-1 text-sm">{item.description}</p>
+								<p class="mt-3 leading-7">{item.detail}</p>
+							</div>
+						</div>
+					</article>
+				{/each}
+			</div>
 		</div>
 	</section>
 
@@ -404,17 +376,6 @@
 			lp-soft-float 8s ease-in-out 1.2s infinite;
 	}
 
-	.lp-side-visual {
-		transition:
-			transform 240ms ease,
-			box-shadow 240ms ease;
-	}
-
-	.lp-side-visual:hover {
-		transform: translateY(-3px);
-		box-shadow: 0 18px 45px color-mix(in oklab, var(--foreground) 8%, transparent);
-	}
-
 	.lp-metric {
 		transform-origin: bottom;
 		animation: lp-metric-pop 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
@@ -543,7 +504,6 @@
 
 		.lp-trust-item:hover,
 		.lp-card-motion:hover,
-		.lp-side-visual:hover,
 		:global(.lp-reveal:not(.is-visible)) {
 			opacity: 1;
 			transform: none;
