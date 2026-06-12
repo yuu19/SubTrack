@@ -1,777 +1,957 @@
 <script lang="ts">
+	import dayjs from 'dayjs';
+	import type { Dayjs } from 'dayjs';
+	import DonutChart from '$lib/components/analytics/DonutChart.svelte';
+	import CalendarGrid from '$lib/components/calendar/CalendarGrid.svelte';
+	import CalendarHeader from '$lib/components/calendar/CalendarHeader.svelte';
+	import EventDetailModal from '$lib/components/calendar/EventDetailModal.svelte';
+	import SubscriptionDetailPanel from '$lib/components/subscriptions/SubscriptionDetailPanel.svelte';
+	import { Badge } from '$lib/components/ui/badge';
 	import Button from '$lib/components/ui/button/button.svelte';
+	import {
+		Card,
+		CardContent,
+		CardDescription,
+		CardHeader,
+		CardTitle
+	} from '$lib/components/ui/card';
+	import Input from '$lib/components/ui/input/input.svelte';
+	import * as Dialog from '$lib/components/ui/dialog';
 	import type { AppLocale } from '$lib/constant';
 	import type {
 		DemoPageCopy,
 		DemoSubscriptionCycle,
 		DemoSubscriptionSample
 	} from '$lib/content/site-content';
-	import { formatCurrencyYen, formatNotifyDays } from '$lib/locale';
+	import {
+		formatCurrencyYen,
+		formatLongDate,
+		formatNotifyDays,
+		getCycleLabel,
+		getCycleUnitLabel
+	} from '$lib/locale';
+	import {
+		getFallbackSubscriptionColor,
+		getSubscriptionColorLabel,
+		getSubscriptionColorStyle,
+		getSubscriptionColorSurfaceStyle,
+		resolveSubscriptionColor,
+		subscriptionColors,
+		type SubscriptionColor
+	} from '$lib/subscription-colors';
 	import { cn } from '$lib/utils';
+	import { untrack } from 'svelte';
 	import {
 		Bell,
 		CalendarDays,
-		ChartPie,
-		Check,
-		CircleDollarSign,
 		CreditCard,
-		LayoutDashboard,
-		List,
+		ListPlus,
+		PieChart,
 		Plus,
-		RotateCcw,
-		WalletCards
+		RotateCcw
 	} from 'lucide-svelte';
 
 	type DemoTab = keyof DemoPageCopy['tabs'];
+	type AnalyticsPeriod = 'monthly' | 'yearly';
 	type DemoSubscription = DemoSubscriptionSample;
-	type AnalyticsPeriod = DemoSubscriptionCycle;
+
+	type DemoCalendarEvent = {
+		id: string;
+		subscriptionId: number;
+		title: string;
+		date: string;
+		amount: number;
+		color: SubscriptionColor;
+		description?: string | null;
+	};
+
+	type AddFormState = {
+		serviceName: string;
+		color: SubscriptionColor;
+		cycle: DemoSubscriptionCycle;
+		notifyDaysBefore: number;
+		amount: number;
+		firstPaymentDate: string;
+		tags: string;
+	};
+
+	type AnalyticsItem = {
+		serviceName: string;
+		color: SubscriptionColor;
+		amount: number;
+		share: number;
+		subscriptionCount: number;
+	};
+
+	type AnalyticsSummary = {
+		total: number;
+		items: AnalyticsItem[];
+		subscriptionCount: number;
+	};
 
 	type Props = {
 		copy: DemoPageCopy;
 		locale: AppLocale;
 	};
 
-	const tabOrder: DemoTab[] = [
-		'dashboard',
-		'subscriptions',
-		'calendar',
-		'analytics',
-		'notifications'
-	];
+	const tabOrder: DemoTab[] = ['subscriptions', 'calendar', 'analytics'];
 	const tabIcons = {
-		dashboard: LayoutDashboard,
-		subscriptions: List,
+		subscriptions: CreditCard,
 		calendar: CalendarDays,
-		analytics: ChartPie,
-		notifications: Bell
+		analytics: PieChart
 	};
-	const calendarDays = Array.from({ length: 30 }, (_, index) => index + 1);
+	const demoToday = dayjs('2026-06-13');
+	const cycleToMonths: Record<string, number> = {
+		monthly: 1,
+		quarterly: 3,
+		yearly: 12
+	};
+	const cycleDayMap: Record<string, number> = {
+		monthly: 30,
+		quarterly: 90,
+		yearly: 365
+	};
 
 	let { copy, locale }: Props = $props();
 
-	const cloneSubscriptions = (items: DemoSubscription[]) => items.map((item) => ({ ...item }));
+	const cloneSubscription = (item: DemoSubscription): DemoSubscription => ({
+		...item,
+		tags: [...item.tags]
+	});
+	const cloneSubscriptions = (items: DemoSubscription[]) => items.map(cloneSubscription);
 	const getInitialSubscriptions = () => cloneSubscriptions(copy.samples.initialSubscriptions);
-	const getInitialSelectedId = () => copy.samples.initialSubscriptions[0]?.id ?? '';
+	const getInitialSelectedId = () => copy.samples.initialSubscriptions[0]?.id ?? null;
+	const getNextDemoId = () =>
+		Math.max(
+			0,
+			...copy.samples.initialSubscriptions.map((subscription) => subscription.id),
+			copy.samples.addCandidate.id
+		) + 1;
 
-	let activeTab = $state<DemoTab>('dashboard');
-	let subscriptions = $state<DemoSubscription[]>(getInitialSubscriptions());
-	let selectedSubscriptionId = $state(getInitialSelectedId());
-	let selectedCalendarId = $state(getInitialSelectedId());
-	let acknowledgedNotificationIds = $state<string[]>([]);
-	let snoozedNotificationIds = $state<string[]>([]);
-	let analyticsPeriod = $state<AnalyticsPeriod>('monthly');
-	let interactionMessage = $state('');
-
-	const addCandidate = $derived(copy.samples.addCandidate);
-	const hasAddCandidate = $derived(
-		subscriptions.some((subscription) => subscription.id === addCandidate.id)
-	);
-	const sortedSubscriptions = $derived(
-		[...subscriptions].sort((a, b) => a.calendarDay - b.calendarDay)
-	);
-	const selectedSubscription = $derived(
-		subscriptions.find((subscription) => subscription.id === selectedSubscriptionId) ??
-			sortedSubscriptions[0] ??
-			null
-	);
-	const selectedCalendarSubscription = $derived(
-		subscriptions.find((subscription) => subscription.id === selectedCalendarId) ??
-			sortedSubscriptions[0] ??
-			null
-	);
-	const upcomingSubscriptions = $derived(sortedSubscriptions.slice(0, 4));
-	const notificationSubscriptions = $derived(sortedSubscriptions.slice(0, 3));
-	const monthlyTotal = $derived(calculateTotal(subscriptions, 'monthly'));
-	const yearlyTotal = $derived(calculateTotal(subscriptions, 'yearly'));
-	const analyticsTotal = $derived(calculateTotal(subscriptions, analyticsPeriod));
-	const categoryBreakdown = $derived.by(() => {
-		const totals = new Map<string, { category: string; amount: number; color: string }>();
-
-		for (const subscription of subscriptions) {
-			const amount = normalizeAmount(subscription, analyticsPeriod);
-			const existing = totals.get(subscription.category);
-
-			if (existing) {
-				existing.amount += amount;
-				continue;
-			}
-
-			totals.set(subscription.category, {
-				category: subscription.category,
-				amount,
-				color: subscription.color
-			});
-		}
-
-		return Array.from(totals.values())
-			.sort((a, b) => b.amount - a.amount)
-			.map((item) => ({
-				...item,
-				share: analyticsTotal > 0 ? item.amount / analyticsTotal : 0
-			}));
+	const createAddForm = (subscription: DemoSubscription): AddFormState => ({
+		serviceName: subscription.serviceName,
+		color: resolveSubscriptionColor(subscription.color),
+		cycle: subscription.cycle,
+		notifyDaysBefore: subscription.notifyDaysBefore,
+		amount: subscription.amount,
+		firstPaymentDate: subscription.firstPaymentDate,
+		tags: subscription.tags.join(', ')
 	});
 
+	let activeTab = $state<DemoTab>('subscriptions');
+	let subscriptions = $state<DemoSubscription[]>(untrack(getInitialSubscriptions));
+	let selectedSubscriptionId = $state<number | null>(untrack(getInitialSelectedId));
+	let currentDate = $state(demoToday.startOf('month'));
+	let selectedDate = $state<string | null>(null);
+	let selectedCalendarSubscriptionId = $state<number | null>(null);
+	let isCalendarDetailOpen = $state(false);
+	let detailOpen = $state(false);
+	let addOpen = $state(false);
+	let analyticsPeriod = $state<AnalyticsPeriod>('monthly');
+	let pushSubscribed = $state(false);
+	let interactionMessage = $state('');
+	let addForm = $state<AddFormState>(untrack(() => createAddForm(copy.samples.addCandidate)));
+	let nextDemoId = $state(untrack(getNextDemoId));
+
+	const colorOptions = $derived(
+		subscriptionColors.map((value) => ({
+			value,
+			label: getSubscriptionColorLabel(value, locale),
+			style: getSubscriptionColorStyle(value),
+			surface: getSubscriptionColorSurfaceStyle(value)
+		}))
+	);
+	const sortedSubscriptions = $derived(
+		[...subscriptions].sort(
+			(a, b) =>
+				a.nextBillingAt.localeCompare(b.nextBillingAt) || a.serviceName.localeCompare(b.serviceName)
+		)
+	);
+	const selectedSubscription = $derived(
+		subscriptions.find((subscription) => subscription.id === selectedSubscriptionId) ?? null
+	);
+	const monthlyTotal = $derived(calculateTotal(subscriptions, 'monthly'));
+	const yearlyTotal = $derived(calculateTotal(subscriptions, 'yearly'));
+	const calendarEvents = $derived.by(() => {
+		const { gridStart, gridEnd } = getGridRange(currentDate);
+		return buildEventsForRange(subscriptions, gridStart, gridEnd).sort(
+			(a, b) => a.date.localeCompare(b.date) || a.title.localeCompare(b.title)
+		);
+	});
+	const selectedEvents = $derived.by(() =>
+		selectedDate ? calendarEvents.filter((event) => event.date === selectedDate) : []
+	);
+	const selectedCalendarSubscription = $derived(
+		subscriptions.find((subscription) => subscription.id === selectedCalendarSubscriptionId) ?? null
+	);
+	const analyticsSummary = $derived(buildAnalyticsSummary(subscriptions, analyticsPeriod));
+	const topAnalyticsItem = $derived(analyticsSummary.items[0] ?? null);
+	const chartSegments = $derived(
+		analyticsSummary.items.map((item) => ({
+			label: item.serviceName,
+			value: item.amount,
+			color: getSubscriptionColorStyle(item.color)
+		}))
+	);
+	const activeViewTitle = $derived(copy.tabs[activeTab]);
+
 	function normalizeAmount(subscription: DemoSubscription, period: AnalyticsPeriod) {
+		if (!Number.isFinite(subscription.amount) || subscription.amount <= 0) return 0;
+
 		if (period === 'monthly') {
-			return subscription.cycle === 'yearly'
-				? Math.round(subscription.amount / 12)
-				: subscription.amount;
+			if (subscription.cycle === 'yearly') return Math.round(subscription.amount / 12);
+			if (subscription.cycle === 'quarterly') return Math.round(subscription.amount / 3);
+			return Math.round(subscription.amount);
 		}
 
-		return subscription.cycle === 'yearly' ? subscription.amount : subscription.amount * 12;
+		if (subscription.cycle === 'yearly') return Math.round(subscription.amount);
+		if (subscription.cycle === 'quarterly') return Math.round(subscription.amount * 4);
+		return Math.round(subscription.amount * 12);
 	}
 
 	function calculateTotal(items: DemoSubscription[], period: AnalyticsPeriod) {
 		return items.reduce((total, subscription) => total + normalizeAmount(subscription, period), 0);
 	}
 
+	function buildAnalyticsSummary(
+		items: DemoSubscription[],
+		period: AnalyticsPeriod
+	): AnalyticsSummary {
+		const grouped = new Map<
+			string,
+			{ amount: number; color: SubscriptionColor; subscriptionCount: number }
+		>();
+
+		for (const subscription of items) {
+			const serviceName = subscription.serviceName.trim() || 'Unknown';
+			const amount = normalizeAmount(subscription, period);
+			if (amount <= 0) continue;
+
+			const existing = grouped.get(serviceName);
+			grouped.set(serviceName, {
+				amount: (existing?.amount ?? 0) + amount,
+				color: existing?.color ?? resolveSubscriptionColor(subscription.color),
+				subscriptionCount: (existing?.subscriptionCount ?? 0) + 1
+			});
+		}
+
+		const total = Array.from(grouped.values()).reduce((sum, item) => sum + item.amount, 0);
+		const analyticsItems = Array.from(grouped.entries())
+			.map(([serviceName, item]) => ({
+				serviceName,
+				color: item.color,
+				amount: item.amount,
+				subscriptionCount: item.subscriptionCount,
+				share: total > 0 ? item.amount / total : 0
+			}))
+			.sort((a, b) => b.amount - a.amount || a.serviceName.localeCompare(b.serviceName));
+
+		return {
+			total,
+			items: analyticsItems,
+			subscriptionCount: items.length
+		};
+	}
+
 	function formatAmount(amount: number) {
 		return formatCurrencyYen(amount, locale);
 	}
 
-	function formatNotificationLeadTime(days: number) {
-		return formatNotifyDays(days, locale);
+	function formatBillingDate(value?: string | null) {
+		return formatLongDate(value, locale);
 	}
 
-	function getSubscriptionsForDay(day: number) {
-		return sortedSubscriptions.filter((subscription) => subscription.calendarDay === day);
+	function getCycleProgress(subscription: DemoSubscription) {
+		const total = cycleDayMap[subscription.cycle] ?? 0;
+		if (!total) return 1;
+		const daysLeft = Number(subscription.daysUntilNextBilling ?? 0);
+		if (!Number.isFinite(daysLeft)) return 1;
+		const elapsed = Math.max(0, total - daysLeft);
+		return Math.min(1, elapsed / total);
 	}
 
-	function getNotificationStatus(subscriptionId: string) {
-		if (acknowledgedNotificationIds.includes(subscriptionId)) {
-			return copy.notifications.statusAcknowledged;
-		}
-
-		if (snoozedNotificationIds.includes(subscriptionId)) {
-			return copy.notifications.statusSnoozed;
-		}
-
-		return copy.notifications.statusPending;
+	function getGridRange(date: Dayjs) {
+		const startOfMonth = date.startOf('month');
+		const startDay = startOfMonth.day();
+		const gridStart = startOfMonth.subtract(startDay, 'day').startOf('day');
+		const gridEnd = gridStart.add(41, 'day').startOf('day');
+		return { gridStart, gridEnd };
 	}
 
-	function getNotificationStatusClass(subscriptionId: string) {
-		if (acknowledgedNotificationIds.includes(subscriptionId)) {
-			return 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300';
-		}
+	function buildEventsForRange(
+		items: DemoSubscription[],
+		rangeStart: Dayjs,
+		rangeEnd: Dayjs
+	): DemoCalendarEvent[] {
+		const events: DemoCalendarEvent[] = [];
 
-		if (snoozedNotificationIds.includes(subscriptionId)) {
-			return 'border-blue-500/30 bg-blue-500/10 text-blue-700 dark:text-blue-300';
-		}
+		items.forEach((subscription, index) => {
+			const first = dayjs(subscription.firstPaymentDate).startOf('day');
+			if (!first.isValid()) return;
 
-		return 'border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300';
+			const interval = cycleToMonths[subscription.cycle] ?? 1;
+			let occurrence = first;
+
+			if (occurrence.isBefore(rangeStart, 'day')) {
+				const diffMonths = rangeStart.diff(occurrence, 'month');
+				const steps = Math.floor(diffMonths / interval);
+				occurrence = occurrence.add(steps * interval, 'month');
+				while (occurrence.isBefore(rangeStart, 'day')) {
+					occurrence = occurrence.add(interval, 'month');
+				}
+			}
+
+			const color = resolveSubscriptionColor(
+				subscription.color,
+				getFallbackSubscriptionColor(index)
+			);
+
+			while (occurrence.isSame(rangeEnd, 'day') || occurrence.isBefore(rangeEnd, 'day')) {
+				events.push({
+					id: `demo-${subscription.id}-${occurrence.format('YYYY-MM-DD')}`,
+					subscriptionId: subscription.id,
+					title: subscription.serviceName,
+					date: occurrence.format('YYYY-MM-DD'),
+					amount: Number(subscription.amount ?? 0),
+					color,
+					description: subscription.tags.join(' / ')
+				});
+				occurrence = occurrence.add(interval, 'month');
+			}
+		});
+
+		return events;
 	}
 
-	function handleAddSubscription() {
-		activeTab = 'subscriptions';
+	function createSubscriptionFromForm(): DemoSubscription {
+		const firstPayment = dayjs(addForm.firstPaymentDate).isValid()
+			? dayjs(addForm.firstPaymentDate).format('YYYY-MM-DD')
+			: copy.samples.addCandidate.firstPaymentDate;
+		const nextBilling = calculateNextBilling(firstPayment, addForm.cycle);
+		const tags = addForm.tags
+			.split(',')
+			.map((tag) => tag.trim())
+			.filter(Boolean);
 
-		if (hasAddCandidate) {
-			selectedSubscriptionId = addCandidate.id;
-			return;
+		return {
+			id: nextDemoId++,
+			userId: null,
+			serviceName: addForm.serviceName.trim() || copy.samples.addCandidate.serviceName,
+			color: addForm.color,
+			cycle: addForm.cycle,
+			amount: Math.max(0, Math.round(Number(addForm.amount) || 0)),
+			firstPaymentDate: firstPayment,
+			nextBillingAt: nextBilling.format('YYYY-MM-DD'),
+			daysUntilNextBilling: Math.max(0, nextBilling.diff(demoToday, 'day')),
+			notifyDaysBefore: Number(addForm.notifyDaysBefore) || 3,
+			tags,
+			isSample: true,
+			note: copy.samples.addCandidate.note
+		};
+	}
+
+	function calculateNextBilling(firstPaymentDate: string, cycle: DemoSubscriptionCycle) {
+		const interval = cycleToMonths[cycle] ?? 1;
+		let nextBilling = dayjs(firstPaymentDate).startOf('day');
+
+		while (nextBilling.isBefore(demoToday, 'day')) {
+			nextBilling = nextBilling.add(interval, 'month');
 		}
 
-		subscriptions = [...subscriptions, { ...addCandidate }];
-		selectedSubscriptionId = addCandidate.id;
-		selectedCalendarId = addCandidate.id;
+		return nextBilling;
+	}
+
+	function handleAddSubmit(event: SubmitEvent) {
+		event.preventDefault();
+		const nextSubscription = createSubscriptionFromForm();
+		subscriptions = [...subscriptions, nextSubscription];
+		selectedSubscriptionId = nextSubscription.id;
+		addOpen = false;
 		interactionMessage = copy.operations.addedMessage;
+		setActiveTab('subscriptions');
 	}
 
 	function handleReset() {
-		const initialSubscriptions = cloneSubscriptions(copy.samples.initialSubscriptions);
+		const initialSubscriptions = getInitialSubscriptions();
 		subscriptions = initialSubscriptions;
-		selectedSubscriptionId = initialSubscriptions[0]?.id ?? '';
-		selectedCalendarId = initialSubscriptions[0]?.id ?? '';
-		acknowledgedNotificationIds = [];
-		snoozedNotificationIds = [];
+		selectedSubscriptionId = initialSubscriptions[0]?.id ?? null;
+		selectedDate = null;
+		selectedCalendarSubscriptionId = null;
+		isCalendarDetailOpen = false;
+		detailOpen = false;
 		analyticsPeriod = 'monthly';
-		activeTab = 'dashboard';
+		pushSubscribed = false;
+		addForm = createAddForm(copy.samples.addCandidate);
+		nextDemoId = getNextDemoId();
+		setActiveTab('subscriptions');
 		interactionMessage = copy.operations.resetMessage;
+		currentDate = demoToday.startOf('month');
+	}
+
+	function setActiveTab(tab: DemoTab) {
+		activeTab = tab;
+		scrollToTop();
+	}
+
+	function scrollToTop() {
+		if (typeof window === 'undefined') return;
+		window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
 	}
 
 	function handleSelectSubscription(subscription: DemoSubscription) {
 		selectedSubscriptionId = subscription.id;
+		detailOpen = true;
 	}
 
-	function handleSelectCalendarEvent(subscription: DemoSubscription) {
-		selectedCalendarId = subscription.id;
+	function handleTogglePush() {
+		pushSubscribed = !pushSubscribed;
+		interactionMessage = pushSubscribed
+			? copy.operations.pushEnabledMessage
+			: copy.operations.pushDisabledMessage;
+	}
+
+	function handleBlockedEdit() {
+		detailOpen = false;
+		isCalendarDetailOpen = false;
+		interactionMessage = copy.operations.editBlockedMessage;
+	}
+
+	function handleBlockedDelete() {
+		detailOpen = false;
+		isCalendarDetailOpen = false;
+		interactionMessage = copy.operations.deleteBlockedMessage;
+	}
+
+	function goToPrevMonth() {
+		currentDate = currentDate.subtract(1, 'month');
+	}
+
+	function goToNextMonth() {
+		currentDate = currentDate.add(1, 'month');
+	}
+
+	function goToDemoToday() {
+		currentDate = demoToday;
+	}
+
+	function handleDateClick(date: Dayjs) {
+		selectedDate = dayjs(date).format('YYYY-MM-DD');
+		selectedCalendarSubscriptionId = null;
+		isCalendarDetailOpen = true;
+	}
+
+	function handleEventClick(event: DemoCalendarEvent) {
+		selectedDate = event.date;
+		selectedCalendarSubscriptionId = null;
+		isCalendarDetailOpen = true;
 		interactionMessage = copy.operations.selectedEventMessage;
 	}
 
-	function handleToggleNotification(subscription: DemoSubscription) {
-		if (acknowledgedNotificationIds.includes(subscription.id)) {
-			acknowledgedNotificationIds = acknowledgedNotificationIds.filter(
-				(id) => id !== subscription.id
-			);
-			snoozedNotificationIds = [...new Set([...snoozedNotificationIds, subscription.id])];
-			interactionMessage = copy.operations.renotifiedMessage;
-			return;
-		}
+	function handleCalendarEventSelect(event: DemoCalendarEvent) {
+		selectedCalendarSubscriptionId = event.subscriptionId;
+	}
 
-		acknowledgedNotificationIds = [...new Set([...acknowledgedNotificationIds, subscription.id])];
-		snoozedNotificationIds = snoozedNotificationIds.filter((id) => id !== subscription.id);
-		interactionMessage = copy.operations.acknowledgedMessage;
+	function backToDateList() {
+		selectedCalendarSubscriptionId = null;
+	}
+
+	function closeCalendarDetail() {
+		isCalendarDetailOpen = false;
+		selectedDate = null;
+		selectedCalendarSubscriptionId = null;
 	}
 </script>
 
-<section class="mx-auto max-w-7xl px-4 py-8 lg:px-8 lg:py-10">
-	<div class="grid gap-4 lg:grid-cols-[220px_minmax(0,1fr)]">
+<section class="bg-background">
+	<div class="border-b">
+		<div class="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3 lg:px-8">
+			<div class="min-w-0">
+				<p class="text-primary text-sm font-semibold">SubTrack</p>
+				<h1 class="truncate text-xl font-semibold">{activeViewTitle}</h1>
+			</div>
+
+			<nav class="ml-auto hidden items-center gap-1 md:flex" aria-label={copy.badge}>
+				{#each tabOrder as tab (tab)}
+					{@const Icon = tabIcons[tab]}
+					<button
+						type="button"
+						class={cn(
+							'text-muted-foreground hover:bg-muted hover:text-foreground inline-flex h-10 items-center gap-2 rounded-md px-3 text-sm font-medium transition-colors',
+							activeTab === tab && 'bg-muted text-foreground'
+						)}
+						aria-current={activeTab === tab ? 'page' : undefined}
+						onclick={() => setActiveTab(tab)}
+					>
+						<Icon class="size-4" />
+						{copy.tabs[tab]}
+					</button>
+				{/each}
+			</nav>
+		</div>
+	</div>
+
+	<div
+		class="mx-auto max-w-7xl px-4 py-6 pb-[calc(env(safe-area-inset-bottom)+6rem)] md:pb-8 lg:px-8"
+	>
+		{#if interactionMessage}
+			<div
+				class="border-primary/25 bg-primary/10 text-primary mb-4 rounded-lg border px-4 py-3 text-sm font-medium"
+				aria-live="polite"
+			>
+				{interactionMessage}
+			</div>
+		{/if}
+
+		{#if activeTab === 'subscriptions'}
+			<div class="flex flex-col gap-6">
+				<header class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+					<div class="space-y-2">
+						<div class="text-primary inline-flex items-center gap-2 text-sm font-medium">
+							<CreditCard class="size-4" />
+							<span>{copy.subscriptions.title}</span>
+						</div>
+						<div class="space-y-2">
+							<h2 class="text-3xl font-bold tracking-tight">{copy.subscriptions.tableTitle}</h2>
+							<p class="text-muted-foreground max-w-2xl leading-7">
+								{copy.subscriptions.description}
+							</p>
+						</div>
+					</div>
+
+					<div class="flex flex-wrap items-center gap-2">
+						<Button type="button" size="sm" variant="outline" onclick={handleTogglePush}>
+							<Bell class="size-4" />
+							{pushSubscribed ? copy.subscriptions.pushDisable : copy.subscriptions.pushEnable}
+						</Button>
+						<Button type="button" size="sm" variant="outline" onclick={handleReset}>
+							<RotateCcw class="size-4" />
+							{copy.subscriptions.resetAction}
+						</Button>
+						<Button type="button" size="sm" onclick={() => (addOpen = true)}>
+							<Plus class="size-4" />
+							{copy.subscriptions.addAction}
+						</Button>
+					</div>
+				</header>
+
+				<div class="text-muted-foreground flex flex-wrap items-center gap-2 text-xs">
+					<Badge variant={pushSubscribed ? 'default' : 'secondary'}>
+						{pushSubscribed ? copy.subscriptions.pushEnabled : copy.subscriptions.pushDisabled}
+					</Badge>
+					<span>{copy.subscriptions.pushHint}</span>
+				</div>
+
+				<div class="grid gap-4 md:grid-cols-3">
+					<div class="rounded-lg border p-4">
+						<p class="text-muted-foreground text-sm">{copy.common.monthlyTotal}</p>
+						<p class="mt-2 text-2xl font-semibold">{formatAmount(monthlyTotal)}</p>
+					</div>
+					<div class="rounded-lg border p-4">
+						<p class="text-muted-foreground text-sm">{copy.common.yearlyTotal}</p>
+						<p class="mt-2 text-2xl font-semibold">{formatAmount(yearlyTotal)}</p>
+					</div>
+					<div class="rounded-lg border p-4">
+						<p class="text-muted-foreground text-sm">{copy.common.activeSubscriptions}</p>
+						<p class="mt-2 text-2xl font-semibold">{subscriptions.length}</p>
+					</div>
+				</div>
+
+				<div class="flex flex-col gap-4">
+					{#each sortedSubscriptions as sub (sub.id)}
+						<Card
+							class="cursor-pointer overflow-hidden"
+							role="button"
+							tabindex={0}
+							onkeydown={(event) => {
+								if (event.key === 'Enter' || event.key === ' ') {
+									event.preventDefault();
+									handleSelectSubscription(sub);
+								}
+							}}
+							onclick={() => handleSelectSubscription(sub)}
+						>
+							<CardHeader class="pb-3">
+								<div class="flex items-start justify-between gap-4">
+									<div class="min-w-0 space-y-1">
+										<CardTitle class="flex min-w-0 items-center gap-2 text-base">
+											<span
+												class="size-2.5 shrink-0 rounded-full"
+												style:background-color={getSubscriptionColorStyle(
+													resolveSubscriptionColor(sub.color)
+												)}
+											></span>
+											<span class="truncate">{sub.serviceName}</span>
+										</CardTitle>
+										<CardDescription class="flex flex-wrap items-center gap-2 text-xs">
+											<span>{getCycleLabel(sub.cycle, locale)}</span>
+											{#each sub.tags as tag (tag)}
+												<Badge variant="secondary" class="text-[10px]">{tag}</Badge>
+											{/each}
+										</CardDescription>
+									</div>
+									<div class="shrink-0 text-right">
+										<div class="text-base font-semibold">
+											{formatAmount(sub.amount)}
+											<span class="text-muted-foreground text-xs">
+												/ {getCycleUnitLabel(sub.cycle, locale)}
+											</span>
+										</div>
+									</div>
+								</div>
+							</CardHeader>
+							<CardContent class="space-y-3 pt-0">
+								<div class="flex items-center justify-between gap-3 text-sm">
+									<span class="text-muted-foreground truncate">
+										{formatBillingDate(sub.nextBillingAt)}
+									</span>
+									<span class="text-muted-foreground shrink-0">
+										{formatNotifyDays(sub.notifyDaysBefore, locale)}
+									</span>
+								</div>
+								<div class="bg-muted h-1 w-full rounded-full">
+									<div
+										class="bg-primary h-1 rounded-full transition-[width]"
+										style={`width: ${Math.max(8, Math.round(getCycleProgress(sub) * 100))}%`}
+									></div>
+								</div>
+							</CardContent>
+						</Card>
+					{/each}
+				</div>
+			</div>
+		{:else if activeTab === 'calendar'}
+			<div class="flex flex-col gap-6">
+				<header class="space-y-2">
+					<div class="text-primary inline-flex items-center gap-2 text-sm font-medium">
+						<CalendarDays class="size-4" />
+						<span>{copy.calendar.title}</span>
+					</div>
+					<h2 class="text-3xl font-bold tracking-tight">{copy.calendar.title}</h2>
+					<p class="text-muted-foreground max-w-2xl leading-7">{copy.calendar.description}</p>
+				</header>
+
+				<div class="bg-background flex min-h-[680px] flex-col overflow-hidden rounded-lg border">
+					<CalendarHeader
+						{currentDate}
+						{locale}
+						onPrevMonth={goToPrevMonth}
+						onNextMonth={goToNextMonth}
+						onToday={goToDemoToday}
+					/>
+					<CalendarGrid
+						{currentDate}
+						{locale}
+						events={calendarEvents}
+						onDateClick={handleDateClick}
+						onEventClick={handleEventClick}
+						onPrevMonth={goToPrevMonth}
+						onNextMonth={goToNextMonth}
+					/>
+				</div>
+			</div>
+		{:else}
+			<div class="mx-auto flex max-w-5xl flex-col gap-6">
+				<header class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+					<div class="space-y-2">
+						<div class="text-primary inline-flex items-center gap-2 text-sm font-medium">
+							<PieChart class="size-4" />
+							<span>{copy.analytics.title}</span>
+						</div>
+						<div class="space-y-2">
+							<h2 class="text-3xl font-bold tracking-tight">{copy.analytics.title}</h2>
+							<p class="text-muted-foreground max-w-2xl leading-7">
+								{copy.analytics.description}
+							</p>
+						</div>
+					</div>
+
+					{#if topAnalyticsItem}
+						<div class="bg-muted/40 hidden min-w-[240px] rounded-lg border p-4 lg:block">
+							<p class="text-muted-foreground text-xs font-medium tracking-[0.2em] uppercase">
+								{copy.analytics.topServiceLabel}
+							</p>
+							<p class="text-foreground mt-3 truncate text-lg font-semibold">
+								{topAnalyticsItem.serviceName}
+							</p>
+							<p class="text-primary mt-1 text-sm font-medium">
+								{formatAmount(topAnalyticsItem.amount)}
+							</p>
+						</div>
+					{/if}
+				</header>
+
+				<div class="bg-muted/30 grid h-11 w-full grid-cols-2 rounded-lg border p-1 sm:w-[18rem]">
+					{#each ['monthly', 'yearly'] as AnalyticsPeriod[] as period (period)}
+						<button
+							type="button"
+							class={cn(
+								'rounded-md px-4 py-2 text-sm font-medium transition-colors',
+								analyticsPeriod === period
+									? 'bg-background text-foreground shadow-sm'
+									: 'text-muted-foreground hover:text-foreground'
+							)}
+							aria-pressed={analyticsPeriod === period}
+							onclick={() => (analyticsPeriod = period)}
+						>
+							{copy.analytics[period]}
+						</button>
+					{/each}
+				</div>
+
+				<div class="grid gap-6 lg:grid-cols-[minmax(320px,380px)_minmax(0,1fr)]">
+					<section class="bg-background rounded-lg border p-5 shadow-sm sm:p-6">
+						<DonutChart
+							segments={chartSegments}
+							total={analyticsSummary.total}
+							totalLabel={copy.analytics.totalLabel}
+							totalDisplay={formatAmount(analyticsSummary.total)}
+							hint={analyticsPeriod === 'monthly'
+								? copy.analytics.periodHintMonthly
+								: copy.analytics.periodHintYearly}
+						/>
+
+						<div class="mt-6 grid gap-3 sm:grid-cols-2">
+							<div class="bg-muted/40 rounded-lg border p-4">
+								<p class="text-muted-foreground text-xs font-medium tracking-[0.2em] uppercase">
+									{copy.analytics.subscriptionCountLabel}
+								</p>
+								<p class="mt-2 text-2xl font-semibold">{analyticsSummary.subscriptionCount}</p>
+							</div>
+							<div class="bg-muted/40 rounded-lg border p-4">
+								<p class="text-muted-foreground text-xs font-medium tracking-[0.2em] uppercase">
+									{copy.analytics.breakdownCountLabel}
+								</p>
+								<p class="mt-2 text-2xl font-semibold">{analyticsSummary.items.length}</p>
+							</div>
+						</div>
+					</section>
+
+					<section class="bg-background rounded-lg border p-5 shadow-sm sm:p-6">
+						<div class="flex items-center justify-between gap-3 border-b pb-4">
+							<div>
+								<h2 class="text-xl font-semibold">{copy.analytics.breakdownTitle}</h2>
+								<p class="text-muted-foreground mt-1 text-sm">
+									{copy.analytics.description}
+								</p>
+							</div>
+							<p class="text-muted-foreground text-xs font-medium tracking-[0.2em] uppercase">
+								{copy.analytics.shareLabel}
+							</p>
+						</div>
+
+						<div class="divide-y">
+							{#each analyticsSummary.items as item (item.serviceName)}
+								<div class="flex items-center gap-3 py-4">
+									<span
+										class="size-3 shrink-0 rounded-full"
+										style:background-color={getSubscriptionColorStyle(item.color)}
+									></span>
+									<div class="min-w-0 flex-1">
+										<p class="truncate font-medium">{item.serviceName}</p>
+										<p class="text-muted-foreground text-sm">{item.subscriptionCount}</p>
+									</div>
+									<div class="text-right">
+										<p class="font-semibold">{formatAmount(item.amount)}</p>
+										<p class="text-muted-foreground text-sm">{Math.round(item.share * 100)}%</p>
+									</div>
+								</div>
+							{/each}
+						</div>
+					</section>
+				</div>
+			</div>
+		{/if}
+	</div>
+</section>
+
+<nav class="pointer-events-none fixed inset-x-0 bottom-0 z-40 md:hidden" aria-label={copy.badge}>
+	<div class="mx-auto w-full max-w-[420px] px-4 pb-[calc(env(safe-area-inset-bottom)+0.75rem)]">
 		<div
-			role="tablist"
-			aria-label={copy.badge}
-			class="bg-background grid h-auto grid-cols-2 gap-2 rounded-lg border p-2 sm:grid-cols-5 lg:sticky lg:top-36 lg:grid-cols-1 lg:self-start"
+			class="bg-background/90 pointer-events-auto flex items-center justify-between rounded-full border px-3 py-2 shadow-lg shadow-black/10 backdrop-blur"
 		>
 			{#each tabOrder as tab (tab)}
 				{@const Icon = tabIcons[tab]}
 				<button
 					type="button"
-					role="tab"
-					aria-selected={activeTab === tab}
 					class={cn(
-						'inline-flex h-11 min-w-0 items-center justify-start gap-1.5 rounded-md border border-transparent px-3 text-xs font-medium transition-colors focus-visible:ring-[3px] focus-visible:outline-1 sm:text-sm lg:justify-start',
+						'flex h-11 w-11 items-center justify-center rounded-full transition-all duration-200',
 						activeTab === tab
-							? 'bg-background text-foreground shadow-sm'
-							: 'text-muted-foreground hover:bg-muted hover:text-foreground'
+							? 'bg-primary text-primary-foreground shadow-md shadow-black/20'
+							: 'text-muted-foreground hover:text-foreground'
 					)}
-					onclick={() => (activeTab = tab)}
+					aria-current={activeTab === tab ? 'page' : undefined}
+					onclick={() => setActiveTab(tab)}
 				>
-					<Icon class="size-4" />
-					<span class="truncate">{copy.tabs[tab]}</span>
+					<Icon class="size-5" />
+					<span class="sr-only">{copy.tabs[tab]}</span>
 				</button>
 			{/each}
 		</div>
-
-		<div class="min-w-0">
-			{#if interactionMessage}
-				<div
-					class="border-primary/25 bg-primary/10 text-primary mb-4 rounded-lg border px-4 py-3 text-sm font-medium"
-					aria-live="polite"
-				>
-					{interactionMessage}
-				</div>
-			{/if}
-
-			{#if activeTab === 'dashboard'}
-				<div class="mt-0">
-					<div class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
-						<div class="grid min-w-0 gap-4 md:grid-cols-3">
-							<article class="demo-motion bg-background rounded-lg border p-5 shadow-sm">
-								<div class="text-muted-foreground flex items-center gap-2">
-									<WalletCards class="size-4" />
-									<span class="text-sm font-medium">{copy.common.monthlyTotal}</span>
-								</div>
-								<p class="mt-3 text-3xl font-semibold tracking-tight">
-									{formatAmount(monthlyTotal)}
-								</p>
-								<p class="text-muted-foreground mt-2 text-sm">{copy.dashboard.overviewTitle}</p>
-							</article>
-
-							<article class="demo-motion bg-background rounded-lg border p-5 shadow-sm">
-								<div class="text-muted-foreground flex items-center gap-2">
-									<CircleDollarSign class="size-4" />
-									<span class="text-sm font-medium">{copy.common.yearlyTotal}</span>
-								</div>
-								<p class="mt-3 text-3xl font-semibold tracking-tight">
-									{formatAmount(yearlyTotal)}
-								</p>
-								<p class="text-muted-foreground mt-2 text-sm">{copy.common.activeSubscriptions}</p>
-							</article>
-
-							<article class="demo-motion bg-background rounded-lg border p-5 shadow-sm">
-								<div class="text-muted-foreground flex items-center gap-2">
-									<CreditCard class="size-4" />
-									<span class="text-sm font-medium">{copy.common.nextBilling}</span>
-								</div>
-								{#if upcomingSubscriptions[0]}
-									<p class="mt-3 truncate text-xl font-semibold">
-										{upcomingSubscriptions[0].serviceName}
-									</p>
-									<p class="text-muted-foreground mt-2 text-sm">
-										{upcomingSubscriptions[0].nextBillingLabel} / {formatAmount(
-											upcomingSubscriptions[0].amount
-										)}
-									</p>
-								{/if}
-							</article>
-						</div>
-
-						<aside class="bg-background rounded-lg border p-5 shadow-sm">
-							<div class="flex items-start justify-between gap-3">
-								<div>
-									<h2 class="text-lg font-semibold">{copy.dashboard.quickActionsTitle}</h2>
-									<p class="text-muted-foreground mt-1 text-sm">{copy.dashboard.description}</p>
-								</div>
-								<span
-									class="bg-primary/10 text-primary inline-flex size-9 shrink-0 items-center justify-center rounded-md"
-								>
-									<LayoutDashboard class="size-5" />
-								</span>
-							</div>
-
-							<div class="mt-5 grid gap-2">
-								<Button type="button" class="justify-start" onclick={handleAddSubscription}>
-									<Plus class="size-4" />
-									{copy.dashboard.addAction}
-								</Button>
-								<Button
-									type="button"
-									variant="outline"
-									class="justify-start"
-									onclick={() => (activeTab = 'calendar')}
-								>
-									<CalendarDays class="size-4" />
-									{copy.dashboard.calendarAction}
-								</Button>
-								<Button
-									type="button"
-									variant="outline"
-									class="justify-start"
-									onclick={() => (activeTab = 'notifications')}
-								>
-									<Bell class="size-4" />
-									{copy.dashboard.notificationAction}
-								</Button>
-							</div>
-						</aside>
-					</div>
-
-					<div class="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
-						<section class="bg-background rounded-lg border p-5 shadow-sm">
-							<div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-								<div>
-									<p class="text-primary text-sm font-medium">{copy.dashboard.title}</p>
-									<h2 class="mt-1 text-2xl font-semibold">{copy.dashboard.upcomingTitle}</h2>
-								</div>
-								<p class="text-muted-foreground text-sm">
-									{subscriptions.length}
-									{copy.common.activeSubscriptions}
-								</p>
-							</div>
-
-							<div class="mt-5 grid gap-3">
-								{#each upcomingSubscriptions as subscription (subscription.id)}
-									<button
-										type="button"
-										class={cn(
-											'demo-motion flex min-w-0 items-center gap-3 rounded-lg border p-3 text-left',
-											selectedSubscription?.id === subscription.id && 'border-primary bg-primary/5'
-										)}
-										onclick={() => handleSelectSubscription(subscription)}
-									>
-										<span
-											class="size-3 shrink-0 rounded-full"
-											style:background-color={subscription.color}
-										></span>
-										<span class="min-w-0 flex-1">
-											<span class="block truncate font-medium">{subscription.serviceName}</span>
-											<span class="text-muted-foreground block truncate text-sm">
-												{subscription.nextBillingLabel} / {copy.cycleLabels[subscription.cycle]}
-											</span>
-										</span>
-										<span class="shrink-0 text-sm font-semibold">
-											{formatAmount(normalizeAmount(subscription, 'monthly'))}
-										</span>
-									</button>
-								{/each}
-							</div>
-						</section>
-
-						<section class="bg-background rounded-lg border p-5 shadow-sm">
-							<h2 class="text-lg font-semibold">{copy.common.nextBilling}</h2>
-							{#if selectedSubscription}
-								<div class="mt-4 space-y-4">
-									<div class="flex items-center gap-3">
-										<span
-											class="size-4 rounded-full"
-											style:background-color={selectedSubscription.color}
-										></span>
-										<div class="min-w-0">
-											<p class="truncate text-xl font-semibold">
-												{selectedSubscription.serviceName}
-											</p>
-											<p class="text-muted-foreground text-sm">{selectedSubscription.note}</p>
-										</div>
-									</div>
-									<div class="grid grid-cols-2 gap-3 text-sm">
-										<div class="bg-muted/30 rounded-lg border p-3">
-											<p class="text-muted-foreground">{copy.common.nextBilling}</p>
-											<p class="mt-1 font-semibold">{selectedSubscription.nextBillingLabel}</p>
-										</div>
-										<div class="bg-muted/30 rounded-lg border p-3">
-											<p class="text-muted-foreground">{copy.common.notification}</p>
-											<p class="mt-1 font-semibold">
-												{formatNotificationLeadTime(selectedSubscription.notifyDaysBefore)}
-											</p>
-										</div>
-									</div>
-								</div>
-							{/if}
-						</section>
-					</div>
-				</div>
-			{/if}
-
-			{#if activeTab === 'subscriptions'}
-				<div class="mt-0">
-					<div class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
-						<section class="bg-background rounded-lg border p-5 shadow-sm">
-							<div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-								<div>
-									<p class="text-primary text-sm font-medium">{copy.subscriptions.title}</p>
-									<h2 class="mt-1 text-2xl font-semibold">{copy.subscriptions.tableTitle}</h2>
-									<p class="text-muted-foreground mt-2 max-w-2xl text-sm leading-6">
-										{copy.subscriptions.description}
-									</p>
-								</div>
-								<Button type="button" variant="outline" onclick={handleReset}>
-									<RotateCcw class="size-4" />
-									{copy.subscriptions.resetAction}
-								</Button>
-							</div>
-
-							<div class="mt-5 grid gap-3">
-								{#each sortedSubscriptions as subscription (subscription.id)}
-									<button
-										type="button"
-										class={cn(
-											'demo-motion grid min-w-0 gap-3 rounded-lg border p-4 text-left md:grid-cols-[minmax(0,1fr)_120px_120px]',
-											selectedSubscription?.id === subscription.id && 'border-primary bg-primary/5'
-										)}
-										onclick={() => handleSelectSubscription(subscription)}
-									>
-										<span class="flex min-w-0 items-center gap-3">
-											<span
-												class="size-3 shrink-0 rounded-full"
-												style:background-color={subscription.color}
-											></span>
-											<span class="min-w-0">
-												<span class="block truncate font-semibold">{subscription.serviceName}</span>
-												<span class="text-muted-foreground block truncate text-sm">
-													{subscription.category} / {subscription.note}
-												</span>
-											</span>
-										</span>
-										<span>
-											<span class="text-muted-foreground block text-xs font-medium">
-												{copy.common.amount}
-											</span>
-											<span class="block font-semibold">{formatAmount(subscription.amount)}</span>
-										</span>
-										<span>
-											<span class="text-muted-foreground block text-xs font-medium">
-												{copy.common.cycle}
-											</span>
-											<span class="block font-semibold">{copy.cycleLabels[subscription.cycle]}</span
-											>
-										</span>
-									</button>
-								{/each}
-							</div>
-						</section>
-
-						<aside class="bg-background rounded-lg border p-5 shadow-sm">
-							<div class="flex items-start gap-3">
-								<span
-									class="bg-primary/10 text-primary inline-flex size-10 shrink-0 items-center justify-center rounded-md"
-								>
-									<Plus class="size-5" />
-								</span>
-								<div>
-									<h2 class="text-lg font-semibold">{copy.subscriptions.addTitle}</h2>
-									<p class="text-muted-foreground mt-1 text-sm leading-6">
-										{copy.subscriptions.addDescription}
-									</p>
-								</div>
-							</div>
-
-							<div class="bg-muted/30 mt-5 rounded-lg border p-4">
-								<div class="flex items-center gap-3">
-									<span class="size-3 rounded-full" style:background-color={addCandidate.color}
-									></span>
-									<div class="min-w-0">
-										<p class="truncate font-semibold">{addCandidate.serviceName}</p>
-										<p class="text-muted-foreground text-sm">{addCandidate.category}</p>
-									</div>
-								</div>
-								<div class="mt-4 grid grid-cols-2 gap-3 text-sm">
-									<div>
-										<p class="text-muted-foreground">{copy.common.amount}</p>
-										<p class="font-semibold">{formatAmount(addCandidate.amount)}</p>
-									</div>
-									<div>
-										<p class="text-muted-foreground">{copy.common.nextBilling}</p>
-										<p class="font-semibold">{addCandidate.nextBillingLabel}</p>
-									</div>
-								</div>
-							</div>
-
-							<Button
-								type="button"
-								class="mt-4 w-full"
-								onclick={handleAddSubscription}
-								disabled={hasAddCandidate}
-							>
-								<Plus class="size-4" />
-								{hasAddCandidate ? copy.subscriptions.addedAction : copy.subscriptions.addAction}
-							</Button>
-						</aside>
-					</div>
-				</div>
-			{/if}
-
-			{#if activeTab === 'calendar'}
-				<div class="mt-0">
-					<div class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
-						<section class="bg-background rounded-lg border p-5 shadow-sm">
-							<div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-								<div>
-									<p class="text-primary text-sm font-medium">{copy.calendar.title}</p>
-									<h2 class="mt-1 text-2xl font-semibold">{copy.calendar.monthLabel}</h2>
-									<p class="text-muted-foreground mt-2 text-sm leading-6">
-										{copy.calendar.description}
-									</p>
-								</div>
-							</div>
-
-							<div
-								class="text-muted-foreground mt-5 grid grid-cols-7 gap-1 text-center text-xs font-medium"
-							>
-								{#each copy.calendar.weekdays as weekday (weekday)}
-									<div class="py-2">{weekday}</div>
-								{/each}
-							</div>
-
-							<div class="grid grid-cols-7 gap-1">
-								{#each calendarDays as day (day)}
-									{@const events = getSubscriptionsForDay(day)}
-									<button
-										type="button"
-										class={cn(
-											'demo-motion flex aspect-square min-h-14 min-w-0 flex-col items-start justify-between rounded-md border p-1.5 text-left text-xs',
-											events.length > 0
-												? 'bg-background hover:border-primary'
-												: 'bg-muted/30 text-muted-foreground',
-											selectedCalendarSubscription?.calendarDay === day &&
-												'border-primary bg-primary/5'
-										)}
-										disabled={events.length === 0}
-										onclick={() => events[0] && handleSelectCalendarEvent(events[0])}
-										aria-label={events[0]?.serviceName ?? copy.calendar.emptyDay}
-									>
-										<span class="font-semibold">{day}</span>
-										{#if events[0]}
-											<span class="flex w-full min-w-0 items-center gap-1">
-												<span
-													class="size-1.5 shrink-0 rounded-full"
-													style:background-color={events[0].color}
-												></span>
-												<span class="truncate">{events[0].serviceName}</span>
-											</span>
-										{/if}
-									</button>
-								{/each}
-							</div>
-						</section>
-
-						<aside class="bg-background rounded-lg border p-5 shadow-sm">
-							<h2 class="text-lg font-semibold">{copy.calendar.selectedTitle}</h2>
-							{#if selectedCalendarSubscription}
-								<div class="mt-5 space-y-4">
-									<div class="flex items-center gap-3">
-										<span
-											class="size-4 rounded-full"
-											style:background-color={selectedCalendarSubscription.color}
-										></span>
-										<div class="min-w-0">
-											<p class="truncate text-xl font-semibold">
-												{selectedCalendarSubscription.serviceName}
-											</p>
-											<p class="text-muted-foreground text-sm">
-												{selectedCalendarSubscription.nextBillingLabel}
-											</p>
-										</div>
-									</div>
-									<div class="bg-muted/30 rounded-lg border p-4">
-										<p class="text-muted-foreground text-sm">{copy.common.amount}</p>
-										<p class="mt-1 text-2xl font-semibold">
-											{formatAmount(selectedCalendarSubscription.amount)}
-										</p>
-										<p class="text-muted-foreground mt-2 text-sm">
-											{selectedCalendarSubscription.note}
-										</p>
-									</div>
-								</div>
-							{/if}
-						</aside>
-					</div>
-				</div>
-			{/if}
-
-			{#if activeTab === 'analytics'}
-				<div class="mt-0">
-					<section class="bg-background rounded-lg border p-5 shadow-sm">
-						<div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-							<div>
-								<p class="text-primary text-sm font-medium">{copy.analytics.title}</p>
-								<h2 class="mt-1 text-2xl font-semibold">{copy.analytics.breakdownTitle}</h2>
-								<p class="text-muted-foreground mt-2 max-w-2xl text-sm leading-6">
-									{copy.analytics.description}
-								</p>
-							</div>
-							<div
-								class="bg-muted/30 grid grid-cols-2 rounded-lg border p-1"
-								aria-label={copy.analytics.title}
-							>
-								{#each ['monthly', 'yearly'] as AnalyticsPeriod[] as period (period)}
-									<button
-										type="button"
-										class={cn(
-											'rounded-md px-4 py-2 text-sm font-medium transition-colors',
-											analyticsPeriod === period
-												? 'bg-background text-foreground shadow-sm'
-												: 'text-muted-foreground hover:text-foreground'
-										)}
-										aria-pressed={analyticsPeriod === period}
-										onclick={() => (analyticsPeriod = period)}
-									>
-										{copy.analytics[period]}
-									</button>
-								{/each}
-							</div>
-						</div>
-
-						<div class="mt-6 grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
-							<div class="bg-muted/20 rounded-lg border p-5">
-								<div
-									class="border-primary/20 flex aspect-square items-center justify-center rounded-full border-[18px]"
-								>
-									<div class="text-center">
-										<p class="text-muted-foreground text-sm">{copy.analytics.totalLabel}</p>
-										<p class="mt-1 text-2xl font-semibold">{formatAmount(analyticsTotal)}</p>
-									</div>
-								</div>
-							</div>
-
-							<div class="grid content-start gap-3">
-								{#each categoryBreakdown as item (item.category)}
-									<div class="rounded-lg border p-4">
-										<div class="flex items-center justify-between gap-3">
-											<div class="flex min-w-0 items-center gap-3">
-												<span
-													class="size-3 shrink-0 rounded-full"
-													style:background-color={item.color}
-												></span>
-												<div class="min-w-0">
-													<p class="truncate font-semibold">{item.category}</p>
-													<p class="text-muted-foreground text-sm">{formatAmount(item.amount)}</p>
-												</div>
-											</div>
-											<p class="text-sm font-semibold">{Math.round(item.share * 100)}%</p>
-										</div>
-										<div class="bg-muted mt-3 h-2 overflow-hidden rounded-full">
-											<div
-												class="h-full rounded-full"
-												style={`width: ${Math.max(4, Math.round(item.share * 100))}%; background-color: ${item.color};`}
-											></div>
-										</div>
-									</div>
-								{/each}
-							</div>
-						</div>
-					</section>
-				</div>
-			{/if}
-
-			{#if activeTab === 'notifications'}
-				<div class="mt-0">
-					<section class="bg-background rounded-lg border p-5 shadow-sm">
-						<div>
-							<p class="text-primary text-sm font-medium">{copy.notifications.title}</p>
-							<h2 class="mt-1 text-2xl font-semibold">{copy.common.notification}</h2>
-							<p class="text-muted-foreground mt-2 max-w-2xl text-sm leading-6">
-								{copy.notifications.description}
-							</p>
-						</div>
-
-						<div class="mt-5 grid gap-3 lg:grid-cols-3">
-							{#each notificationSubscriptions as subscription (subscription.id)}
-								<article class="bg-muted/20 rounded-lg border p-4">
-									<div class="flex items-start justify-between gap-3">
-										<div class="flex min-w-0 items-center gap-3">
-											<span
-												class="bg-background text-primary inline-flex size-9 shrink-0 items-center justify-center rounded-md"
-											>
-												<Bell class="size-4" />
-											</span>
-											<div class="min-w-0">
-												<h3 class="truncate font-semibold">{subscription.serviceName}</h3>
-												<p class="text-muted-foreground text-sm">
-													{subscription.nextBillingLabel} / {formatNotificationLeadTime(
-														subscription.notifyDaysBefore
-													)}
-												</p>
-											</div>
-										</div>
-										<span
-											class={cn(
-												'rounded-md border px-2 py-1 text-xs font-medium',
-												getNotificationStatusClass(subscription.id)
-											)}
-										>
-											{getNotificationStatus(subscription.id)}
-										</span>
-									</div>
-
-									<p class="text-muted-foreground mt-4 text-sm leading-6">{subscription.note}</p>
-
-									<Button
-										type="button"
-										class="mt-4 w-full"
-										variant={acknowledgedNotificationIds.includes(subscription.id)
-											? 'outline'
-											: 'default'}
-										onclick={() => handleToggleNotification(subscription)}
-									>
-										{#if acknowledgedNotificationIds.includes(subscription.id)}
-											<RotateCcw class="size-4" />
-											{copy.notifications.resendAction}
-										{:else}
-											<Check class="size-4" />
-											{copy.notifications.confirmAction}
-										{/if}
-									</Button>
-								</article>
-							{/each}
-						</div>
-					</section>
-				</div>
-			{/if}
-		</div>
 	</div>
-</section>
+</nav>
 
-<style>
-	.demo-motion {
-		transition:
-			transform 180ms ease,
-			border-color 180ms ease,
-			background-color 180ms ease,
-			box-shadow 180ms ease;
-	}
+<Dialog.Root bind:open={detailOpen}>
+	<Dialog.Content class="w-full max-w-md overflow-hidden p-0">
+		<div class="flex items-center justify-between border-b px-4 py-3">
+			<Dialog.Title class="truncate text-base font-semibold">
+				{selectedSubscription?.serviceName ?? copy.subscriptions.title}
+			</Dialog.Title>
+		</div>
+		{#if selectedSubscription}
+			<SubscriptionDetailPanel
+				subscription={selectedSubscription}
+				{locale}
+				canMutate
+				onEdit={handleBlockedEdit}
+				onDelete={handleBlockedDelete}
+			/>
+		{/if}
+	</Dialog.Content>
+</Dialog.Root>
 
-	button.demo-motion:not(:disabled):hover,
-	.demo-motion:hover {
-		transform: translateY(-2px);
-		box-shadow: 0 12px 28px color-mix(in oklab, var(--foreground) 6%, transparent);
-	}
+<Dialog.Root bind:open={addOpen}>
+	<Dialog.Content class="max-h-[90vh] w-full max-w-3xl overflow-y-auto p-0">
+		<div class="space-y-6 p-6">
+			<div class="space-y-2">
+				<Dialog.Title class="text-2xl font-bold">{copy.subscriptions.addTitle}</Dialog.Title>
+				<Dialog.Description class="text-muted-foreground text-sm">
+					{copy.subscriptions.addDescription}
+				</Dialog.Description>
+			</div>
 
-	@media (prefers-reduced-motion: reduce) {
-		.demo-motion {
-			transition: none;
-		}
+			<form class="space-y-4" onsubmit={handleAddSubmit}>
+				<div class="space-y-2">
+					<label for="demo-service-name" class="font-medium">
+						{copy.subscriptions.formServiceName}
+					</label>
+					<Input
+						id="demo-service-name"
+						type="text"
+						required
+						placeholder="Netflix"
+						bind:value={addForm.serviceName}
+					/>
+				</div>
 
-		button.demo-motion:not(:disabled):hover,
-		.demo-motion:hover {
-			transform: none;
-			box-shadow: none;
-		}
-	}
-</style>
+				<div class="space-y-2">
+					<p class="font-medium">{copy.subscriptions.formColor}</p>
+					<div
+						class="flex flex-wrap gap-3"
+						role="radiogroup"
+						aria-label={copy.subscriptions.formColor}
+					>
+						{#each colorOptions as option (option.value)}
+							<button
+								type="button"
+								onclick={() => (addForm.color = option.value)}
+								class={cn(
+									'flex items-center gap-2 rounded-full border px-3 py-2 text-sm transition-colors',
+									option.value === addForm.color
+										? 'outline-2 outline-offset-2'
+										: 'border-border hover:bg-muted/60'
+								)}
+								style:border-color={option.value === addForm.color ? option.style : undefined}
+								style:background-color={option.value === addForm.color ? option.surface : undefined}
+								style:outline-color={option.value === addForm.color ? option.style : undefined}
+								role="radio"
+								aria-checked={option.value === addForm.color}
+								aria-label={option.label}
+								title={option.label}
+							>
+								<span
+									class="size-4 rounded-full border border-black/10"
+									style:background-color={option.style}
+								></span>
+								<span class:font-semibold={option.value === addForm.color}>{option.label}</span>
+							</button>
+						{/each}
+					</div>
+					<p class="text-muted-foreground text-xs">{copy.subscriptions.formColorDescription}</p>
+				</div>
+
+				<div class="grid gap-4 md:grid-cols-2">
+					<div class="space-y-2">
+						<label for="demo-cycle" class="font-medium">{copy.subscriptions.formCycle}</label>
+						<select
+							id="demo-cycle"
+							class="border-input focus-visible:ring-ring focus-visible:border-ring bg-background flex h-10 w-full rounded-md border px-3 text-sm shadow-sm transition"
+							bind:value={addForm.cycle}
+						>
+							{#each ['monthly', 'quarterly', 'yearly'] as DemoSubscriptionCycle[] as cycle (cycle)}
+								<option value={cycle}>{copy.cycleLabels[cycle]}</option>
+							{/each}
+						</select>
+					</div>
+
+					<div class="space-y-2">
+						<label for="demo-notify" class="font-medium">{copy.subscriptions.formNotify}</label>
+						<select
+							id="demo-notify"
+							class="border-input focus-visible:ring-ring focus-visible:border-ring bg-background flex h-10 w-full rounded-md border px-3 text-sm shadow-sm transition"
+							bind:value={addForm.notifyDaysBefore}
+						>
+							{#each [1, 3, 7] as days (days)}
+								<option value={days}>{formatNotifyDays(days, locale)}</option>
+							{/each}
+						</select>
+					</div>
+				</div>
+
+				<div class="grid gap-4 md:grid-cols-2">
+					<div class="space-y-2">
+						<label for="demo-amount" class="font-medium">{copy.subscriptions.formAmount}</label>
+						<Input
+							id="demo-amount"
+							type="number"
+							min="0"
+							step="1"
+							required
+							bind:value={addForm.amount}
+						/>
+					</div>
+
+					<div class="space-y-2">
+						<label for="demo-first-payment" class="font-medium">
+							{copy.subscriptions.formFirstPayment}
+						</label>
+						<Input
+							id="demo-first-payment"
+							type="date"
+							required
+							bind:value={addForm.firstPaymentDate}
+						/>
+					</div>
+				</div>
+
+				<div class="space-y-2">
+					<label for="demo-tags" class="font-medium">{copy.subscriptions.formTags}</label>
+					<Input
+						id="demo-tags"
+						type="text"
+						placeholder={copy.subscriptions.formTagsPlaceholder}
+						bind:value={addForm.tags}
+					/>
+				</div>
+
+				<Button type="submit" class="h-12 w-full text-base sm:h-10 sm:text-sm">
+					<ListPlus class="size-4" />
+					{copy.subscriptions.addAction}
+				</Button>
+			</form>
+		</div>
+	</Dialog.Content>
+</Dialog.Root>
+
+<EventDetailModal
+	isOpen={isCalendarDetailOpen}
+	{locale}
+	date={selectedDate}
+	events={selectedEvents}
+	selectedSubscription={selectedCalendarSubscription}
+	canMutateSelected
+	onClose={closeCalendarDetail}
+	onBackToList={backToDateList}
+	onEventSelect={handleCalendarEventSelect}
+	onEdit={handleBlockedEdit}
+	onDelete={handleBlockedDelete}
+/>

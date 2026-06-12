@@ -2,8 +2,12 @@ import * as Sentry from '@sentry/sveltekit';
 import { env as publicEnv } from '$env/dynamic/public';
 
 const clientDsn = publicEnv.PUBLIC_SENTRY_DSN || undefined;
+const currentPathname = window.location.pathname.replace(/^\/(?:ja|en)(?=\/|$)/, '') || '/';
+const normalizedPathname =
+	currentPathname.length > 1 ? currentPathname.replace(/\/+$/, '') : currentPathname;
+const isPublicDemo = normalizedPathname === '/demo';
 
-if (clientDsn) {
+if (clientDsn && !isPublicDemo) {
 	Sentry.init({
 		dsn: clientDsn,
 		sendDefaultPii: false,
@@ -26,7 +30,7 @@ if (clientDsn) {
 		],
 		enableLogs: false
 	});
-} else {
+} else if (!clientDsn) {
 	console.warn('[Sentry] PUBLIC_SENTRY_DSN not set; client telemetry disabled.');
 }
 

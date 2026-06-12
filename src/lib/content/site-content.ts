@@ -97,18 +97,21 @@ export type LandingPricingPlan = {
 	featured?: boolean;
 };
 
-export type DemoSubscriptionCycle = 'monthly' | 'yearly';
+export type DemoSubscriptionCycle = 'monthly' | 'quarterly' | 'yearly';
 
 export type DemoSubscriptionSample = {
-	id: string;
+	id: number;
+	userId: string | null;
 	serviceName: string;
-	category: string;
-	amount: number;
-	cycle: DemoSubscriptionCycle;
-	nextBillingLabel: string;
-	calendarDay: number;
-	notifyDaysBefore: number;
 	color: string;
+	cycle: DemoSubscriptionCycle;
+	amount: number;
+	firstPaymentDate: string;
+	nextBillingAt: string;
+	daysUntilNextBilling: number;
+	notifyDaysBefore: number;
+	tags: string[];
+	isSample: boolean;
 	note: string;
 };
 
@@ -126,11 +129,9 @@ export type DemoPageCopy = {
 		secondaryAction: string;
 	};
 	tabs: {
-		dashboard: string;
 		subscriptions: string;
 		calendar: string;
 		analytics: string;
-		notifications: string;
 	};
 	common: {
 		monthlyTotal: string;
@@ -139,37 +140,37 @@ export type DemoPageCopy = {
 		nextBilling: string;
 		amount: string;
 		cycle: string;
-		category: string;
 		notification: string;
+		firstPayment: string;
+		tags: string;
 	};
 	cycleLabels: Record<DemoSubscriptionCycle, string>;
-	dashboard: {
-		title: string;
-		description: string;
-		overviewTitle: string;
-		upcomingTitle: string;
-		quickActionsTitle: string;
-		addAction: string;
-		calendarAction: string;
-		notificationAction: string;
-	};
 	subscriptions: {
 		title: string;
 		description: string;
 		addTitle: string;
 		addDescription: string;
 		addAction: string;
-		addedAction: string;
 		resetAction: string;
 		tableTitle: string;
+		pushEnable: string;
+		pushDisable: string;
+		pushEnabled: string;
+		pushDisabled: string;
+		pushHint: string;
+		formServiceName: string;
+		formColor: string;
+		formColorDescription: string;
+		formAmount: string;
+		formCycle: string;
+		formFirstPayment: string;
+		formNotify: string;
+		formTags: string;
+		formTagsPlaceholder: string;
 	};
 	calendar: {
 		title: string;
 		description: string;
-		monthLabel: string;
-		weekdays: string[];
-		selectedTitle: string;
-		emptyDay: string;
 	};
 	analytics: {
 		title: string;
@@ -179,21 +180,19 @@ export type DemoPageCopy = {
 		totalLabel: string;
 		breakdownTitle: string;
 		shareLabel: string;
-	};
-	notifications: {
-		title: string;
-		description: string;
-		confirmAction: string;
-		resendAction: string;
-		statusPending: string;
-		statusAcknowledged: string;
-		statusSnoozed: string;
+		topServiceLabel: string;
+		subscriptionCountLabel: string;
+		breakdownCountLabel: string;
+		periodHintMonthly: string;
+		periodHintYearly: string;
 	};
 	operations: {
 		addedMessage: string;
 		resetMessage: string;
-		acknowledgedMessage: string;
-		renotifiedMessage: string;
+		pushEnabledMessage: string;
+		pushDisabledMessage: string;
+		editBlockedMessage: string;
+		deleteBlockedMessage: string;
 		selectedEventMessage: string;
 	};
 	samples: {
@@ -1052,16 +1051,14 @@ export const demoPageCopy: Record<AppLocale, DemoPageCopy> = {
 			eyebrow: 'SubTrack の使用例',
 			title: 'ログイン前に、サブスク管理の流れを試せます。',
 			description:
-				'Netflix、Spotify、Notion、Adobe Creative Cloud などのサンプル契約を使って、追加、請求予定、通知確認、分析切替をブラウザ内だけで体験できます。',
+				'Netflix、Spotify、Notion、Adobe Creative Cloud などのサンプル契約を使って、追加、請求予定、通知設定、分析切替をブラウザ内だけで体験できます。',
 			primaryAction: '実際に始める',
 			secondaryAction: 'LPに戻る'
 		},
 		tabs: {
-			dashboard: 'Dashboard',
 			subscriptions: 'Subscriptions',
 			calendar: 'Calendar',
-			analytics: 'Analytics',
-			notifications: 'Notifications'
+			analytics: 'Analysis'
 		},
 		common: {
 			monthlyTotal: '月額換算',
@@ -1070,127 +1067,158 @@ export const demoPageCopy: Record<AppLocale, DemoPageCopy> = {
 			nextBilling: '次回請求',
 			amount: '金額',
 			cycle: '周期',
-			category: 'カテゴリ',
-			notification: '通知'
+			notification: '通知',
+			firstPayment: '初回支払日',
+			tags: 'タグ'
 		},
 		cycleLabels: {
 			monthly: '月額',
+			quarterly: '3ヶ月ごと',
 			yearly: '年額'
-		},
-		dashboard: {
-			title: 'ダッシュボード',
-			description: '月額換算、次回請求、確認待ち通知をまとめて見ます。',
-			overviewTitle: '支出サマリー',
-			upcomingTitle: '近い請求予定',
-			quickActionsTitle: '疑似操作',
-			addAction: 'サブスクを追加',
-			calendarAction: '予定を見る',
-			notificationAction: '通知を確認'
 		},
 		subscriptions: {
 			title: 'サブスク一覧',
-			description: 'サンプル契約だけを一覧化し、追加操作で合計が変わる様子を確認できます。',
+			description:
+				'実アプリと同じ流れでサンプル契約を確認できます。追加とPush切替はブラウザ内のローカル状態だけを更新します。',
 			addTitle: 'Google One を追加',
-			addDescription: 'この操作はデモ内の配列だけを更新します。リロードすると初期状態に戻ります。',
+			addDescription:
+				'実フォームに近い項目を入力できます。送信してもDBやAPIには接続せず、デモ内の一覧だけを更新します。',
 			addAction: '追加する',
-			addedAction: '追加済み',
 			resetAction: 'リセット',
-			tableTitle: '登録済みサンプル'
+			tableTitle: '登録済みサンプル',
+			pushEnable: '通知を有効化',
+			pushDisable: '通知を無効化',
+			pushEnabled: 'Push有効',
+			pushDisabled: 'Push無効',
+			pushHint: 'デモではブラウザ許可やPush登録は行わず、表示状態だけを切り替えます。',
+			formServiceName: 'サービス名',
+			formColor: '色',
+			formColorDescription: 'カレンダーと分析画面で使う表示色です。',
+			formAmount: '金額',
+			formCycle: '支払い周期',
+			formFirstPayment: '初回支払日',
+			formNotify: '通知タイミング',
+			formTags: 'タグ',
+			formTagsPlaceholder: 'クラウド, 仕事'
 		},
 		calendar: {
 			title: 'カレンダー',
-			description: '請求予定をクリックすると、右側の詳細だけが切り替わります。',
-			monthLabel: '2026年6月',
-			weekdays: ['月', '火', '水', '木', '金', '土', '日'],
-			selectedTitle: '選択中の予定',
-			emptyDay: 'この日の予定はありません'
+			description: '2026年6月のサンプル請求予定を、実カレンダー表示に近い形で確認できます。'
 		},
 		analytics: {
 			title: '分析',
-			description: '月額換算と年額換算を切り替え、カテゴリ別の割合を確認できます。',
+			description: '月額換算と年額換算を切り替え、サービス別の割合を確認できます。',
 			monthly: '月額',
 			yearly: '年額',
 			totalLabel: '合計',
-			breakdownTitle: 'カテゴリ内訳',
-			shareLabel: '割合'
-		},
-		notifications: {
-			title: '通知',
-			description: '確認済みと再通知予定の状態をローカルで切り替えます。',
-			confirmAction: '確認済みにする',
-			resendAction: '再通知する',
-			statusPending: '未確認',
-			statusAcknowledged: '確認済み',
-			statusSnoozed: '再通知予定'
+			breakdownTitle: 'サービス別内訳',
+			shareLabel: '割合',
+			topServiceLabel: '最大の支出',
+			subscriptionCountLabel: '登録数',
+			breakdownCountLabel: '内訳数',
+			periodHintMonthly: '年額契約は月額換算で表示します。',
+			periodHintYearly: '月額契約は年額換算で表示します。'
 		},
 		operations: {
 			addedMessage: 'Google One をデモ一覧に追加しました。',
 			resetMessage: 'デモを初期状態に戻しました。',
-			acknowledgedMessage: '通知を確認済みにしました。',
-			renotifiedMessage: '再通知予定に戻しました。',
+			pushEnabledMessage: 'Push通知の表示状態を有効にしました。実際の登録は行っていません。',
+			pushDisabledMessage: 'Push通知の表示状態を無効にしました。実際の登録解除は行っていません。',
+			editBlockedMessage: 'デモでは編集内容を保存しません。',
+			deleteBlockedMessage: 'デモでは契約を削除しません。',
 			selectedEventMessage: 'カレンダー予定を選択しました。'
 		},
 		samples: {
 			initialSubscriptions: [
 				{
-					id: 'netflix',
+					id: 1,
+					userId: null,
 					serviceName: 'Netflix',
-					category: '動画',
-					amount: 1490,
+					color: 'red',
 					cycle: 'monthly',
-					nextBillingLabel: '6/15',
-					calendarDay: 15,
+					amount: 1490,
+					firstPaymentDate: '2026-06-15',
+					nextBillingAt: '2026-06-15',
+					daysUntilNextBilling: 2,
 					notifyDaysBefore: 3,
-					color: '#ef4444',
+					tags: ['動画', 'エンタメ'],
+					isSample: true,
 					note: '週末前に視聴状況を確認'
 				},
 				{
-					id: 'spotify',
+					id: 2,
+					userId: null,
 					serviceName: 'Spotify',
-					category: '音楽',
-					amount: 980,
+					color: 'green',
 					cycle: 'monthly',
-					nextBillingLabel: '6/21',
-					calendarDay: 21,
+					amount: 980,
+					firstPaymentDate: '2026-06-21',
+					nextBillingAt: '2026-06-21',
+					daysUntilNextBilling: 8,
 					notifyDaysBefore: 1,
-					color: '#22c55e',
+					tags: ['音楽'],
+					isSample: true,
 					note: '家族プラン移行を検討'
 				},
 				{
-					id: 'notion',
+					id: 3,
+					userId: null,
 					serviceName: 'Notion',
-					category: '仕事',
-					amount: 12000,
+					color: 'purple',
 					cycle: 'yearly',
-					nextBillingLabel: '6/28',
-					calendarDay: 28,
+					amount: 12000,
+					firstPaymentDate: '2026-06-28',
+					nextBillingAt: '2026-06-28',
+					daysUntilNextBilling: 15,
 					notifyDaysBefore: 7,
-					color: '#111827',
+					tags: ['仕事', 'ツール'],
+					isSample: true,
 					note: '年額更新前にワークスペースを確認'
 				},
 				{
-					id: 'adobe-creative-cloud',
+					id: 4,
+					userId: null,
 					serviceName: 'Adobe Creative Cloud',
-					category: '制作',
-					amount: 3280,
+					color: 'orange',
 					cycle: 'monthly',
-					nextBillingLabel: '6/20',
-					calendarDay: 20,
+					amount: 3280,
+					firstPaymentDate: '2026-06-20',
+					nextBillingAt: '2026-06-20',
+					daysUntilNextBilling: 7,
 					notifyDaysBefore: 3,
-					color: '#f97316',
+					tags: ['制作'],
+					isSample: true,
 					note: '使っているアプリを棚卸し'
+				},
+				{
+					id: 5,
+					userId: null,
+					serviceName: 'Figma',
+					color: 'yellow',
+					cycle: 'quarterly',
+					amount: 4500,
+					firstPaymentDate: '2026-06-18',
+					nextBillingAt: '2026-06-18',
+					daysUntilNextBilling: 5,
+					notifyDaysBefore: 7,
+					tags: ['デザイン', '仕事'],
+					isSample: true,
+					note: '共同編集メンバーを確認'
 				}
 			],
 			addCandidate: {
-				id: 'google-one',
+				id: 100,
+				userId: null,
 				serviceName: 'Google One',
-				category: 'クラウド',
-				amount: 250,
+				color: 'blue',
 				cycle: 'monthly',
-				nextBillingLabel: '6/24',
-				calendarDay: 24,
+				amount: 250,
+				firstPaymentDate: '2026-06-24',
+				nextBillingAt: '2026-06-24',
+				daysUntilNextBilling: 11,
 				notifyDaysBefore: 3,
-				color: '#3b82f6',
+				tags: ['クラウド'],
+				isSample: true,
 				note: 'ストレージ容量を確認'
 			}
 		}
@@ -1207,16 +1235,14 @@ export const demoPageCopy: Record<AppLocale, DemoPageCopy> = {
 			eyebrow: 'SubTrack example workflow',
 			title: 'Try the subscription workflow before signing in.',
 			description:
-				'Use sample subscriptions such as Netflix, Spotify, Notion, and Adobe Creative Cloud to try adding an item, reviewing billing dates, checking reminders, and switching analytics views in your browser only.',
+				'Use sample subscriptions such as Netflix, Spotify, Notion, and Adobe Creative Cloud to try adding an item, reviewing billing dates, toggling reminders, and switching analysis views in your browser only.',
 			primaryAction: 'Start for real',
 			secondaryAction: 'Back to landing'
 		},
 		tabs: {
-			dashboard: 'Dashboard',
 			subscriptions: 'Subscriptions',
 			calendar: 'Calendar',
-			analytics: 'Analytics',
-			notifications: 'Notifications'
+			analytics: 'Analysis'
 		},
 		common: {
 			monthlyTotal: 'Monthly equivalent',
@@ -1225,128 +1251,160 @@ export const demoPageCopy: Record<AppLocale, DemoPageCopy> = {
 			nextBilling: 'Next billing',
 			amount: 'Amount',
 			cycle: 'Cycle',
-			category: 'Category',
-			notification: 'Reminder'
+			notification: 'Reminder',
+			firstPayment: 'First payment',
+			tags: 'Tags'
 		},
 		cycleLabels: {
 			monthly: 'Monthly',
+			quarterly: 'Every 3 months',
 			yearly: 'Yearly'
-		},
-		dashboard: {
-			title: 'Dashboard',
-			description: 'Review monthly cost, upcoming billing, and reminders in one place.',
-			overviewTitle: 'Cost summary',
-			upcomingTitle: 'Upcoming billing',
-			quickActionsTitle: 'Demo actions',
-			addAction: 'Add subscription',
-			calendarAction: 'View calendar',
-			notificationAction: 'Check reminders'
 		},
 		subscriptions: {
 			title: 'Subscriptions',
-			description: 'Review sample subscriptions and see totals change after the add action.',
+			description:
+				'Review sample subscriptions with a flow close to the signed-in app. Adding items and toggling push only updates local browser state.',
 			addTitle: 'Add Google One',
 			addDescription:
-				'This only updates the demo array in the browser. Reloading the page restores the initial state.',
+				'This form mirrors the real inputs, but it does not connect to the database or an API. It only updates the demo list.',
 			addAction: 'Add',
-			addedAction: 'Added',
 			resetAction: 'Reset',
-			tableTitle: 'Sample subscriptions'
+			tableTitle: 'Sample subscriptions',
+			pushEnable: 'Enable reminders',
+			pushDisable: 'Disable reminders',
+			pushEnabled: 'Push enabled',
+			pushDisabled: 'Push disabled',
+			pushHint:
+				'The demo does not request browser permission or register Push. It only changes the visible state.',
+			formServiceName: 'Service name',
+			formColor: 'Color',
+			formColorDescription: 'Used for calendar and analysis views.',
+			formAmount: 'Amount',
+			formCycle: 'Billing cycle',
+			formFirstPayment: 'First payment date',
+			formNotify: 'Reminder timing',
+			formTags: 'Tags',
+			formTagsPlaceholder: 'Cloud, Work'
 		},
 		calendar: {
 			title: 'Calendar',
-			description: 'Click a billing date to change only the local detail panel.',
-			monthLabel: 'June 2026',
-			weekdays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-			selectedTitle: 'Selected event',
-			emptyDay: 'No billing event on this day'
+			description:
+				'Review sample billing events for June 2026 in a view close to the real calendar.'
 		},
 		analytics: {
-			title: 'Analytics',
-			description: 'Switch between monthly and yearly equivalents and review category shares.',
+			title: 'Analysis',
+			description: 'Switch between monthly and yearly equivalents and review service shares.',
 			monthly: 'Monthly',
 			yearly: 'Yearly',
 			totalLabel: 'Total',
-			breakdownTitle: 'Category breakdown',
-			shareLabel: 'Share'
-		},
-		notifications: {
-			title: 'Notifications',
-			description: 'Toggle reminder cards between acknowledged and scheduled-again states locally.',
-			confirmAction: 'Mark done',
-			resendAction: 'Remind again',
-			statusPending: 'Pending',
-			statusAcknowledged: 'Acknowledged',
-			statusSnoozed: 'Scheduled again'
+			breakdownTitle: 'Service breakdown',
+			shareLabel: 'Share',
+			topServiceLabel: 'Top service',
+			subscriptionCountLabel: 'Subscriptions',
+			breakdownCountLabel: 'Breakdowns',
+			periodHintMonthly: 'Annual plans are shown as monthly equivalents.',
+			periodHintYearly: 'Monthly plans are shown as yearly equivalents.'
 		},
 		operations: {
 			addedMessage: 'Google One was added to the demo list.',
 			resetMessage: 'The demo was reset to its initial state.',
-			acknowledgedMessage: 'The reminder was marked as acknowledged.',
-			renotifiedMessage: 'The reminder was scheduled again.',
+			pushEnabledMessage: 'Push is shown as enabled. No real registration was created.',
+			pushDisabledMessage: 'Push is shown as disabled. No real registration was removed.',
+			editBlockedMessage: 'The demo does not save edits.',
+			deleteBlockedMessage: 'The demo does not delete subscriptions.',
 			selectedEventMessage: 'Calendar event selected.'
 		},
 		samples: {
 			initialSubscriptions: [
 				{
-					id: 'netflix',
+					id: 1,
+					userId: null,
 					serviceName: 'Netflix',
-					category: 'Video',
-					amount: 1490,
+					color: 'red',
 					cycle: 'monthly',
-					nextBillingLabel: 'Jun 15',
-					calendarDay: 15,
+					amount: 1490,
+					firstPaymentDate: '2026-06-15',
+					nextBillingAt: '2026-06-15',
+					daysUntilNextBilling: 2,
 					notifyDaysBefore: 3,
-					color: '#ef4444',
+					tags: ['Video', 'Entertainment'],
+					isSample: true,
 					note: 'Review watch usage before the weekend'
 				},
 				{
-					id: 'spotify',
+					id: 2,
+					userId: null,
 					serviceName: 'Spotify',
-					category: 'Music',
-					amount: 980,
+					color: 'green',
 					cycle: 'monthly',
-					nextBillingLabel: 'Jun 21',
-					calendarDay: 21,
+					amount: 980,
+					firstPaymentDate: '2026-06-21',
+					nextBillingAt: '2026-06-21',
+					daysUntilNextBilling: 8,
 					notifyDaysBefore: 1,
-					color: '#22c55e',
+					tags: ['Music'],
+					isSample: true,
 					note: 'Consider whether a family plan fits'
 				},
 				{
-					id: 'notion',
+					id: 3,
+					userId: null,
 					serviceName: 'Notion',
-					category: 'Work',
-					amount: 12000,
+					color: 'purple',
 					cycle: 'yearly',
-					nextBillingLabel: 'Jun 28',
-					calendarDay: 28,
+					amount: 12000,
+					firstPaymentDate: '2026-06-28',
+					nextBillingAt: '2026-06-28',
+					daysUntilNextBilling: 15,
 					notifyDaysBefore: 7,
-					color: '#111827',
+					tags: ['Work', 'Tools'],
+					isSample: true,
 					note: 'Review workspace usage before annual renewal'
 				},
 				{
-					id: 'adobe-creative-cloud',
+					id: 4,
+					userId: null,
 					serviceName: 'Adobe Creative Cloud',
-					category: 'Creative',
-					amount: 3280,
+					color: 'orange',
 					cycle: 'monthly',
-					nextBillingLabel: 'Jun 20',
-					calendarDay: 20,
+					amount: 3280,
+					firstPaymentDate: '2026-06-20',
+					nextBillingAt: '2026-06-20',
+					daysUntilNextBilling: 7,
 					notifyDaysBefore: 3,
-					color: '#f97316',
+					tags: ['Creative'],
+					isSample: true,
 					note: 'Check which apps are still in use'
+				},
+				{
+					id: 5,
+					userId: null,
+					serviceName: 'Figma',
+					color: 'yellow',
+					cycle: 'quarterly',
+					amount: 4500,
+					firstPaymentDate: '2026-06-18',
+					nextBillingAt: '2026-06-18',
+					daysUntilNextBilling: 5,
+					notifyDaysBefore: 7,
+					tags: ['Design', 'Work'],
+					isSample: true,
+					note: 'Review collaborating seats'
 				}
 			],
 			addCandidate: {
-				id: 'google-one',
+				id: 100,
+				userId: null,
 				serviceName: 'Google One',
-				category: 'Cloud',
-				amount: 250,
+				color: 'blue',
 				cycle: 'monthly',
-				nextBillingLabel: 'Jun 24',
-				calendarDay: 24,
+				amount: 250,
+				firstPaymentDate: '2026-06-24',
+				nextBillingAt: '2026-06-24',
+				daysUntilNextBilling: 11,
 				notifyDaysBefore: 3,
-				color: '#3b82f6',
+				tags: ['Cloud'],
+				isSample: true,
 				note: 'Review storage usage'
 			}
 		}
