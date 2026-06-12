@@ -315,14 +315,6 @@
 						</summary>
 						<div class="lp-faq-answer text-muted-foreground mt-4 leading-7">
 							<p>{item.answer}</p>
-							{#if item.href && item.linkLabel}
-								<a
-									class="text-primary mt-2 inline-flex underline-offset-4 hover:underline"
-									href={pageHref(item.href)}
-								>
-									{item.linkLabel}
-								</a>
-							{/if}
 						</div>
 					</details>
 				{/each}

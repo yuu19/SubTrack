@@ -270,8 +270,6 @@ export type LandingMotionDemoCopy = {
 export type LandingFAQItem = {
 	question: string;
 	answer: string;
-	href?: string;
-	linkLabel?: string;
 };
 
 export type LandingPageCopy = {
@@ -731,15 +729,11 @@ export const landingPageCopy: Record<AppLocale, LandingPageCopy> = {
 			items: [
 				{
 					question: '無料プランでは何件まで登録できますか？',
-					answer: 'サブスクリプションを最大5件まで登録できます。6件目以降は Premium が必要です。',
-					href: '/faq',
-					linkLabel: 'FAQを見る'
+					answer: 'サブスクリプションを最大5件まで登録できます。6件目以降は Premium が必要です。'
 				},
 				{
 					question: '通知はどの方法で受け取れますか？',
-					answer: 'アプリ通知、メール、またはその両方を選べます。',
-					href: '/push',
-					linkLabel: '通知設定を見る'
+					answer: 'アプリ通知、メール、またはその両方を選べます。'
 				},
 				{
 					question: 'カード情報は SubTrack に保存されますか？',
@@ -747,15 +741,11 @@ export const landingPageCopy: Record<AppLocale, LandingPageCopy> = {
 				},
 				{
 					question: 'スマホのホーム画面に追加できますか？',
-					answer: 'できます。対応ブラウザでは、ホーム画面に追加してアプリのように開けます。',
-					href: '/push',
-					linkLabel: '追加方法を見る'
+					answer: 'できます。対応ブラウザでは、ホーム画面に追加してアプリのように開けます。'
 				},
 				{
 					question: '有料プランの解約や請求情報の変更はどこで行いますか？',
-					answer: 'ログイン後、設定画面からお支払い管理ページを開いて手続きできます。',
-					href: '/faq',
-					linkLabel: '詳細を見る'
+					answer: 'ログイン後、設定画面からお支払い管理ページを開いて手続きできます。'
 				}
 			],
 			moreLink: {
@@ -1014,15 +1004,11 @@ export const landingPageCopy: Record<AppLocale, LandingPageCopy> = {
 			items: [
 				{
 					question: 'How many subscriptions can I add for free?',
-					answer: 'You can add up to 5 subscriptions. Premium is required for the sixth and later.',
-					href: '/faq',
-					linkLabel: 'Read FAQ'
+					answer: 'You can add up to 5 subscriptions. Premium is required for the sixth and later.'
 				},
 				{
 					question: 'Which reminder methods are supported?',
-					answer: 'You can choose app notifications, email, or both.',
-					href: '/push',
-					linkLabel: 'View notification guide'
+					answer: 'You can choose app notifications, email, or both.'
 				},
 				{
 					question: 'Does SubTrack store card details?',
@@ -1031,15 +1017,11 @@ export const landingPageCopy: Record<AppLocale, LandingPageCopy> = {
 				{
 					question: 'Can I add it to my phone home screen?',
 					answer:
-						'Yes. Supported browsers let you add SubTrack to your home screen and open it like an app.',
-					href: '/push',
-					linkLabel: 'See setup'
+						'Yes. Supported browsers let you add SubTrack to your home screen and open it like an app.'
 				},
 				{
 					question: 'Where do I manage cancellation or billing details?',
-					answer: 'After logging in, open the billing management page from settings.',
-					href: '/faq',
-					linkLabel: 'Learn more'
+					answer: 'After logging in, open the billing management page from settings.'
 				}
 			],
 			moreLink: {
