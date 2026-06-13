@@ -45,6 +45,7 @@
 		troubleshootingItems: string[];
 		faqItems: FAQItem[];
 		deviceGuides: DeviceGuide[];
+		dataNote: string;
 	};
 
 	const pushCopy: Record<'ja' | 'en', PushCopy> = {
@@ -56,9 +57,9 @@
 			},
 			hero: {
 				eyebrow: 'SubTrack Push Guide',
-				title: 'Push通知で、支払い日を見逃さない。',
+				title: '支払い日前に、通知で確認しやすく。',
 				description:
-					'SubTrackのPush通知を有効にすると、支払い日の前にリマインドを受け取れます。解約や見直しのタイミングを逃しにくくなり、固定費管理を続けやすくなります。',
+					'SubTrackのPush通知を有効にすると、登録した支払い日と通知設定に基づいてリマインドを受け取れます。通知は見直しを補助する機能であり、到達や到達時刻を保証するものではありません。',
 				openSettings: '通知設定を開く',
 				login: 'ログインして設定する'
 			},
@@ -75,22 +76,23 @@
 						description: '通知許可ダイアログが表示されたら「許可」を選択してください。'
 					},
 					{
-						title: '通知受信を確認する',
+						title: '通知設定を確認する',
 						description:
-							'設定完了後、支払い日前にPush通知でお知らせします。不要な場合はいつでも無効化できます。'
+							'設定後は、各サブスクの支払い日と通知タイミングに基づいてリマインドします。ブラウザや端末の通知設定が許可されている必要があります。'
 					}
 				]
 			},
 			devices: {
-				title: 'デバイス別スクリーンショットと手順',
+				title: 'デバイス別の画面イメージと手順',
 				description:
-					'PC / Android / iPhone での設定イメージです。実際の表示はブラウザやOSのバージョンによって一部異なる場合があります。'
+					'PC / Android / iPhone・iPad での設定イメージです。実際の表示や利用可否はブラウザ、OSのバージョン、端末設定によって異なる場合があります。'
 			},
 			faqTitle: 'よくある質問',
 			troubleshootingTitle: '通知が届かないときのチェック',
 			troubleshootingItems: [
 				'ブラウザのサイト設定で、SubTrackの通知許可が「許可」になっているか',
 				'OS（iOS/Android/PC）の通知設定で、ブラウザ通知が無効化されていないか',
+				'iPhone / iPadでは、SubTrackをホーム画面に追加し、ホーム画面のアイコンから開いているか',
 				'省電力モードやバックグラウンド制限で通知が抑制されていないか',
 				'ネットワーク接続が不安定でないか'
 			],
@@ -98,7 +100,7 @@
 				{
 					question: 'Push通知は無料で使えますか？',
 					answer:
-						'はい。SubTrackのPush通知機能は無料で利用できます。ブラウザの通知許可をONにするだけで使い始められます。'
+						'はい。SubTrackのPush通知機能自体は無料で利用できます。ただし、ログイン、対応ブラウザ、Service Worker、ブラウザまたは端末の通知許可が必要です。iPhone / iPadではホーム画面に追加したWebアプリとして開く必要があります。'
 				},
 				{
 					question: '通知はいつでも解除できますか？',
@@ -107,7 +109,8 @@
 				},
 				{
 					question: 'どこで通知設定を変更できますか？',
-					answer: 'サブスク管理ページで「通知を有効にする / 無効にする」を切り替えられます。'
+					answer:
+						'Push通知の端末登録はサブスク管理ページで「通知を有効にする / 無効にする」から切り替えられます。通知方法や既定の通知日は設定ページで変更できます。'
 				},
 				{
 					question: '通知が届かないときは？',
@@ -143,19 +146,21 @@
 					note: '省電力モードやバックグラウンド制限が有効だと通知が遅延する場合があります。'
 				},
 				{
-					name: 'iPhone',
+					name: 'iPhone / iPad',
 					image: '/images/push-guide/iphone-notification-toggle.svg',
 					category: 'mobile',
-					categoryLabel: 'モバイルブラウザ向け',
-					title: 'iPhoneで設定する',
+					categoryLabel: 'ホーム画面Webアプリ向け',
+					title: 'iPhone / iPadで設定する',
 					steps: [
-						'「サブスク管理」画面で「通知を有効にする」をタップします。',
-						'表示される通知許可ダイアログで「許可」を選択します。',
-						'iOSの通知設定で、使用ブラウザの通知が許可されていることを確認します。'
+						'iPhone / iPadでは、SubTrackをホーム画面に追加し、ホーム画面のアイコンから開いてください。',
+						'サブスク管理画面の通知エリアで「通知を有効にする」をタップします。',
+						'通知許可ダイアログが表示されたら「許可」を選択し、iOS / iPadOSの通知設定でSubTrackの通知が許可されていることを確認します。'
 					],
-					note: 'iOSでは使用ブラウザやOS設定の状態によって、通知許可ダイアログの表示条件が変わる場合があります。'
+					note: 'iOS / iPadOS 16.4以降のHome Screen Web Appが対象です。利用可否や表示内容は、OSバージョン、ブラウザ、通知設定によって異なる場合があります。'
 				}
-			]
+			],
+			dataNote:
+				'SubTrackは、通知設定に基づいてリマインドを届けるために、Push通知の購読情報と通知関連の設定情報を利用します。'
 		},
 		en: {
 			head: {
@@ -165,9 +170,9 @@
 			},
 			hero: {
 				eyebrow: 'SubTrack Push Guide',
-				title: 'Never miss a billing date with push notifications.',
+				title: 'Get reminders before billing dates.',
 				description:
-					'When push notifications are enabled, SubTrack reminds you before each billing date so it is easier to review, cancel, or adjust subscriptions before they renew.',
+					'When push notifications are enabled, SubTrack sends reminders based on the billing dates and reminder settings you register. Notifications are a supporting feature and delivery or delivery timing is not guaranteed.',
 				openSettings: 'Open notification settings',
 				login: 'Log in to configure'
 			},
@@ -184,22 +189,23 @@
 						description: 'When the browser permission dialog appears, choose Allow.'
 					},
 					{
-						title: 'Confirm delivery',
+						title: 'Check your reminder settings',
 						description:
-							'After setup, SubTrack sends a reminder before the next billing date. You can turn notifications off at any time.'
+							"After setup, SubTrack sends reminders based on each subscription's billing date and reminder timing, as long as browser and device notifications remain allowed."
 					}
 				]
 			},
 			devices: {
-				title: 'Screenshots and steps by device',
+				title: 'Screen examples and setup steps by device',
 				description:
-					'These examples show the setup flow on desktop, Android, and iPhone. Actual dialogs can vary by browser and OS version.'
+					'These examples show the setup flow on desktop, Android, and iPhone or iPad. Actual availability and dialogs can vary by browser, OS version, and device settings.'
 			},
 			faqTitle: 'Frequently asked questions',
 			troubleshootingTitle: 'When notifications are not arriving',
 			troubleshootingItems: [
 				'Check that the browser site setting for SubTrack notifications is set to Allow',
 				'Check that browser notifications are not disabled in your OS settings on iPhone, Android, or desktop',
+				'On iPhone or iPad, check that SubTrack was added to the Home Screen and opened from the Home Screen icon',
 				'Check whether battery saver or background restrictions are delaying notifications',
 				'Check whether your network connection is unstable'
 			],
@@ -207,7 +213,7 @@
 				{
 					question: 'Are push notifications free to use?',
 					answer:
-						'Yes. SubTrack push notifications are free. You only need to allow notifications in your browser to start using them.'
+						'Yes. The SubTrack push notification feature itself is free to use. You still need to be logged in, use a supported browser, have Service Worker support, and allow notifications in your browser or device settings. On iPhone and iPad, SubTrack must be opened as a Home Screen web app.'
 				},
 				{
 					question: 'Can I disable notifications later?',
@@ -217,7 +223,7 @@
 				{
 					question: 'Where can I change notification settings?',
 					answer:
-						'On the subscriptions page you can switch between Enable notifications and Disable notifications.'
+						'Device registration for push notifications can be switched on or off from Enable notifications or Disable notifications on the subscriptions page. Notification method and default reminder timing can be changed from the settings page.'
 				},
 				{
 					question: 'What should I check if notifications do not arrive?',
@@ -253,19 +259,21 @@
 					note: 'Battery saver or background restrictions can delay notifications.'
 				},
 				{
-					name: 'iPhone',
+					name: 'iPhone / iPad',
 					image: '/images/push-guide/iphone-notification-toggle.svg',
 					category: 'mobile',
-					categoryLabel: 'Mobile browser',
-					title: 'Set up on iPhone',
+					categoryLabel: 'Home Screen web app',
+					title: 'Set up on iPhone / iPad',
 					steps: [
-						'Open the subscriptions page and tap Enable notifications.',
-						'Choose Allow in the permission dialog that appears.',
-						'Confirm that notifications are allowed for the browser you use in iOS settings.'
+						'On iPhone and iPad, add SubTrack to your Home Screen and open it from the Home Screen icon.',
+						'Open the subscriptions page and tap Enable notifications in the notification area.',
+						'When the permission dialog appears, choose Allow, then confirm that notifications are allowed for SubTrack in iOS or iPadOS settings.'
 					],
-					note: 'On iOS, the notification permission dialog can vary depending on the browser and OS configuration.'
+					note: 'Web Push on iPhone and iPad requires an iOS or iPadOS 16.4 or later Home Screen web app. Availability and dialogs can vary by OS version, browser, and notification settings.'
 				}
-			]
+			],
+			dataNote:
+				'SubTrack uses push subscription information and notification settings only to deliver reminders according to your settings.'
 		}
 	};
 
@@ -423,5 +431,9 @@
 				{/each}
 			</ul>
 		</div>
+	</section>
+
+	<section class="bg-muted/40 text-muted-foreground rounded-xl border p-4 text-xs leading-6">
+		{copy.dataNote}
 	</section>
 </main>

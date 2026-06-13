@@ -36,6 +36,10 @@ export type LegalPageCopy = {
 export type FAQItem = {
 	question: string;
 	answer: string;
+	link?: {
+		href: string;
+		label: string;
+	};
 };
 
 export type FAQCategory = {
@@ -1461,7 +1465,11 @@ export const faqPageCopy: Record<'ja' | 'en', FAQPageCopy> = {
 					{
 						question: 'アプリの通知を使うには何が必要ですか？',
 						answer:
-							'ブラウザで通知を許可する必要があります。通知が届かない場合は、ブラウザと端末の通知設定をご確認ください。'
+							'ブラウザで通知を許可する必要があります。通知が届かない場合は、ブラウザと端末の通知設定をご確認ください。',
+						link: {
+							href: 'https://subtracknotify.com/push',
+							label: 'Push通知の詳しい設定手順を見る'
+						}
 					},
 					{
 						question: '通知はいつ送信されますか？',
@@ -1546,7 +1554,11 @@ export const faqPageCopy: Record<'ja' | 'en', FAQPageCopy> = {
 					{
 						question: 'What is required for app notifications?',
 						answer:
-							'You need to allow notifications in your browser. If reminders do not arrive, check browser and device notification settings first.'
+							'You need to allow notifications in your browser. If reminders do not arrive, check browser and device notification settings first.',
+						link: {
+							href: 'https://subtracknotify.com/push',
+							label: 'View the push notification setup guide'
+						}
 					},
 					{
 						question: 'When are reminders sent?',

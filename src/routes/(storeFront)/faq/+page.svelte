@@ -41,6 +41,16 @@
 							</summary>
 							<div class="border-t px-5 py-4">
 								<p class="text-muted-foreground leading-7">{item.answer}</p>
+								{#if item.link}
+									<a
+										class="mt-3 inline-flex text-sm font-medium underline-offset-4 hover:underline"
+										href={item.link.href}
+										target="_blank"
+										rel="noreferrer"
+									>
+										{item.link.label}
+									</a>
+								{/if}
 							</div>
 						</details>
 					{/each}
