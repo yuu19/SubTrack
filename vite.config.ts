@@ -16,16 +16,7 @@ export default defineConfig({
 			// Display locale is resolved from the public URL, with ja as the final fallback.
 			strategy: ['url', 'baseLocale'],
 			// Cloudflare/edge friendly: avoid AsyncLocalStorage
-			disableAsyncLocalStorage: true,
-			urlPatterns: [
-				{
-					pattern: ':protocol://:domain(.*)/:path(.*)?',
-					localized: [
-						['ja', ':protocol://:domain(.*)/ja/:path(.*)?'],
-						['en', ':protocol://:domain(.*)/en/:path(.*)?']
-					]
-				}
-			]
+			disableAsyncLocalStorage: true
 		})
 	],
 	test: {

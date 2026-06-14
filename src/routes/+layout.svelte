@@ -4,11 +4,18 @@
 	import '../nprogress.css';
 	import NProgress from 'nprogress';
 	import { browser } from '$app/environment';
+	import { page } from '$app/state';
+	import { getLocalePrefix } from '$lib/locale-routing';
 	import { baseLocale, getLocale, isLocale, setLocale } from '$lib/paraglide/runtime';
 
 	import { afterNavigate, beforeNavigate } from '$app/navigation';
 
 	let { children } = $props();
+	const localeRenderKey = $derived(getLocalePrefix(page.url.pathname) ?? baseLocale);
+
+	$effect(() => {
+		document.documentElement.lang = localeRenderKey;
+	});
 
 	if (browser) {
 		const docLang = document.documentElement.lang;
@@ -47,4 +54,6 @@
 
 <Toaster closeButton richColors />
 
-{@render children()}
+{#key localeRenderKey}
+	{@render children()}
+{/key}
