@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import { watch } from 'runed';
 	import { UserConfig, UserConfigContext } from '$lib/states/userConfig.svelte';
@@ -8,14 +7,14 @@
 	import OnboardingDialog from '$lib/components/onboarding/OnboardingDialog.svelte';
 	import MobileBottomNav from '$lib/components/MobileBottomNav.svelte';
 	import PublicFooter from '$lib/components/PublicFooter.svelte';
+	import { stripLocalePrefix } from '$lib/locale-routing';
 
 	const props = $props();
 	// todo: この部分について修正する必要があるか確認する
 	const userConfig = UserConfigContext.set(new UserConfig(props.data.userConfig));
-	const homePath = resolve('/');
 
 	const modeClasses = $derived([`theme-${userConfig.current.activeTheme}`]);
-	const showPublicFooter = $derived(page.url.pathname === homePath);
+	const showPublicFooter = $derived(stripLocalePrefix(page.url.pathname) === '/');
 	watch.pre(
 		() => userConfig.current.activeTheme,
 		() => {

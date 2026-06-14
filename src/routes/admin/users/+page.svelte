@@ -1,14 +1,19 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
 	import * as Table from '$lib/components/ui/table';
 	import { ChevronDown } from 'lucide-svelte';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
 	import { authClient } from '$lib/auth-client';
+	import { resolveLocale } from '$lib/locale';
+	import { localizeInternalHref } from '$lib/locale-routing';
+	import { getLocale } from '$lib/paraglide/runtime';
 	import { toast } from 'svelte-sonner';
 	import { invalidateAll } from '$app/navigation';
 	let { data } = $props();
-	console.log('🚀 ~ data:', data);
+	const currentLocale = $derived(resolveLocale(getLocale()));
+	const inviteHref = $derived(localizeInternalHref(resolve('/admin/users/add'), currentLocale));
 </script>
 
 <div class="flex-1 space-y-4 p-8 pt-6">
@@ -16,7 +21,7 @@
 		<h2 class="text-3xl font-bold tracking-tight">Team Members</h2>
 		<div class="flex items-center space-x-2">
 			<Input class="w-[150px] lg:w-[250px]" placeholder="Search team members..." />
-			<Button href="/admin/users/add">Invite Member</Button>
+			<Button href={inviteHref}>Invite Member</Button>
 		</div>
 	</div>
 	<Table.Root>

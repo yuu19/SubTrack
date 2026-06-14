@@ -1,3 +1,4 @@
-import { deLocalizeUrl } from '$lib/paraglide/runtime';
+import { stripLocalePrefix } from '$lib/locale-routing';
+import type { Reroute } from '@sveltejs/kit';
 
-export const reroute = (request) => deLocalizeUrl(request.url).pathname;
+export const reroute: Reroute = ({ url }) => stripLocalePrefix(url.pathname);

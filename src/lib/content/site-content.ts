@@ -1467,7 +1467,7 @@ export const faqPageCopy: Record<'ja' | 'en', FAQPageCopy> = {
 						answer:
 							'ブラウザで通知を許可する必要があります。通知が届かない場合は、ブラウザと端末の通知設定をご確認ください。',
 						link: {
-							href: 'https://subtracknotify.com/push',
+							href: 'https://subtracknotify.com/ja/push',
 							label: 'Push通知の詳しい設定手順を見る'
 						}
 					},
@@ -1556,7 +1556,7 @@ export const faqPageCopy: Record<'ja' | 'en', FAQPageCopy> = {
 						answer:
 							'You need to allow notifications in your browser. If reminders do not arrive, check browser and device notification settings first.',
 						link: {
-							href: 'https://subtracknotify.com/push',
+							href: 'https://subtracknotify.com/en/push',
 							label: 'View the push notification setup guide'
 						}
 					},

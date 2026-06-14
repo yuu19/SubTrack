@@ -1,40 +1,39 @@
-import { APP_LOCALES, type AppLocale } from '$lib/constant';
-import { cookieMaxAge, cookieName } from '$lib/paraglide/runtime';
 import { paraglideMiddleware } from '$lib/paraglide/server';
 import * as Sentry from '@sentry/sveltekit';
 import { sentryHandle, initCloudflareSentryHandle } from '@sentry/sveltekit';
 import { building } from '$app/environment';
-import { redirect, type Handle } from '@sveltejs/kit';
+import { error, redirect, type Handle } from '@sveltejs/kit';
 import { sequence } from '@sveltejs/kit/hooks';
 import { svelteKitHandler } from 'better-auth/svelte-kit';
 import { createDb } from '$lib/server/db';
 import { createAuth } from '$lib/auth';
 import { THEMES } from '$lib/constant';
 import { isPublicDemoPathname } from '$lib/server/public-routes';
+import {
+	getLocalePrefix,
+	hasLocalePrefix,
+	hasUnsupportedTwoLetterLocalePrefix,
+	isAppLocale,
+	isHtmlLocaleRedirectExcludedPath,
+	localizePathname,
+	selectPreferredLocale,
+	stripLocalePrefix,
+	SUBTRACK_LOCALE_COOKIE
+} from '$lib/locale-routing';
 import Database from 'better-sqlite3';
 import { drizzle as drizzleSqlite } from 'drizzle-orm/better-sqlite3';
 import * as schema from '$lib/server/db/schema';
 
 const protectedUserRoutes = ['/me', '/subscriptions'];
 
-const isAppLocale = (value: string | null | undefined): value is AppLocale =>
-	value !== undefined && value !== null && APP_LOCALES.includes(value as AppLocale);
-
-const upsertCookieHeader = (header: string, name: string, value: string) => {
-	const parts = header
-		.split(';')
-		.map((part) => part.trim())
-		.filter(Boolean)
-		.filter((part) => !part.startsWith(`${name}=`));
-
-	parts.push(`${name}=${value}`);
-	return parts.join('; ');
-};
+const localizedHomePath = (pathname: string) =>
+	localizePathname('/', getLocalePrefix(pathname) ?? 'ja');
 
 const handleAuth: Handle = async ({ event, resolve }) => {
 	const { locals, url, request } = event;
+	const canonicalPathname = stripLocalePrefix(url.pathname);
 
-	if (isPublicDemoPathname(url.pathname)) {
+	if (isPublicDemoPathname(canonicalPathname)) {
 		return resolve(event);
 	}
 
@@ -42,14 +41,16 @@ const handleAuth: Handle = async ({ event, resolve }) => {
 	const auth = createAuth(db, { requestOrigin: event.url.origin });
 	const session = await auth.api.getSession({ headers: request.headers });
 
-	if (url.pathname.startsWith('/admin') && session?.user.role !== 'admin') {
-		redirect(303, '/');
+	if (canonicalPathname.startsWith('/admin') && session?.user.role !== 'admin') {
+		redirect(303, localizedHomePath(url.pathname));
 	}
 
-	const isProtectedUserRoute = protectedUserRoutes.some((route) => url.pathname.startsWith(route));
+	const isProtectedUserRoute = protectedUserRoutes.some((route) =>
+		canonicalPathname.startsWith(route)
+	);
 
 	if (isProtectedUserRoute && !session) {
-		redirect(303, '/');
+		redirect(303, localizedHomePath(url.pathname));
 	}
 
 	return svelteKitHandler({ event, resolve, auth, building });
@@ -74,56 +75,54 @@ export const handleDb: Handle = async ({ event, resolve }) => {
 	return resolve(event);
 };
 
-const handleLocalePreference: Handle = async ({ event, resolve }) => {
-	const accept = event.request.headers.get('accept') ?? '';
-	const isDocumentRequest = event.request.method === 'GET' && accept.includes('text/html');
+const handleLocaleRouting: Handle = async ({ event, resolve }) => {
+	const { url, request } = event;
+	const isPageRequest = request.method === 'GET' && !isHtmlLocaleRedirectExcludedPath(url.pathname);
 
-	if (!isDocumentRequest || !event.locals.db || isPublicDemoPathname(event.url.pathname)) {
+	if (!isPageRequest) {
 		return resolve(event);
 	}
 
-	try {
-		const auth = createAuth(event.locals.db, { requestOrigin: event.url.origin });
-		const session = await auth.api.getSession({
-			headers: event.request.headers
-		});
-		const userId = session?.user.id;
-
-		if (!userId) {
-			return resolve(event);
-		}
-
-		const record = await event.locals.db.query.user.findFirst({
-			columns: {
-				locale: true
-			},
-			where: (t, { eq }) => eq(t.id, userId)
-		});
-		const locale = record?.locale;
-
-		if (!isAppLocale(locale)) {
-			return resolve(event);
-		}
-
-		const requestHeaders = new Headers(event.request.headers);
-		const cookieHeader = requestHeaders.get('cookie') ?? '';
-		requestHeaders.set('cookie', upsertCookieHeader(cookieHeader, cookieName, locale));
-		event.request = new Request(event.request, {
-			headers: requestHeaders
-		});
-
-		if (event.cookies.get(cookieName) !== locale) {
-			event.cookies.set(cookieName, locale, {
-				path: '/',
-				maxAge: cookieMaxAge,
-				sameSite: 'lax'
-			});
-		}
-	} catch {
-		// Fall through to default locale resolution if auth or db lookup fails.
+	if (hasUnsupportedTwoLetterLocalePrefix(url.pathname)) {
+		error(404, 'Not found');
 	}
 
-	return resolve(event);
+	if (hasLocalePrefix(url.pathname)) {
+		return resolve(event);
+	}
+
+	let userLocale: string | null | undefined;
+	try {
+		if (event.locals.db) {
+			const auth = createAuth(event.locals.db, { requestOrigin: event.url.origin });
+			const session = await auth.api.getSession({
+				headers: event.request.headers
+			});
+			const userId = session?.user.id;
+
+			if (userId) {
+				const record = await event.locals.db.query.user.findFirst({
+					columns: {
+						locale: true
+					},
+					where: (t, { eq }) => eq(t.id, userId)
+				});
+				userLocale = record?.locale;
+			}
+		}
+	} catch {
+		// Continue with cookie and Accept-Language fallback if auth or DB lookup fails.
+	}
+
+	const locale = selectPreferredLocale({
+		userLocale: isAppLocale(userLocale) ? userLocale : null,
+		cookieLocale: event.cookies.get(SUBTRACK_LOCALE_COOKIE),
+		acceptLanguage: request.headers.get('accept-language')
+	});
+	const redirectUrl = new URL(url);
+	redirectUrl.pathname = localizePathname(url.pathname, locale);
+
+	redirect(302, `${redirectUrl.pathname}${redirectUrl.search}`);
 };
 
 const preloadFonts: Handle = async ({ event, resolve }) => {
@@ -191,7 +190,7 @@ const handleTheme: Handle = async ({ event, resolve }) => {
 
 export const handle = sequence(
 	handleDb,
-	handleLocalePreference,
+	handleLocaleRouting,
 	handleParaglide,
 	sentryHandleConfigured ?? noopHandle,
 	sentryHandle(),

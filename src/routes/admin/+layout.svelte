@@ -1,20 +1,26 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
+	import LanguageSwitcher from '$lib/components/LanguageSwitcher.svelte';
+	import { resolveLocale } from '$lib/locale';
+	import { localizeInternalHref } from '$lib/locale-routing';
+	import { getLocale } from '$lib/paraglide/runtime';
 	import { Home, User } from 'lucide-svelte';
 	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
 
-	// Menu items.
-	const items = [
+	const currentLocale = $derived(resolveLocale(getLocale()));
+	const localizedHref = (href: string) => localizeInternalHref(resolve(href), currentLocale);
+	const items = $derived([
 		{
 			title: 'Team',
-			url: 'users',
+			href: localizedHref('/admin/users'),
 			icon: User
 		},
 		{
 			title: 'Customer Portal',
-			url: '../',
+			href: localizedHref('/subscriptions'),
 			icon: Home
 		}
-	];
+	]);
 
 	let { children } = $props();
 </script>
@@ -30,7 +36,7 @@
 							<Sidebar.MenuItem>
 								<Sidebar.MenuButton>
 									{#snippet child({ props })}
-										<a href={'/admin/' + item.url} {...props}>
+										<a href={item.href} {...props}>
 											<item.icon />
 											<span>{item.title}</span>
 										</a>
@@ -44,7 +50,10 @@
 		</Sidebar.Content>
 	</Sidebar.Root>
 	<main class=" flex-1">
-		<Sidebar.Trigger />
+		<div class="flex items-center justify-between gap-3 p-3">
+			<Sidebar.Trigger />
+			<LanguageSwitcher />
+		</div>
 		{@render children?.()}
 	</main>
 </Sidebar.Provider>

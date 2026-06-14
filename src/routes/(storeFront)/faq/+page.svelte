@@ -1,17 +1,24 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import { resolveLocale } from '$lib/locale';
+	import { getLocalizedSeoLinks, localizeInternalHref } from '$lib/locale-routing';
 	import { getLocale } from '$lib/paraglide/runtime';
 	import { faqPageCopy } from '$lib/content/site-content';
 	import { ChevronDown } from 'lucide-svelte';
 
 	const locale = $derived(resolveLocale(getLocale()));
 	const copy = $derived(faqPageCopy[locale]);
+	const seoLinks = $derived(getLocalizedSeoLinks('/faq', locale));
+	const localizedHref = (href: string) => localizeInternalHref(resolve(href), locale);
 </script>
 
 <svelte:head>
 	<title>{copy.headTitle}</title>
 	<meta name="description" content={copy.headDescription} />
+	<link rel="canonical" href={seoLinks.canonical} />
+	{#each seoLinks.alternates as alternate (alternate.hreflang)}
+		<link rel="alternate" hreflang={alternate.hreflang} href={alternate.href} />
+	{/each}
 </svelte:head>
 
 <main class="mx-auto flex max-w-5xl flex-col gap-8 px-4 py-10 md:py-14">
@@ -68,10 +75,10 @@
 				: 'データの取り扱いと利用条件の詳細は、プライバシーポリシーと利用規約をご確認ください。'}
 		</p>
 		<div class="mt-3 flex flex-wrap gap-4">
-			<a class="underline-offset-4 hover:underline" href={resolve('/terms')}>
+			<a class="underline-offset-4 hover:underline" href={localizedHref('/terms')}>
 				{locale === 'en' ? 'Terms' : '利用規約'}
 			</a>
-			<a class="underline-offset-4 hover:underline" href={resolve('/privacy')}>
+			<a class="underline-offset-4 hover:underline" href={localizedHref('/privacy')}>
 				{locale === 'en' ? 'Privacy policy' : 'プライバシーポリシー'}
 			</a>
 		</div>

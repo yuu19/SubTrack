@@ -30,6 +30,7 @@
 		resolveLocale
 	} from '$lib/locale';
 	import { startLifetimeCheckout } from '$lib/client/lifetime-checkout';
+	import { localizeInternalHref } from '$lib/locale-routing';
 	import { m } from '$lib/paraglide/messages.js';
 	import { getLocale } from '$lib/paraglide/runtime';
 	import { addSubscriptionModalState } from '$lib/states/modalState.svelte';
@@ -94,7 +95,10 @@
 		!isPremium && !hasSubscriptionAccess && !hasLifetimeEntitlement
 	);
 	const exportHref = $derived(resolve('/subscriptions/export'));
-	const upgradePlanHref = $derived(`${resolve('/me/settings')}#plan-info`);
+	const upgradePlanHref = $derived(
+		localizeInternalHref(`${resolve('/me/settings')}#plan-info`, currentLocale)
+	);
+	const pushGuideHref = $derived(localizeInternalHref(resolve('/push'), currentLocale));
 	const activeTag = $derived(page.url.searchParams.get('tag')?.trim() ?? '');
 	const normalizedActiveTag = $derived(activeTag.toLocaleLowerCase());
 
@@ -454,7 +458,7 @@
 	{#if pushSupported && data.vapidPublicKey}
 		<div class="text-muted-foreground flex flex-wrap items-center gap-2 text-xs">
 			<span>{m.subscription_push_hint()}</span>
-			<a href={resolve('/push')} class="text-primary underline-offset-4 hover:underline">
+			<a href={pushGuideHref} class="text-primary underline-offset-4 hover:underline">
 				{m.subscription_push_details_link()}
 			</a>
 			{#if pushPermission === 'denied'}

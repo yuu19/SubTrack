@@ -7,6 +7,7 @@
 	import * as Dialog from '$lib/components/ui/dialog';
 	import Button from '$lib/components/ui/button/button.svelte';
 	import { resolveLocale } from '$lib/locale';
+	import { localizeInternalHref } from '$lib/locale-routing';
 	import { m } from '$lib/paraglide/messages.js';
 	import { getLocale } from '$lib/paraglide/runtime';
 	import { cn } from '$lib/utils';
@@ -212,6 +213,7 @@
 	};
 	const locale = $derived(resolveLocale(getLocale()));
 	const copy = $derived(copyByLocale[locale]);
+	const localizedHref = (href: string) => localizeInternalHref(resolve(href), locale);
 
 	const steps = $derived([
 		{
@@ -698,15 +700,15 @@
 						</div>
 
 						<div class="mt-auto flex flex-col gap-3">
-							<Button class="h-12 w-full text-base" href={resolve('/me/settings')}>
+							<Button class="h-12 w-full text-base" href={localizedHref('/me/settings')}>
 								{copy.planAction}
 							</Button>
 							<div
 								class="text-primary flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs font-semibold sm:justify-start"
 							>
-								<a class="hover:underline" href={resolve('/faq')}>{copy.faqLink}</a>
-								<a class="hover:underline" href={resolve('/terms')}>{copy.termsLink}</a>
-								<a class="hover:underline" href={resolve('/privacy')}>{copy.privacyLink}</a>
+								<a class="hover:underline" href={localizedHref('/faq')}>{copy.faqLink}</a>
+								<a class="hover:underline" href={localizedHref('/terms')}>{copy.termsLink}</a>
+								<a class="hover:underline" href={localizedHref('/privacy')}>{copy.privacyLink}</a>
 							</div>
 						</div>
 					</div>

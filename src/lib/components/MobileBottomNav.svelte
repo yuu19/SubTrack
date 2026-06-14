@@ -1,32 +1,37 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
+	import { resolveLocale } from '$lib/locale';
+	import { localizeInternalHref } from '$lib/locale-routing';
 	import { m } from '$lib/paraglide/messages.js';
+	import { getLocale } from '$lib/paraglide/runtime';
 	import { cn } from '$lib/utils';
 	import { CalendarDays, CreditCard, PieChart, Settings } from 'lucide-svelte';
 
-	const items = [
+	const currentLocale = $derived(resolveLocale(getLocale()));
+	const localizedHref = (href: string) => localizeInternalHref(resolve(href), currentLocale);
+	const items = $derived([
 		{
-			href: resolve('/subscriptions'),
+			href: localizedHref('/subscriptions'),
 			label: () => m.mobile_nav_subscriptions(),
 			icon: CreditCard
 		},
 		{
-			href: resolve('/calendar'),
+			href: localizedHref('/calendar'),
 			label: () => m.mobile_nav_calendar(),
 			icon: CalendarDays
 		},
 		{
-			href: resolve('/analysis'),
+			href: localizedHref('/analysis'),
 			label: () => m.mobile_nav_analysis(),
 			icon: PieChart
 		},
 		{
-			href: resolve('/me/settings'),
+			href: localizedHref('/me/settings'),
 			label: () => m.nav_settings(),
 			icon: Settings
 		}
-	];
+	]);
 
 	const pathname = $derived(page.url.pathname);
 

@@ -2,6 +2,7 @@
 	import { resolve as resolvePath } from '$app/paths';
 	import { page } from '$app/state';
 	import { resolveLocale } from '$lib/locale';
+	import { getLocalizedSeoLinks, localizeInternalHref } from '$lib/locale-routing';
 	import { getLocale } from '$lib/paraglide/runtime';
 	import Button from '$lib/components/ui/button/button.svelte';
 
@@ -279,6 +280,8 @@
 
 	const locale = $derived(resolveLocale(getLocale()));
 	const copy = $derived(pushCopy[locale]);
+	const seoLinks = $derived(getLocalizedSeoLinks('/push', locale));
+	const localizedHref = (href: string) => localizeInternalHref(resolvePath(href), locale);
 	const desktopGuide = $derived(copy.deviceGuides[0]);
 	const mobileGuides = $derived(copy.deviceGuides.slice(1));
 	const mobileBadgeLabel = $derived(locale === 'en' ? 'Mobile' : 'スマホ');
@@ -292,6 +295,10 @@
 <svelte:head>
 	<title>{copy.head.title}</title>
 	<meta name="description" content={copy.head.description} />
+	<link rel="canonical" href={seoLinks.canonical} />
+	{#each seoLinks.alternates as alternate (alternate.hreflang)}
+		<link rel="alternate" hreflang={alternate.hreflang} href={alternate.href} />
+	{/each}
 </svelte:head>
 
 <main class="mx-auto flex w-full max-w-5xl flex-col gap-8 px-4 py-10 md:py-12">
@@ -307,9 +314,9 @@
 		</p>
 		<div class="mt-5 flex flex-wrap gap-3">
 			{#if page.data.user}
-				<Button href={resolvePath('/subscriptions')}>{copy.hero.openSettings}</Button>
+				<Button href={localizedHref('/subscriptions')}>{copy.hero.openSettings}</Button>
 			{:else}
-				<Button href={resolvePath('/')} variant="secondary">{copy.hero.login}</Button>
+				<Button href={localizedHref('/')} variant="secondary">{copy.hero.login}</Button>
 			{/if}
 		</div>
 	</section>

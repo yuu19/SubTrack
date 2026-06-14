@@ -79,9 +79,7 @@ sw.addEventListener('push', (event) => {
 		icon: typeof payload.icon === 'string' ? payload.icon : '/favicon.png',
 		tag: typeof payload.tag === 'string' ? payload.tag : undefined,
 		data:
-			typeof payload.data === 'object' && payload.data
-				? payload.data
-				: { url: '/subscriptions' }
+			typeof payload.data === 'object' && payload.data ? payload.data : { url: '/ja/subscriptions' }
 	};
 
 	event.waitUntil(sw.registration.showNotification(title, options));
@@ -90,7 +88,7 @@ sw.addEventListener('push', (event) => {
 sw.addEventListener('notificationclick', (event) => {
 	event.notification.close();
 	const rawUrl =
-		(event.notification.data as { url?: string } | undefined)?.url ?? '/subscriptions';
+		(event.notification.data as { url?: string } | undefined)?.url ?? '/ja/subscriptions';
 	const targetUrl = new URL(rawUrl, sw.location.origin).toString();
 	const targetPath = new URL(targetUrl).pathname;
 

@@ -4,7 +4,6 @@
 	import { page } from '$app/state';
 	import { authClient } from '$lib/auth-client';
 	import { startLifetimeCheckout } from '$lib/client/lifetime-checkout';
-	import LanguageSwitcher from '$lib/components/LanguageSwitcher.svelte';
 	import DefaultNotifyModal from '$lib/components/modals/DefaultNotifyModal.svelte';
 	import NotificationMethodModal from '$lib/components/modals/NotificationMethodModal.svelte';
 	import UpdateNameModal from '$lib/components/modals/UpdateNameModal.svelte';
@@ -17,6 +16,7 @@
 		getSubscriptionStatusLabel,
 		resolveLocale
 	} from '$lib/locale';
+	import { localizeInternalHref } from '$lib/locale-routing';
 	import { m } from '$lib/paraglide/messages.js';
 	import { getLocale } from '$lib/paraglide/runtime';
 	import Check from 'lucide-svelte/icons/check';
@@ -29,6 +29,7 @@
 		page.url;
 		return resolveLocale(getLocale());
 	});
+	const localizedHref = (href: string) => localizeInternalHref(resolve(href), currentLocale);
 	const isPremium = $derived(currentPlan?.isPremium ?? false);
 	const hasSubscriptionAccess = $derived(currentPlan?.hasSubscriptionAccess ?? false);
 	const hasLifetimeEntitlement = $derived(currentPlan?.hasLifetimeEntitlement ?? false);
@@ -378,12 +379,6 @@
 			</div>
 			<div class={settingsCardClass}>
 				<div class={settingRowClass}>
-					<p class="text-sm font-medium">{m.settings_language_label()}</p>
-					<div class={settingActionClass}>
-						<LanguageSwitcher />
-					</div>
-				</div>
-				<div class={settingRowWithBorderClass}>
 					<div class={settingTextClass}>
 						<p class="text-sm font-medium">{m.settings_theme_label()}</p>
 						<p class="text-muted-foreground text-sm">{m.settings_theme_title()}</p>
@@ -511,14 +506,14 @@
 					>
 						<a
 							class="underline-offset-4 hover:underline"
-							href={resolve('/commercial-transactions')}
+							href={localizedHref('/commercial-transactions')}
 						>
 							特定商取引法に基づく表記
 						</a>
-						<a class="underline-offset-4 hover:underline" href={resolve('/terms')}>
+						<a class="underline-offset-4 hover:underline" href={localizedHref('/terms')}>
 							{m.legal_terms()}
 						</a>
-						<a class="underline-offset-4 hover:underline" href={resolve('/privacy')}>
+						<a class="underline-offset-4 hover:underline" href={localizedHref('/privacy')}>
 							{m.legal_privacy()}
 						</a>
 					</div>

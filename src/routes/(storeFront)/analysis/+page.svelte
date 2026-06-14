@@ -4,6 +4,7 @@
 	import Button from '$lib/components/ui/button/button.svelte';
 	import * as Tabs from '$lib/components/ui/tabs';
 	import { formatCurrencyYen, resolveLocale } from '$lib/locale';
+	import { localizeInternalHref } from '$lib/locale-routing';
 	import { m } from '$lib/paraglide/messages.js';
 	import { getLocale } from '$lib/paraglide/runtime';
 	import {
@@ -26,6 +27,7 @@
 	let period = $state<AnalyticsPeriod>('monthly');
 
 	const locale = $derived(resolveLocale(getLocale()));
+	const subscriptionsHref = $derived(localizeInternalHref(resolve('/subscriptions'), locale));
 	const summary = $derived(data.analytics[period]);
 	const summaryHint = $derived(
 		period === 'monthly' ? m.analysis_period_hint_monthly() : m.analysis_period_hint_yearly()
@@ -41,7 +43,9 @@
 	const topItem = $derived(summary.items[0] ?? null);
 </script>
 
-<div class="mx-auto flex max-w-5xl flex-col gap-6 px-4 pb-[calc(env(safe-area-inset-bottom)+6rem)] pt-6 md:px-8 md:pb-8">
+<div
+	class="mx-auto flex max-w-5xl flex-col gap-6 px-4 pt-6 pb-[calc(env(safe-area-inset-bottom)+6rem)] md:px-8 md:pb-8"
+>
 	<div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
 		<div class="space-y-2">
 			<div class="text-primary inline-flex items-center gap-2 text-sm font-medium">
@@ -83,14 +87,16 @@
 	{#if summary.items.length === 0}
 		<section class="bg-muted/20 rounded-[2rem] border border-dashed px-6 py-12 text-center">
 			<div class="mx-auto flex max-w-md flex-col items-center gap-4">
-				<div class="bg-primary/10 text-primary flex size-14 items-center justify-center rounded-2xl">
+				<div
+					class="bg-primary/10 text-primary flex size-14 items-center justify-center rounded-2xl"
+				>
 					<CreditCard class="size-6" />
 				</div>
 				<div class="space-y-2">
 					<h2 class="text-xl font-semibold">{m.analysis_empty_title()}</h2>
 					<p class="text-muted-foreground leading-7">{m.analysis_empty_description()}</p>
 				</div>
-				<Button href={resolve('/subscriptions')}>{m.analysis_empty_action()}</Button>
+				<Button href={subscriptionsHref}>{m.analysis_empty_action()}</Button>
 			</div>
 		</section>
 	{:else}
@@ -100,7 +106,7 @@
 					segments={chartSegments}
 					total={summary.total}
 					totalLabel={m.analysis_total_label()}
-					totalDisplay={totalDisplay}
+					{totalDisplay}
 					hint={summaryHint}
 				/>
 
@@ -145,7 +151,8 @@
 							<div class="min-w-0 flex-1">
 								<p class="truncate font-medium">{item.serviceName}</p>
 								<p class="text-muted-foreground text-sm">
-									{item.subscriptionCount} {m.analysis_entry_count_suffix()}
+									{item.subscriptionCount}
+									{m.analysis_entry_count_suffix()}
 								</p>
 							</div>
 							<div class="text-right">

@@ -4,16 +4,23 @@
 	import Button from '$lib/components/ui/button/button.svelte';
 	import { demoPageCopy } from '$lib/content/site-content';
 	import { resolveLocale } from '$lib/locale';
+	import { getLocalizedSeoLinks, localizeInternalHref } from '$lib/locale-routing';
 	import { getLocale } from '$lib/paraglide/runtime';
 	import { ArrowLeft, Play } from 'lucide-svelte';
 
 	const locale = $derived(resolveLocale(getLocale()));
 	const copy = $derived(demoPageCopy[locale]);
+	const seoLinks = $derived(getLocalizedSeoLinks('/demo', locale));
+	const localizedHref = (href: string) => localizeInternalHref(resolve(href), locale);
 </script>
 
 <svelte:head>
 	<title>{copy.headTitle}</title>
 	<meta name="description" content={copy.headDescription} />
+	<link rel="canonical" href={seoLinks.canonical} />
+	{#each seoLinks.alternates as alternate (alternate.hreflang)}
+		<link rel="alternate" hreflang={alternate.hreflang} href={alternate.href} />
+	{/each}
 </svelte:head>
 
 <main class="bg-background text-foreground min-h-screen">
@@ -34,10 +41,10 @@
 				</div>
 			</div>
 			<div class="flex shrink-0 flex-wrap gap-2">
-				<Button href={`${resolve('/')}#start`} size="sm">
+				<Button href={localizedHref('/#start')} size="sm">
 					{copy.hero.primaryAction}
 				</Button>
-				<Button href={resolve('/')} variant="outline" size="sm">
+				<Button href={localizedHref('/')} variant="outline" size="sm">
 					<ArrowLeft class="size-4" />
 					{copy.hero.secondaryAction}
 				</Button>

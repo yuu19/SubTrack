@@ -13,18 +13,16 @@ export default defineConfig({
 		paraglideVitePlugin({
 			project: './project.inlang',
 			outdir: './src/lib/paraglide',
-			// Prefer persisted user choice, fall back to URL, then base locale
-			strategy: ['localStorage', 'cookie', 'url', 'baseLocale'],
+			// Display locale is resolved from the public URL, with ja as the final fallback.
+			strategy: ['url', 'baseLocale'],
 			// Cloudflare/edge friendly: avoid AsyncLocalStorage
 			disableAsyncLocalStorage: true,
-			// urlPatterns部分は不要になった場合は削除する
-			// Drop explicit port in generated localized URLs to avoid Codespaces forwarding issues
 			urlPatterns: [
 				{
 					pattern: ':protocol://:domain(.*)/:path(.*)?',
 					localized: [
 						['ja', ':protocol://:domain(.*)/ja/:path(.*)?'],
-						['en', ':protocol://:domain(.*)/:path(.*)?']
+						['en', ':protocol://:domain(.*)/en/:path(.*)?']
 					]
 				}
 			]

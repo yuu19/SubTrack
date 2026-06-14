@@ -11,6 +11,8 @@ import { computeNextBilling } from '$lib/server/subscriptions';
 import { sendWebPush } from '$lib/server/push';
 import { sendSubscriptionReminderEmail, sendTrialEndingEmail } from '$lib/server/email';
 import { createBillingPortalUrl } from '$lib/server/stripe';
+import { DEFAULT_LOCALE, type AppLocale } from '$lib/constant';
+import { isAppLocale, localizePathname } from '$lib/locale-routing';
 
 export type NotificationDispatchResult = {
 	evaluated: number;
@@ -21,10 +23,15 @@ export type NotificationDispatchResult = {
 	updated: number;
 };
 
-const buildPayload = (subscription: typeof trackedSubscriptionTable.$inferSelect) => {
+const resolveUserLocale = (locale: string | null | undefined): AppLocale =>
+	isAppLocale(locale) ? locale : DEFAULT_LOCALE;
+
+const buildPayload = (
+	subscription: typeof trackedSubscriptionTable.$inferSelect,
+	locale: AppLocale
+) => {
 	const notifyDays = subscription.notifyDaysBefore ?? 0;
-	const when =
-		notifyDays === 0 ? '今日が支払い日です。' : `支払いまであと${notifyDays}日です。`;
+	const when = notifyDays === 0 ? '今日が支払い日です。' : `支払いまであと${notifyDays}日です。`;
 
 	return {
 		title: 'サブスクの支払い通知',
@@ -32,7 +39,7 @@ const buildPayload = (subscription: typeof trackedSubscriptionTable.$inferSelect
 		icon: '/favicon.png',
 		tag: `subscription-${subscription.id}-${dayjs().format('YYYY-MM-DD')}`,
 		data: {
-			url: '/subscriptions',
+			url: localizePathname('/subscriptions', locale),
 			subscriptionId: subscription.id
 		}
 	};
@@ -44,20 +51,19 @@ const formatBillingDate = (value: string | null | undefined) => {
 	return parsed.isValid() ? parsed.format('YYYY-MM-DD') : value;
 };
 
-const resolveSubscriptionUrl = () => {
+const resolveSubscriptionUrl = (locale: AppLocale) => {
 	const directBase =
-		process.env.BETTER_AUTH_URL ??
-		process.env.PUBLIC_BETTER_AUTH_URL ??
-		process.env.APP_ORIGIN;
+		process.env.BETTER_AUTH_URL ?? process.env.PUBLIC_BETTER_AUTH_URL ?? process.env.APP_ORIGIN;
+	const subscriptionsPath = localizePathname('/subscriptions', locale);
 
 	if (directBase) {
-		return new URL('/subscriptions', directBase).toString();
+		return new URL(subscriptionsPath, directBase).toString();
 	}
 
 	if (process.env.PUSH_CRON_URL) {
 		try {
 			const origin = new URL(process.env.PUSH_CRON_URL).origin;
-			return new URL('/subscriptions', origin).toString();
+			return new URL(subscriptionsPath, origin).toString();
 		} catch {
 			return null;
 		}
@@ -85,7 +91,7 @@ export const dispatchSubscriptionNotifications = async (
 		.where(eq(trackedSubscriptionTable.isSample, false));
 	let updated = 0;
 
-	const dueSubscriptions: typeof trackedSubscriptionTable.$inferSelect[] = [];
+	const dueSubscriptions: (typeof trackedSubscriptionTable.$inferSelect)[] = [];
 
 	for (const sub of subscriptions) {
 		if (!sub.userId) continue;
@@ -138,6 +144,7 @@ export const dispatchSubscriptionNotifications = async (
 			id: userTable.id,
 			email: userTable.email,
 			name: userTable.name,
+			locale: userTable.locale,
 			notificationMethod: userTable.notificationMethod
 		})
 		.from(userTable)
@@ -150,7 +157,7 @@ export const dispatchSubscriptionNotifications = async (
 		.from(pushSubscriptionTable)
 		.where(inArray(pushSubscriptionTable.userId, userIds));
 
-	const pushByUser = new Map<string, typeof pushSubscriptionTable.$inferSelect[]>();
+	const pushByUser = new Map<string, (typeof pushSubscriptionTable.$inferSelect)[]>();
 	for (const pushSub of pushSubscriptions) {
 		const list = pushByUser.get(pushSub.userId) ?? [];
 		list.push(pushSub);
@@ -160,12 +167,12 @@ export const dispatchSubscriptionNotifications = async (
 	let sent = 0;
 	let failed = 0;
 	let removed = 0;
-	const subscriptionUrl = resolveSubscriptionUrl();
 
 	for (const sub of dueSubscriptions) {
 		const userId = sub.userId ?? '';
 		const user = userById.get(userId);
 		if (!user) continue;
+		const userLocale = resolveUserLocale(user.locale);
 
 		const method = user.notificationMethod ?? 'push';
 		const shouldPush = method === 'push' || method === 'both';
@@ -176,7 +183,7 @@ export const dispatchSubscriptionNotifications = async (
 			const userPushSubscriptions = pushByUser.get(userId) ?? [];
 			if (userPushSubscriptions.length > 0) {
 				attempted = true;
-				const payload = buildPayload(sub);
+				const payload = buildPayload(sub, userLocale);
 
 				for (const pushSub of userPushSubscriptions) {
 					try {
@@ -212,6 +219,7 @@ export const dispatchSubscriptionNotifications = async (
 		}
 
 		if (shouldEmail && user.email && emailEnabled) {
+			const subscriptionUrl = resolveSubscriptionUrl(userLocale);
 			if (!subscriptionUrl) {
 				console.error('[subscription-notify] APP_ORIGIN is not configured');
 				failed += 1;
@@ -259,20 +267,19 @@ export type TrialEndingDispatchResult = {
 	skipped: number;
 };
 
-const resolveReturnUrl = () => {
+const resolveReturnUrl = (locale: AppLocale) => {
 	const directBase =
-		process.env.BETTER_AUTH_URL ??
-		process.env.PUBLIC_BETTER_AUTH_URL ??
-		process.env.APP_ORIGIN;
+		process.env.BETTER_AUTH_URL ?? process.env.PUBLIC_BETTER_AUTH_URL ?? process.env.APP_ORIGIN;
+	const settingsPath = localizePathname('/me/settings', locale);
 
 	if (directBase) {
-		return new URL('/me/settings', directBase).toString();
+		return new URL(settingsPath, directBase).toString();
 	}
 
 	if (process.env.PUSH_CRON_URL) {
 		try {
 			const origin = new URL(process.env.PUSH_CRON_URL).origin;
-			return new URL('/me/settings', origin).toString();
+			return new URL(settingsPath, origin).toString();
 		} catch {
 			return null;
 		}
@@ -316,8 +323,6 @@ export const dispatchTrialEndingEmails = async (
 		.where(inArray(verificationTable.identifier, identifiers));
 
 	const sentIdentifiers = new Set(sentRows.map((row) => row.identifier));
-	const returnUrl = resolveReturnUrl();
-
 	let sent = 0;
 	let failed = 0;
 	let skipped = 0;
@@ -331,6 +336,7 @@ export const dispatchTrialEndingEmails = async (
 			skipped += 1;
 			continue;
 		}
+		const returnUrl = resolveReturnUrl(resolveUserLocale(user.locale));
 
 		if (sentIdentifiers.has(identifier)) {
 			skipped += 1;

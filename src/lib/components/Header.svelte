@@ -7,6 +7,8 @@
 	import { invalidateAll } from '$app/navigation';
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
+	import LanguageSwitcher from '$lib/components/LanguageSwitcher.svelte';
+	import { localizeInternalHref } from '$lib/locale-routing';
 	import { m } from '$lib/paraglide/messages.js';
 	import { getLocale } from '$lib/paraglide/runtime';
 	import { resolveLocale } from '$lib/locale';
@@ -17,39 +19,17 @@
 			.map((n) => n[0])
 			.join('');
 	}
-	// const session = authClient.useSession();
-	const mainNavItems = [
-		{
-			title: () => m.mobile_nav_subscriptions(),
-			href: resolve('/subscriptions')
-		},
-		{
-			title: () => m.mobile_nav_calendar(),
-			href: resolve('/calendar')
-		},
-		{
-			title: () => m.mobile_nav_analysis(),
-			href: resolve('/analysis')
-		}
-	];
-
-	const accountPages = [
-		{
-			title: () => m.nav_settings(),
-			href: resolve('/me/settings')
-		}
-	];
 	const landingNavCopy = {
 		ja: [
 			{ title: '機能', href: '#features' },
-			{ title: 'デモ', href: resolve('/demo') },
+			{ title: 'デモ', href: '/demo' },
 			{ title: '料金', href: '#pricing' },
 			{ title: 'FAQ', href: '#faq' },
 			{ title: '始める', href: '#start', primary: true }
 		],
 		en: [
 			{ title: 'Features', href: '#features' },
-			{ title: 'Demo', href: resolve('/demo') },
+			{ title: 'Demo', href: '/demo' },
 			{ title: 'Pricing', href: '#pricing' },
 			{ title: 'FAQ', href: '#faq' },
 			{ title: 'Start', href: '#start', primary: true }
@@ -57,12 +37,40 @@
 	};
 
 	const pathname = $derived(page.url.pathname);
-	const logoHref = $derived(page.data.user ? resolve('/subscriptions') : resolve('/'));
-	const homeHref = resolve('/');
 	const currentLocale = $derived(resolveLocale(getLocale()));
-	const landingNavItems = $derived(landingNavCopy[currentLocale]);
+	const localizedHref = (href: string) =>
+		href.startsWith('#') ? href : localizeInternalHref(resolve(href), currentLocale);
+	const mainNavItems = $derived([
+		{
+			title: () => m.mobile_nav_subscriptions(),
+			href: localizedHref('/subscriptions')
+		},
+		{
+			title: () => m.mobile_nav_calendar(),
+			href: localizedHref('/calendar')
+		},
+		{
+			title: () => m.mobile_nav_analysis(),
+			href: localizedHref('/analysis')
+		}
+	]);
+	const accountPages = $derived([
+		{
+			title: () => m.nav_settings(),
+			href: localizedHref('/me/settings')
+		}
+	]);
+	const logoHref = $derived(page.data.user ? localizedHref('/subscriptions') : localizedHref('/'));
+	const homeHref = $derived(localizedHref('/'));
+	const adminHref = $derived(localizedHref('/admin'));
+	const landingNavItems = $derived(
+		landingNavCopy[currentLocale].map((item) => ({
+			...item,
+			href: localizedHref(item.href)
+		}))
+	);
 	const publicLandingPathnames = $derived.by(() => {
-		const paths = ['/', `/${currentLocale}`, `/${currentLocale}/`, homeHref];
+		const paths = ['/', homeHref];
 		if (homeHref !== '/' && homeHref.endsWith('/')) {
 			paths.push(homeHref.slice(0, -1));
 		}
@@ -134,7 +142,7 @@
 						{#if page.data.user.role === 'admin'}
 							<DropdownMenu.Item>
 								{#snippet child({ props })}
-									<a href={resolve('/admin')} {...props}>{m.nav_admin_dashboard()}</a>
+									<a href={adminHref} {...props}>{m.nav_admin_dashboard()}</a>
 								{/snippet}
 							</DropdownMenu.Item>
 						{/if}
@@ -167,8 +175,7 @@
 		{:else}
 			<div class="flex items-center"></div>
 		{/if}
-		<!-- todo 将来的に多言語対応を整備する -->
-		<!-- <LanguageSwitcher /> -->
+		<LanguageSwitcher />
 	</div>
 </header>
 <!-- 
