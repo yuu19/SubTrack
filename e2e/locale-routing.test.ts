@@ -6,9 +6,10 @@ test('language switcher updates page text during client navigation', async ({ pa
 
 	await expect(page.locator('h1')).toHaveText('よくある質問');
 
-	await page.getByLabel('言語').selectOption('en');
+	await page.getByRole('button', { name: '言語' }).click();
+	await page.getByRole('menuitemradio', { name: 'en' }).click();
 
 	await expect(page).toHaveURL(/\/en\/faq$/);
 	await expect(page.locator('h1')).toHaveText('Frequently asked questions');
-	await expect(page.locator('#locale')).toHaveValue('en');
+	await expect(page.getByRole('button', { name: 'Language' })).toContainText('en');
 });

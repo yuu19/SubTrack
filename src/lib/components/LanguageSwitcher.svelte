@@ -2,6 +2,10 @@
 	import type { AppLocale } from '$lib/constant';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
+	import {
+		LanguageSwitcher as LanguageSwitcherPrimitive,
+		type Language
+	} from '$lib/components/ui/language-switcher';
 	import { isAppLocale, localizeInternalHref } from '$lib/locale-routing';
 	import { getLocale } from '$lib/paraglide/runtime';
 	import { m } from '$lib/paraglide/messages.js';
@@ -17,14 +21,14 @@
 	const currentLocale = $derived(getLocale() as AppLocale);
 	const localeOptions = [
 		{
-			value: 'ja' as const,
-			label: () => m.language_option_ja()
+			code: 'ja',
+			label: 'ja'
 		},
 		{
-			value: 'en' as const,
-			label: () => m.language_option_en()
+			code: 'en',
+			label: 'en'
 		}
-	];
+	] satisfies Language[];
 
 	const switchLocale = async (locale: string) => {
 		if (!isAppLocale(locale) || locale === currentLocale) return;
@@ -55,14 +59,9 @@
 	};
 </script>
 
-<label class="sr-only" for="locale">{m.language_label()}</label>
-<select
-	id="locale"
-	class="border-border bg-muted text-foreground hover:border-primary focus:border-primary rounded-full border px-3 py-1 text-sm shadow-sm"
+<LanguageSwitcherPrimitive
+	languages={localeOptions}
 	value={currentLocale}
-	onchange={(event) => switchLocale((event.target as HTMLSelectElement).value)}
->
-	{#each localeOptions as option (option.value)}
-		<option value={option.value} selected={option.value === currentLocale}>{option.label()}</option>
-	{/each}
-</select>
+	ariaLabel={m.language_label()}
+	onChange={switchLocale}
+/>
