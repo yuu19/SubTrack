@@ -712,16 +712,16 @@ export const landingPageCopy: Record<AppLocale, LandingPageCopy> = {
 						'CSV エクスポート',
 						'個別通知設定',
 						'7日間無料トライアルが適用される場合があります'
-					],
-					badge: '人気',
-					featured: true
+					]
 				},
 				{
 					name: 'Premium 買い切り',
 					price: '6,000円',
 					cycle: '月額を増やしたくない方向け',
 					description: '一度の支払いで Premium 相当の機能を使い続けられます。',
-					bullets: ['買い切りで利用', 'CSV エクスポート', '登録件数制限の解除']
+					bullets: ['買い切りで利用', 'CSV エクスポート', '登録件数制限の解除'],
+					badge: 'おすすめ',
+					featured: true
 				}
 			]
 		},
@@ -986,16 +986,16 @@ export const landingPageCopy: Record<AppLocale, LandingPageCopy> = {
 						'CSV export',
 						'Per-subscription reminder settings',
 						'A 7-day free trial may apply'
-					],
-					badge: 'Popular',
-					featured: true
+					]
 				},
 				{
 					name: 'Premium Lifetime',
 					price: 'JPY 6,000',
 					cycle: 'For avoiding another monthly bill',
 					description: 'Use Premium-level features with a one-time purchase.',
-					bullets: ['One-time purchase', 'CSV export', 'Remove entry limits']
+					bullets: ['One-time purchase', 'CSV export', 'Remove entry limits'],
+					badge: 'Recommended',
+					featured: true
 				}
 			]
 		},
