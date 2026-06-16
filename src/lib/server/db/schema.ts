@@ -46,7 +46,7 @@ export const user = sqliteTable('user', {
 	defaultNotifyDaysBefore: integer('default_notify_days_before').notNull().default(3),
 	notificationMethod: text('notification_method', { enum: NOTIFICATION_METHODS })
 		.notNull()
-		.default('push'),
+		.default('email'),
 	onboardingCompleted: integer('onboarding_completed', {
 		mode: 'boolean'
 	})

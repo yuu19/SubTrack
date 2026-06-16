@@ -70,7 +70,7 @@
 					{
 						title: 'サブスク管理ページを開く',
 						description:
-							'「サブスク管理」画面で通知エリアを表示し、「通知を有効にする」を選択します。'
+							'「サブスク管理」画面の通知エリアで「プッシュ通知を有効にする」を選択します。'
 					},
 					{
 						title: 'ブラウザ通知を許可する',
@@ -106,12 +106,12 @@
 				{
 					question: '通知はいつでも解除できますか？',
 					answer:
-						'いつでも解除できます。サブスク管理画面の「通知を無効にする」ボタン、またはブラウザのサイト設定から解除可能です。'
+						'いつでも解除できます。サブスク管理画面の「プッシュ通知を無効にする」ボタン、またはブラウザのサイト設定から解除可能です。'
 				},
 				{
 					question: 'どこで通知設定を変更できますか？',
 					answer:
-						'Push通知の端末登録はサブスク管理ページで「通知を有効にする / 無効にする」から切り替えられます。通知方法や既定の通知日は設定ページで変更できます。'
+						'Push通知の端末登録はサブスク管理ページで「プッシュ通知を有効にする / 無効にする」から切り替えられます。通知方法や既定の通知日は設定ページで変更できます。'
 				},
 				{
 					question: '通知が届かないときは？',
@@ -127,7 +127,7 @@
 					categoryLabel: 'デスクトップブラウザ向け',
 					title: 'PCで設定する',
 					steps: [
-						'「サブスク管理」画面を開き、「通知を有効にする」をクリックします。',
+						'「サブスク管理」画面を開き、「プッシュ通知を有効にする」をクリックします。',
 						'ブラウザの通知許可ダイアログで「許可」を選択します。',
 						'通知エリアにエラーが表示されていないことを確認します。'
 					],
@@ -140,7 +140,7 @@
 					categoryLabel: 'モバイルブラウザ向け',
 					title: 'Androidで設定する',
 					steps: [
-						'「サブスク管理」画面で「通知を有効にする」をタップします。',
+						'「サブスク管理」画面で「プッシュ通知を有効にする」をタップします。',
 						'ブラウザ側の通知許可ダイアログで「許可」を選択します。',
 						'端末設定でブラウザ通知が無効になっていないか確認します。'
 					],
@@ -154,7 +154,7 @@
 					title: 'iPhone / iPadで設定する',
 					steps: [
 						'iPhone / iPadでは、SubTrackをホーム画面に追加し、ホーム画面のアイコンから開いてください。',
-						'サブスク管理画面の通知エリアで「通知を有効にする」をタップします。',
+						'サブスク管理画面の通知エリアで「プッシュ通知を有効にする」をタップします。',
 						'通知許可ダイアログが表示されたら「許可」を選択し、iOS / iPadOSの通知設定でSubTrackの通知が許可されていることを確認します。'
 					],
 					note: 'iOS / iPadOS 16.4以降のHome Screen Web Appが対象です。利用可否や表示内容は、OSバージョン、ブラウザ、通知設定によって異なる場合があります。'
@@ -183,7 +183,7 @@
 					{
 						title: 'Open the subscriptions page',
 						description:
-							'Open the subscriptions screen, find the notification area, and choose Enable notifications.'
+							'Open the subscriptions screen, find the notification area, and choose Enable push notifications.'
 					},
 					{
 						title: 'Allow browser notifications',
@@ -224,7 +224,7 @@
 				{
 					question: 'Where can I change notification settings?',
 					answer:
-						'Device registration for push notifications can be switched on or off from Enable notifications or Disable notifications on the subscriptions page. Notification method and default reminder timing can be changed from the settings page.'
+						'Device registration for push notifications can be switched on or off from Enable push notifications or Disable push notifications on the subscriptions page. Notification method and default reminder timing can be changed from the settings page.'
 				},
 				{
 					question: 'What should I check if notifications do not arrive?',
@@ -240,7 +240,7 @@
 					categoryLabel: 'Desktop browser',
 					title: 'Set up on desktop',
 					steps: [
-						'Open the subscriptions page and click Enable notifications.',
+						'Open the subscriptions page and click Enable push notifications.',
 						'Choose Allow in the browser permission dialog.',
 						'Confirm that no error message is shown in the notification area.'
 					],
@@ -253,7 +253,7 @@
 					categoryLabel: 'Mobile browser',
 					title: 'Set up on Android',
 					steps: [
-						'Open the subscriptions page and tap Enable notifications.',
+						'Open the subscriptions page and tap Enable push notifications.',
 						'Choose Allow in the browser permission dialog.',
 						'Confirm that browser notifications are not disabled in your Android settings.'
 					],
@@ -267,7 +267,7 @@
 					title: 'Set up on iPhone / iPad',
 					steps: [
 						'On iPhone and iPad, add SubTrack to your Home Screen and open it from the Home Screen icon.',
-						'Open the subscriptions page and tap Enable notifications in the notification area.',
+						'Open the subscriptions page and tap Enable push notifications in the notification area.',
 						'When the permission dialog appears, choose Allow, then confirm that notifications are allowed for SubTrack in iOS or iPadOS settings.'
 					],
 					note: 'Web Push on iPhone and iPad requires an iOS or iPadOS 16.4 or later Home Screen web app. Availability and dialogs can vary by OS version, browser, and notification settings.'
@@ -281,7 +281,8 @@
 	const locale = $derived(resolveLocale(getLocale()));
 	const copy = $derived(pushCopy[locale]);
 	const seoLinks = $derived(getLocalizedSeoLinks('/push', locale));
-	const localizedHref = (href: string) => localizeInternalHref(resolvePath(href), locale);
+	const subscriptionsHref = $derived(localizeInternalHref(resolvePath('/subscriptions'), locale));
+	const homeHref = $derived(localizeInternalHref(resolvePath('/'), locale));
 	const desktopGuide = $derived(copy.deviceGuides[0]);
 	const mobileGuides = $derived(copy.deviceGuides.slice(1));
 	const mobileBadgeLabel = $derived(locale === 'en' ? 'Mobile' : 'スマホ');
@@ -314,9 +315,9 @@
 		</p>
 		<div class="mt-5 flex flex-wrap gap-3">
 			{#if page.data.user}
-				<Button href={localizedHref('/subscriptions')}>{copy.hero.openSettings}</Button>
+				<Button href={subscriptionsHref}>{copy.hero.openSettings}</Button>
 			{:else}
-				<Button href={localizedHref('/')} variant="secondary">{copy.hero.login}</Button>
+				<Button href={homeHref} variant="secondary">{copy.hero.login}</Button>
 			{/if}
 		</div>
 	</section>

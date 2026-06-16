@@ -108,7 +108,7 @@ export const load = async ({ request, locals, url }) => {
 		locale: (user?.locale as AppLocale | null | undefined) ?? DEFAULT_LOCALE,
 		activeTheme: user?.activeTheme ?? 'rose',
 		defaultNotifyDaysBefore: user?.defaultNotifyDaysBefore ?? 3,
-		notificationMethod: user?.notificationMethod ?? 'push'
+		notificationMethod: user?.notificationMethod ?? 'email'
 	});
 	const userConfig = parsedConfig.success ? parsedConfig.data : userConfigSchema.parse({});
 	const billingSubscriptions =

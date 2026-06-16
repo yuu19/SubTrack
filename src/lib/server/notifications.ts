@@ -174,7 +174,7 @@ export const dispatchSubscriptionNotifications = async (
 		if (!user) continue;
 		const userLocale = resolveUserLocale(user.locale);
 
-		const method = user.notificationMethod ?? 'push';
+		const method = user.notificationMethod ?? 'email';
 		const shouldPush = method === 'push' || method === 'both';
 		const shouldEmail = method === 'email' || method === 'both';
 		let attempted = false;

@@ -8,18 +8,17 @@
 	const userConfig = UserConfigContext.get();
 
 	const options = $derived([
-		{ value: 'push', label: m.notification_method_push() },
 		{ value: 'email', label: m.notification_method_email() },
 		{ value: 'both', label: m.notification_method_both() }
 	]);
 
-	const currentValue = $derived(userConfig.current.notificationMethod ?? 'push');
+	const currentValue = $derived(userConfig.current.notificationMethod ?? 'email');
 	const currentLabel = $derived(
-		options.find((option) => option.value === currentValue)?.label ?? m.notification_method_push()
+		options.find((option) => option.value === currentValue)?.label ?? m.notification_method_email()
 	);
 
 	const selectMethod = (value: string) => {
-		userConfig.setConfig({ notificationMethod: value as 'push' | 'email' | 'both' });
+		userConfig.setConfig({ notificationMethod: value as 'email' | 'both' });
 		modalState = false;
 	};
 </script>

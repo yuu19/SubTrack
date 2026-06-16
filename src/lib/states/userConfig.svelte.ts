@@ -11,7 +11,7 @@ import { z } from 'zod/v4';
 const locale = z.enum(APP_LOCALES).default(DEFAULT_LOCALE);
 const activeTheme = z.enum(THEMES).default('rose');
 const defaultNotifyDaysBefore = z.number().int().min(0).max(365).default(3);
-const notificationMethod = z.enum(NOTIFICATION_METHODS).default('push');
+const notificationMethod = z.enum(NOTIFICATION_METHODS).default('email');
 
 export type ActiveTheme = z.infer<typeof activeTheme>;
 
@@ -26,7 +26,7 @@ export const userConfigSchema = z
 		locale: DEFAULT_LOCALE,
 		activeTheme: 'rose',
 		defaultNotifyDaysBefore: 3,
-		notificationMethod: 'push'
+		notificationMethod: 'email'
 	});
 
 export type UserConfigType = z.infer<typeof userConfigSchema>;

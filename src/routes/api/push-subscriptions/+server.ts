@@ -1,5 +1,5 @@
 import { createAuth } from '$lib/auth';
-import { pushSubscriptionTable } from '$lib/server/db/schema';
+import { pushSubscriptionTable, user } from '$lib/server/db/schema';
 import { error, json } from '@sveltejs/kit';
 import { and, eq } from 'drizzle-orm';
 
@@ -24,26 +24,34 @@ export const POST = async ({ request, locals: { db } }) => {
 	if (!userId) error(401, 'unauthorized request');
 
 	const payload = parsePayload(await request.json().catch(() => null));
-	const endpoint = payload?.endpoint;
-	const p256dh = payload?.keys?.p256dh;
-	const authKey = payload?.keys?.auth;
-
-	if (typeof endpoint !== 'string' || typeof p256dh !== 'string' || typeof authKey !== 'string') {
+	const keys = payload?.keys;
+	if (
+		!payload ||
+		typeof payload.endpoint !== 'string' ||
+		!keys ||
+		typeof keys.p256dh !== 'string' ||
+		typeof keys.auth !== 'string'
+	) {
 		error(400, 'invalid subscription payload');
 	}
+	const endpoint = payload.endpoint;
+	const p256dh = keys.p256dh;
+	const authKey = keys.auth;
 
 	const expirationTime =
 		typeof payload.expirationTime === 'number'
 			? new Date(Math.trunc(payload.expirationTime))
 			: null;
 
-	const existing = await db
-		.select({ id: pushSubscriptionTable.id })
-		.from(pushSubscriptionTable)
-		.where(and(eq(pushSubscriptionTable.userId, userId), eq(pushSubscriptionTable.endpoint, endpoint)))
-		.limit(1);
+	const existing = await db.query.pushSubscriptionTable.findFirst({
+		columns: {
+			id: true
+		},
+		where: (pushSubscription, { and, eq }) =>
+			and(eq(pushSubscription.userId, userId), eq(pushSubscription.endpoint, endpoint))
+	});
 
-	if (existing.length > 0) {
+	if (existing) {
 		await db
 			.update(pushSubscriptionTable)
 			.set({
@@ -52,7 +60,7 @@ export const POST = async ({ request, locals: { db } }) => {
 				expirationTime,
 				userAgent: request.headers.get('user-agent') ?? null
 			})
-			.where(eq(pushSubscriptionTable.id, existing[0].id));
+			.where(eq(pushSubscriptionTable.id, existing.id));
 	} else {
 		await db.insert(pushSubscriptionTable).values({
 			userId,
@@ -63,6 +71,8 @@ export const POST = async ({ request, locals: { db } }) => {
 			userAgent: request.headers.get('user-agent') ?? null
 		});
 	}
+
+	await db.update(user).set({ notificationMethod: 'both' }).where(eq(user.id, userId));
 
 	return json({ ok: true });
 };
@@ -79,7 +89,11 @@ export const DELETE = async ({ request, locals: { db } }) => {
 
 	await db
 		.delete(pushSubscriptionTable)
-		.where(and(eq(pushSubscriptionTable.userId, userId), eq(pushSubscriptionTable.endpoint, endpoint)));
+		.where(
+			and(eq(pushSubscriptionTable.userId, userId), eq(pushSubscriptionTable.endpoint, endpoint))
+		);
+
+	await db.update(user).set({ notificationMethod: 'email' }).where(eq(user.id, userId));
 
 	return json({ ok: true });
 };

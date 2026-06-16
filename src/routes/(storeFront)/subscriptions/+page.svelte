@@ -1,6 +1,7 @@
 <script lang="ts">
 	import AddSubscription from '$lib/components/modals/AddSubscription.svelte';
 	import EditSubscription from '$lib/components/modals/EditSubscription.svelte';
+	import PushNotificationControl from '$lib/components/push/PushNotificationControl.svelte';
 	import SubscriptionDetailPanel from '$lib/components/subscriptions/SubscriptionDetailPanel.svelte';
 	import * as AlertDialog from '$lib/components/ui/alert-dialog';
 	import { Badge, badgeVariants } from '$lib/components/ui/badge';
@@ -34,7 +35,7 @@
 	import { m } from '$lib/paraglide/messages.js';
 	import { getLocale } from '$lib/paraglide/runtime';
 	import { addSubscriptionModalState } from '$lib/states/modalState.svelte';
-	import { browser, dev } from '$app/environment';
+	import { browser } from '$app/environment';
 	import { enhance as kitEnhance } from '$app/forms';
 	import { goto } from '$app/navigation';
 	import { base, resolve } from '$app/paths';
@@ -69,19 +70,11 @@
 		return data.subscriptions as SubscriptionView[];
 	}
 
-	function getInitialPushSubscribed() {
-		return data.hasPushSubscription;
-	}
-
 	let subscriptions = $state<SubscriptionView[]>(getInitialSubscriptions());
 	let isOnline = $state(true);
 	let isSyncing = $state(false);
 	let syncError = $state<string | null>(null);
-	let pushSupported = $state(false);
-	let pushSubscribed = $state(getInitialPushSubscribed());
-	let pushPermission = $state<NotificationPermission>('default');
-	let pushBusy = $state(false);
-	let pushError = $state<string | null>(null);
+	let pushPromptKey = $state(0);
 	let isCreatingLifetimeCheckout = $state(false);
 	let detailOpen = $state(false);
 	let editOpen = $state(false);
@@ -228,6 +221,7 @@
 	const handleCreateResult = async (serverSubscriptions: Subscription[]) => {
 		await handleServerResult(serverSubscriptions);
 		toast.success(m.subscription_added_toast());
+		pushPromptKey += 1;
 	};
 
 	const handleUpdateResult = async (serverSubscriptions: Subscription[]) => {
@@ -272,134 +266,9 @@
 		};
 	};
 
-	const pushEndpoint = `${base}/api/push-subscriptions`;
-
-	const urlBase64ToUint8Array = (base64String: string) => {
-		const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
-		const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
-		const rawData = atob(base64);
-		const outputArray = new Uint8Array(rawData.length);
-		for (let i = 0; i < rawData.length; i += 1) {
-			outputArray[i] = rawData.charCodeAt(i);
-		}
-		return outputArray;
-	};
-
-	const getServiceWorkerRegistration = async () => {
-		if (!('serviceWorker' in navigator)) return null;
-		try {
-			const existing = await navigator.serviceWorker.getRegistration();
-			const registration =
-				existing ??
-				(await navigator.serviceWorker.register(`${base}/service-worker.js`, {
-					type: dev ? 'module' : 'classic'
-				}));
-			const ready = await navigator.serviceWorker.ready;
-			return ready ?? registration;
-		} catch {
-			return null;
-		}
-	};
-
-	const syncPushSubscription = async (subscription: PushSubscription) => {
-		await fetch(pushEndpoint, {
-			method: 'POST',
-			headers: { 'content-type': 'application/json' },
-			credentials: 'same-origin',
-			body: JSON.stringify(subscription)
-		});
-	};
-
-	const removePushSubscription = async (endpoint: string) => {
-		await fetch(pushEndpoint, {
-			method: 'DELETE',
-			headers: { 'content-type': 'application/json' },
-			credentials: 'same-origin',
-			body: JSON.stringify({ endpoint })
-		});
-	};
-
-	const initPush = async () => {
-		if (!browser) return;
-		pushSupported =
-			'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
-		if (!pushSupported) return;
-		pushPermission = Notification.permission;
-		if (!data.vapidPublicKey) return;
-
-		const registration = await getServiceWorkerRegistration();
-		if (!registration) return;
-
-		const subscription = await registration.pushManager.getSubscription();
-		if (subscription) {
-			pushSubscribed = true;
-			void syncPushSubscription(subscription);
-		} else {
-			pushSubscribed = false;
-		}
-	};
-
-	const enablePush = async () => {
-		if (!pushSupported || !data.vapidPublicKey) return;
-		pushBusy = true;
-		pushError = null;
-		try {
-			const permission = await Notification.requestPermission();
-			pushPermission = permission;
-			if (permission !== 'granted') {
-				pushError = m.subscription_push_permission_denied();
-				return;
-			}
-
-			const registration = await getServiceWorkerRegistration();
-			if (!registration) {
-				pushError = m.subscription_push_service_worker_unavailable();
-				return;
-			}
-
-			let subscription = await registration.pushManager.getSubscription();
-			if (!subscription) {
-				subscription = await registration.pushManager.subscribe({
-					userVisibleOnly: true,
-					applicationServerKey: urlBase64ToUint8Array(data.vapidPublicKey)
-				});
-			}
-
-			await syncPushSubscription(subscription);
-			pushSubscribed = true;
-		} catch (error) {
-			console.error('Failed to enable push notifications', error);
-			pushError = m.subscription_push_enable_failed();
-		} finally {
-			pushBusy = false;
-		}
-	};
-
-	const disablePush = async () => {
-		if (!pushSupported) return;
-		pushBusy = true;
-		pushError = null;
-		try {
-			const registration = await getServiceWorkerRegistration();
-			if (!registration) return;
-			const subscription = await registration.pushManager.getSubscription();
-			if (subscription) {
-				await subscription.unsubscribe();
-				await removePushSubscription(subscription.endpoint);
-			}
-			pushSubscribed = false;
-		} catch (error) {
-			console.error('Failed to disable push notifications', error);
-			pushError = m.subscription_push_disable_failed();
-		} finally {
-			pushBusy = false;
-		}
-	};
-
 	onMount(() => {
 		isOnline = navigator.onLine;
 		void loadCachedSubscriptions();
-		void initPush();
 		if (navigator.onLine) {
 			void applyServerSubscriptions(data.subscriptions);
 			void runSync();
@@ -431,16 +300,6 @@
 			<p class="text-muted-foreground">{m.subscription_page_description()}</p>
 		</div>
 		<div class="flex flex-wrap items-center gap-2">
-			{#if pushSupported && data.vapidPublicKey}
-				<Button
-					size="sm"
-					variant="outline"
-					disabled={pushBusy}
-					onclick={pushSubscribed ? disablePush : enablePush}
-				>
-					{pushSubscribed ? m.subscription_push_disable() : m.subscription_push_enable()}
-				</Button>
-			{/if}
 			{#if isPremium}
 				<Button size="sm" variant="outline" href={exportHref} download>
 					{m.subscription_export_button()}
@@ -455,20 +314,13 @@
 			>
 		</div>
 	</header>
-	{#if pushSupported && data.vapidPublicKey}
-		<div class="text-muted-foreground flex flex-wrap items-center gap-2 text-xs">
-			<span>{m.subscription_push_hint()}</span>
-			<a href={pushGuideHref} class="text-primary underline-offset-4 hover:underline">
-				{m.subscription_push_details_link()}
-			</a>
-			{#if pushPermission === 'denied'}
-				<span class="text-destructive">{m.subscription_push_permission_denied()}</span>
-			{/if}
-			{#if pushError}
-				<span class="text-destructive">{pushError}</span>
-			{/if}
-		</div>
-	{/if}
+	<PushNotificationControl
+		vapidPublicKey={data.vapidPublicKey}
+		initialSubscribed={data.hasPushSubscription}
+		guideHref={pushGuideHref}
+		promptKey={pushPromptKey}
+		variant="banner"
+	/>
 
 	{#if shouldShowLifetimeEntry}
 		<div class="bg-card flex flex-col gap-4 rounded-2xl border p-5 shadow-sm">

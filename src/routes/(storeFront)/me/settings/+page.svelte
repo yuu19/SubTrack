@@ -8,6 +8,7 @@
 	import NotificationMethodModal from '$lib/components/modals/NotificationMethodModal.svelte';
 	import UpdateNameModal from '$lib/components/modals/UpdateNameModal.svelte';
 	import ThemeSelectModal from '$lib/components/modals/ThemeSelectModal.svelte';
+	import PushNotificationControl from '$lib/components/push/PushNotificationControl.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import * as Dialog from '$lib/components/ui/dialog';
 	import {
@@ -24,12 +25,19 @@
 	import { Loader2 } from 'lucide-svelte';
 	import { toast } from 'svelte-sonner';
 
-	let { user, subscription, currentPlan } = $derived(page.data);
+	let { user, subscription, currentPlan, vapidPublicKey, hasPushSubscription } = $derived(
+		page.data
+	);
 	const currentLocale = $derived.by(() => {
 		page.url;
 		return resolveLocale(getLocale());
 	});
-	const localizedHref = (href: string) => localizeInternalHref(resolve(href), currentLocale);
+	const pushGuideHref = $derived(localizeInternalHref(resolve('/push'), currentLocale));
+	const commercialTransactionsHref = $derived(
+		localizeInternalHref(resolve('/commercial-transactions'), currentLocale)
+	);
+	const termsHref = $derived(localizeInternalHref(resolve('/terms'), currentLocale));
+	const privacyHref = $derived(localizeInternalHref(resolve('/privacy'), currentLocale));
 	const isPremium = $derived(currentPlan?.isPremium ?? false);
 	const hasSubscriptionAccess = $derived(currentPlan?.hasSubscriptionAccess ?? false);
 	const hasLifetimeEntitlement = $derived(currentPlan?.hasLifetimeEntitlement ?? false);
@@ -365,6 +373,14 @@
 						<NotificationMethodModal />
 					</div>
 				</div>
+				<div class="border-t px-4 py-4 sm:px-5">
+					<PushNotificationControl
+						variant="settings"
+						{vapidPublicKey}
+						initialSubscribed={Boolean(hasPushSubscription)}
+						guideHref={pushGuideHref}
+					/>
+				</div>
 			</div>
 		</div>
 	</section>
@@ -504,16 +520,13 @@
 					<div
 						class="text-muted-foreground flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-center text-xs"
 					>
-						<a
-							class="underline-offset-4 hover:underline"
-							href={localizedHref('/commercial-transactions')}
-						>
+						<a class="underline-offset-4 hover:underline" href={commercialTransactionsHref}>
 							特定商取引法に基づく表記
 						</a>
-						<a class="underline-offset-4 hover:underline" href={localizedHref('/terms')}>
+						<a class="underline-offset-4 hover:underline" href={termsHref}>
 							{m.legal_terms()}
 						</a>
-						<a class="underline-offset-4 hover:underline" href={localizedHref('/privacy')}>
+						<a class="underline-offset-4 hover:underline" href={privacyHref}>
 							{m.legal_privacy()}
 						</a>
 					</div>
