@@ -84,9 +84,9 @@
 				]
 			},
 			devices: {
-				title: 'デバイス別の画面イメージと手順',
+				title: 'デバイス別の実画面例と手順',
 				description:
-					'PC / Android / iPhone・iPad での設定イメージです。実際の表示や利用可否はブラウザ、OSのバージョン、端末設定によって異なる場合があります。'
+					'PC / Android / iPhone・iPad での設定画面例です。実際の表示や利用可否はブラウザ、OSのバージョン、端末設定によって異なる場合があります。'
 			},
 			faqTitle: 'よくある質問',
 			troubleshootingTitle: '通知が届かないときのチェック',
@@ -122,7 +122,7 @@
 			deviceGuides: [
 				{
 					name: 'PC',
-					image: '/images/push-guide/pc-notification-toggle.svg',
+					image: '/images/push-guide/pc-notification-toggle-ja.png',
 					category: 'desktop',
 					categoryLabel: 'デスクトップブラウザ向け',
 					title: 'PCで設定する',
@@ -135,7 +135,7 @@
 				},
 				{
 					name: 'Android',
-					image: '/images/push-guide/android-notification-toggle.svg',
+					image: '/images/push-guide/android-notification-toggle-ja.png',
 					category: 'mobile',
 					categoryLabel: 'モバイルブラウザ向け',
 					title: 'Androidで設定する',
@@ -148,7 +148,7 @@
 				},
 				{
 					name: 'iPhone / iPad',
-					image: '/images/push-guide/iphone-notification-toggle.svg',
+					image: '/images/push-guide/iphone-notification-toggle-ja.png',
 					category: 'mobile',
 					categoryLabel: 'ホーム画面Webアプリ向け',
 					title: 'iPhone / iPadで設定する',
@@ -197,7 +197,7 @@
 				]
 			},
 			devices: {
-				title: 'Screen examples and setup steps by device',
+				title: 'Real screen examples and setup steps by device',
 				description:
 					'These examples show the setup flow on desktop, Android, and iPhone or iPad. Actual availability and dialogs can vary by browser, OS version, and device settings.'
 			},
@@ -235,7 +235,7 @@
 			deviceGuides: [
 				{
 					name: 'Desktop',
-					image: '/images/push-guide/pc-notification-toggle.svg',
+					image: '/images/push-guide/pc-notification-toggle-en.png',
 					category: 'desktop',
 					categoryLabel: 'Desktop browser',
 					title: 'Set up on desktop',
@@ -248,7 +248,7 @@
 				},
 				{
 					name: 'Android',
-					image: '/images/push-guide/android-notification-toggle.svg',
+					image: '/images/push-guide/android-notification-toggle-en.png',
 					category: 'mobile',
 					categoryLabel: 'Mobile browser',
 					title: 'Set up on Android',
@@ -261,7 +261,7 @@
 				},
 				{
 					name: 'iPhone / iPad',
-					image: '/images/push-guide/iphone-notification-toggle.svg',
+					image: '/images/push-guide/iphone-notification-toggle-en.png',
 					category: 'mobile',
 					categoryLabel: 'Home Screen web app',
 					title: 'Set up on iPhone / iPad',
