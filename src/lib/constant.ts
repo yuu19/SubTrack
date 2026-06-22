@@ -19,3 +19,17 @@ export type Themes = (typeof THEMES)[number];
 
 export const NOTIFICATION_METHODS = ['push', 'email', 'both'] as const;
 export type NotificationMethod = (typeof NOTIFICATION_METHODS)[number];
+
+export const TRACKED_SUBSCRIPTION_STATUSES = ['active', 'canceled'] as const;
+export type TrackedSubscriptionStatus = (typeof TRACKED_SUBSCRIPTION_STATUSES)[number];
+
+export const CANCELLATION_METHODS = [
+	'web',
+	'app',
+	'app_store',
+	'google_play',
+	'phone',
+	'email',
+	'other'
+] as const;
+export type CancellationMethod = (typeof CANCELLATION_METHODS)[number];

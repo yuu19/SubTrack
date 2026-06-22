@@ -1,4 +1,5 @@
 import { DEFAULT_LOCALE, type AppLocale } from '$lib/constant';
+import type { CancellationMethod, TrackedSubscriptionStatus } from '$lib/constant';
 
 export const resolveLocale = (value?: string | null): AppLocale =>
 	value === 'en' ? 'en' : DEFAULT_LOCALE;
@@ -145,4 +146,92 @@ export const getSubscriptionStatusLabel = (
 	}
 
 	return labels[locale][status as keyof (typeof labels)['ja']] ?? status;
+};
+
+export const getTrackedSubscriptionStatusLabel = (
+	status: string | null | undefined,
+	locale: AppLocale
+): string => {
+	const labels = {
+		ja: {
+			active: '登録中',
+			canceled: '解約済み'
+		},
+		en: {
+			active: 'Active',
+			canceled: 'Canceled'
+		}
+	} as const satisfies Record<AppLocale, Record<TrackedSubscriptionStatus, string>>;
+
+	if (status === 'active' || status === 'canceled') {
+		return labels[locale][status];
+	}
+
+	return locale === 'en' ? 'Active' : '登録中';
+};
+
+export const getCancellationMethodLabel = (
+	method: string | null | undefined,
+	locale: AppLocale
+): string => {
+	const labels = {
+		ja: {
+			web: 'Webサイト',
+			app: 'アプリ',
+			app_store: 'App Store',
+			google_play: 'Google Play',
+			phone: '電話',
+			email: 'メール',
+			other: 'その他'
+		},
+		en: {
+			web: 'Website',
+			app: 'App',
+			app_store: 'App Store',
+			google_play: 'Google Play',
+			phone: 'Phone',
+			email: 'Email',
+			other: 'Other'
+		}
+	} as const satisfies Record<AppLocale, Record<CancellationMethod, string>>;
+
+	if (!method) {
+		return locale === 'en' ? 'Not set' : '未設定';
+	}
+
+	return labels[locale][method as CancellationMethod] ?? method;
+};
+
+export const getCancellationMethodDescription = (
+	method: string | null | undefined,
+	locale: AppLocale
+): string => {
+	const descriptions = {
+		ja: {
+			web: 'サービスのアカウント管理ページや請求設定ページから解約します。',
+			app: 'サービスのアプリ内にあるアカウント設定やプラン管理から解約します。',
+			app_store: 'Apple IDのサブスクリプション管理から対象サービスを確認します。',
+			google_play: 'Google Playのサブスクリプション管理から対象サービスを確認します。',
+			phone: '受付時間や本人確認に注意して、電話で解約手続きを行います。',
+			email: '登録メールアドレスや契約情報を確認し、メールで解約手続きを行います。',
+			other: 'メモに残した手順を確認して、利用者本人が解約手続きを行います。'
+		},
+		en: {
+			web: 'Cancel from the service account or billing settings page.',
+			app: 'Cancel from the account or plan management area in the service app.',
+			app_store: 'Check the subscription from the Apple ID subscription settings.',
+			google_play: 'Check the subscription from Google Play subscription management.',
+			phone: 'Cancel by phone, checking business hours and identity verification requirements.',
+			email: 'Cancel by email, checking the registered address and contract details.',
+			other: 'Follow the saved notes and complete the cancellation yourself.'
+		}
+	} as const satisfies Record<AppLocale, Record<CancellationMethod, string>>;
+
+	if (!method) {
+		return locale === 'en'
+			? 'Save how to cancel this subscription so you can find it before renewal.'
+			: '更新前に確認できるよう、解約方法を保存しておけます。';
+	}
+
+	return descriptions[locale][method as CancellationMethod] ?? descriptions[locale].other;
 };

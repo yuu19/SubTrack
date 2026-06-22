@@ -175,10 +175,13 @@
 
 	function applyServerSubscriptions(serverSubscriptions: Subscription[]) {
 		const selectedId = selectedSubscription?.id;
-		subscriptions = serverSubscriptions;
+		const activeSubscriptions = serverSubscriptions.filter(
+			(subscription) => (subscription.status ?? 'active') !== 'canceled'
+		);
+		subscriptions = activeSubscriptions;
 		if (selectedId !== undefined) {
 			selectedSubscription =
-				serverSubscriptions.find((subscription) => subscription.id === selectedId) ?? null;
+				activeSubscriptions.find((subscription) => subscription.id === selectedId) ?? null;
 		}
 	}
 

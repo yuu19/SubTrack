@@ -9,9 +9,22 @@
 	import Input from '$lib/components/ui/input/input.svelte';
 	import TagsInput from '$lib/components/ui/tags-input/tags-input.svelte';
 	import { payloadFromFormData } from '$lib/offline/subscriptions';
-	import { formatNotifyDays, getCycleLabel, resolveLocale } from '$lib/locale';
+	import {
+		formatCurrencyYen,
+		formatLongDate,
+		formatNotifyDays,
+		getCancellationMethodLabel,
+		getCycleLabel,
+		resolveLocale
+	} from '$lib/locale';
+	import { CANCELLATION_METHODS } from '$lib/constant';
 	import { m } from '$lib/paraglide/messages.js';
 	import { getLocale } from '$lib/paraglide/runtime';
+	import {
+		serviceTemplates,
+		type ServiceTemplate,
+		type ServiceTemplatePlan
+	} from '$lib/service-templates';
 	import { addSubscriptionModalState } from '$lib/states/modalState.svelte';
 	import { UserConfigContext } from '$lib/states/userConfig.svelte';
 	import {
@@ -39,6 +52,12 @@
 		}))
 	);
 	const notifyOptions = $derived([1, 3, 7]);
+	const cancellationMethodOptions = $derived(
+		CANCELLATION_METHODS.map((value) => ({
+			value,
+			label: getCancellationMethodLabel(value, currentLocale)
+		}))
+	);
 	const colorFieldLabel = $derived(currentLocale === 'en' ? 'Color' : '色');
 	const colorFieldDescription = $derived(
 		currentLocale === 'en'
@@ -52,6 +71,8 @@
 		now.getDate()
 	).padStart(2, '0')}`;
 	let wasOpen = false;
+	let templateSearch = $state('');
+	let selectedPlanId = $state('');
 
 	const form = superForm(
 		untrack(() => data.form),
@@ -63,12 +84,94 @@
 	const { enhance } = form;
 
 	const textField = fieldProxy(form, 'text');
+	const serviceTemplateIdField = fieldProxy(form, 'serviceTemplateId');
+	const planNameField = fieldProxy(form, 'planName');
+	const priceEditedByUserField = fieldProxy(form, 'priceEditedByUser');
 	const colorField = fieldProxy(form, 'color');
 	const selectField = fieldProxy(form, 'select');
 	const notifyDaysBeforeField = fieldProxy(form, 'notifyDaysBefore');
 	const numberField = fieldProxy(form, 'number');
 	const datepickerField = fieldProxy(form, 'datepicker');
+	const cancellationUrlField = fieldProxy(form, 'cancellationUrl');
+	const cancellationMethodField = fieldProxy(form, 'cancellationMethod');
+	const cancellationMemoField = fieldProxy(form, 'cancellationMemo');
+	const cancellationDeadlineMemoField = fieldProxy(form, 'cancellationDeadlineMemo');
 	const tagsField = fieldProxy(form, 'tagsinput');
+
+	const localizedTemplateTags = (template: ServiceTemplate) => template.tags[currentLocale];
+	const localizedPlanName = (plan: ServiceTemplatePlan) => plan.name[currentLocale];
+	const templateQuery = $derived(templateSearch.trim().toLocaleLowerCase());
+	const selectedTemplate = $derived.by(() =>
+		serviceTemplates.find((template) => template.id === $serviceTemplateIdField)
+	);
+	const selectedPlan = $derived.by(() =>
+		selectedTemplate?.plans.find((plan) => plan.id === selectedPlanId)
+	);
+	const matchingTemplates = $derived.by(() => {
+		if (!templateQuery) return serviceTemplates.slice(0, 5);
+
+		return serviceTemplates
+			.filter((template) => {
+				const haystack = [
+					template.name,
+					...template.tags.ja,
+					...template.tags.en,
+					...template.plans.flatMap((plan) => [plan.name.ja, plan.name.en])
+				]
+					.join(' ')
+					.toLocaleLowerCase();
+				return haystack.includes(templateQuery);
+			})
+			.slice(0, 5);
+	});
+	const selectedTemplateVerifiedAt = $derived(
+		selectedTemplate ? formatLongDate(selectedTemplate.lastVerifiedAt, currentLocale) : ''
+	);
+
+	const mergeTemplateTags = (template: ServiceTemplate) => {
+		const tags = localizedTemplateTags(template);
+		const existingTags = Array.isArray($tagsField) ? $tagsField : [];
+		const seen = new Set(tags.map((tag) => tag.trim().toLocaleLowerCase()));
+		$tagsField = [
+			...tags,
+			...existingTags.filter((tag) => !seen.has(tag.trim().toLocaleLowerCase()))
+		];
+	};
+
+	const applyTemplatePlan = (template: ServiceTemplate, plan: ServiceTemplatePlan) => {
+		$serviceTemplateIdField = template.id;
+		selectedPlanId = plan.id;
+		$planNameField = localizedPlanName(plan);
+		$priceEditedByUserField = false;
+		$textField = template.name;
+		$colorField = template.color;
+		$selectField = plan.cycle;
+		$numberField = plan.price ?? 0;
+		$cancellationUrlField = template.cancellation.url ?? '';
+		$cancellationMethodField = template.cancellation.method;
+		$cancellationMemoField = template.cancellation.memo[currentLocale];
+		$cancellationDeadlineMemoField = template.cancellation.deadlineMemo?.[currentLocale] ?? '';
+		mergeTemplateTags(template);
+	};
+
+	const selectTemplate = (template: ServiceTemplate) => {
+		applyTemplatePlan(template, template.plans[0]);
+		templateSearch = template.name;
+	};
+
+	const updateSelectedPlan = (event: Event) => {
+		const planId = (event.currentTarget as HTMLSelectElement).value;
+		if (!selectedTemplate) return;
+		const plan = selectedTemplate.plans.find((item) => item.id === planId);
+		if (!plan) return;
+		applyTemplatePlan(selectedTemplate, plan);
+	};
+
+	const markPriceEdited = () => {
+		if ($serviceTemplateIdField) {
+			$priceEditedByUserField = true;
+		}
+	};
 
 	const enhanceEvents = {
 		onSubmit: async (input: any) => {
@@ -96,9 +199,18 @@
 		if (isOpen && !wasOpen) {
 			$colorField = defaultSubscriptionColor;
 			$notifyDaysBeforeField = defaultNotifyDaysBefore;
+			$serviceTemplateIdField = '';
+			$planNameField = '';
+			$priceEditedByUserField = false;
+			$cancellationUrlField = '';
+			$cancellationMethodField = '';
+			$cancellationMemoField = '';
+			$cancellationDeadlineMemoField = '';
 			if (!$datepickerField) {
 				$datepickerField = todayISO;
 			}
+			templateSearch = '';
+			selectedPlanId = '';
 		}
 		wasOpen = isOpen;
 	});
@@ -112,6 +224,85 @@
 		class="space-y-4"
 		{@attach fromAction(enhance, () => enhanceEvents)}
 	>
+		<input type="hidden" name="serviceTemplateId" value={$serviceTemplateIdField ?? ''} />
+		<input type="hidden" name="planName" value={$planNameField ?? ''} />
+		<input
+			type="hidden"
+			name="priceEditedByUser"
+			value={$priceEditedByUserField ? 'true' : 'false'}
+		/>
+
+		<div class="space-y-3 rounded-lg border p-4">
+			<div class="space-y-1">
+				<label for="service-template-search" class="font-medium">
+					{m.subscription_template_search_label()}
+				</label>
+				<p class="text-muted-foreground text-xs">
+					{m.subscription_template_search_description()}
+				</p>
+			</div>
+			<Input
+				id="service-template-search"
+				type="search"
+				placeholder={m.subscription_template_search_placeholder()}
+				bind:value={templateSearch}
+			/>
+			{#if matchingTemplates.length > 0}
+				<div class="grid gap-2 sm:grid-cols-2">
+					{#each matchingTemplates as template (template.id)}
+						<button
+							type="button"
+							class="hover:bg-muted/60 flex items-start justify-between gap-3 rounded-md border px-3 py-2 text-left text-sm transition {template.id ===
+							$serviceTemplateIdField
+								? 'border-primary'
+								: ''}"
+							onclick={() => selectTemplate(template)}
+						>
+							<span>
+								<span class="block font-medium">{template.name}</span>
+								<span class="text-muted-foreground block text-xs">
+									{localizedTemplateTags(template).join(', ')}
+								</span>
+							</span>
+							{#if template.id === $serviceTemplateIdField}
+								<span class="text-primary text-xs font-medium">
+									{m.subscription_template_selected()}
+								</span>
+							{/if}
+						</button>
+					{/each}
+				</div>
+			{:else if templateQuery}
+				<p class="text-muted-foreground text-sm">{m.subscription_template_empty()}</p>
+			{/if}
+
+			{#if selectedTemplate}
+				<div class="space-y-2">
+					<label for="service-template-plan" class="text-sm font-medium">
+						{m.subscription_template_plan_label()}
+					</label>
+					<select
+						id="service-template-plan"
+						class="border-input focus-visible:ring-ring focus-visible:border-ring bg-background flex h-10 w-full rounded-md border px-3 text-sm shadow-sm transition"
+						value={selectedPlanId}
+						onchange={updateSelectedPlan}
+					>
+						{#each selectedTemplate.plans as plan (plan.id)}
+							<option value={plan.id}>
+								{localizedPlanName(plan)}
+								{#if plan.price !== null}
+									- {formatCurrencyYen(plan.price, currentLocale)}
+								{/if}
+							</option>
+						{/each}
+					</select>
+					<p class="text-muted-foreground text-xs">
+						{m.subscription_template_cancellation_notice()}
+					</p>
+				</div>
+			{/if}
+		</div>
+
 		<Field {form} name="text">
 			<Control>
 				{#snippet children({ props })}
@@ -205,10 +396,37 @@
 						min="0"
 						step="1"
 						placeholder="1000"
+						oninput={markPriceEdited}
 						bind:value={$numberField}
 					/>
 					<Description class="text-muted-foreground text-xs">
-						{m.subscription_form_amount_description()}
+						{#if selectedTemplate && selectedPlan && selectedPlan.price !== null}
+							{m.subscription_template_reference_price_note({
+								date: selectedTemplateVerifiedAt
+							})}
+							<a
+								href={selectedTemplate.sourceUrl}
+								target="_blank"
+								rel="noopener noreferrer"
+								class="underline underline-offset-2"
+							>
+								{m.subscription_template_source_link()}
+							</a>
+						{:else if selectedTemplate}
+							{m.subscription_template_reference_price_missing({
+								date: selectedTemplateVerifiedAt
+							})}
+							<a
+								href={selectedTemplate.sourceUrl}
+								target="_blank"
+								rel="noopener noreferrer"
+								class="underline underline-offset-2"
+							>
+								{m.subscription_template_source_link()}
+							</a>
+						{:else}
+							{m.subscription_form_amount_description()}
+						{/if}
 					</Description>
 				{/snippet}
 			</Control>
@@ -237,6 +455,86 @@
 			</Control>
 			<FieldErrors class="text-destructive text-sm" />
 		</Field>
+
+		<details class="rounded-lg border p-4">
+			<summary class="cursor-pointer text-sm font-semibold">
+				{m.subscription_form_cancellation_summary()}
+			</summary>
+			<p class="text-muted-foreground mt-2 text-xs">
+				{m.subscription_form_cancellation_description()}
+			</p>
+			<div class="mt-4 space-y-4">
+				<Field {form} name="cancellationUrl">
+					<Control>
+						{#snippet children({ props })}
+							<Label class="font-medium">{m.subscription_form_cancellation_url_label()}</Label>
+							<Input
+								{...props}
+								type="url"
+								inputmode="url"
+								placeholder={m.subscription_form_cancellation_url_placeholder()}
+								bind:value={$cancellationUrlField}
+							/>
+							<Description class="text-muted-foreground text-xs">
+								{m.subscription_form_cancellation_url_description()}
+							</Description>
+						{/snippet}
+					</Control>
+					<FieldErrors class="text-destructive text-sm" />
+				</Field>
+
+				<Field {form} name="cancellationMethod">
+					<Control>
+						{#snippet children({ props })}
+							<Label class="font-medium">{m.subscription_form_cancellation_method_label()}</Label>
+							<select
+								{...props}
+								class="border-input focus-visible:ring-ring focus-visible:border-ring bg-background flex h-10 w-full rounded-md border px-3 text-sm shadow-sm transition"
+								bind:value={$cancellationMethodField}
+							>
+								<option value="">{m.subscription_form_cancellation_method_placeholder()}</option>
+								{#each cancellationMethodOptions as option (option.value)}
+									<option value={option.value}>{option.label}</option>
+								{/each}
+							</select>
+						{/snippet}
+					</Control>
+					<FieldErrors class="text-destructive text-sm" />
+				</Field>
+
+				<Field {form} name="cancellationMemo">
+					<Control>
+						{#snippet children({ props })}
+							<Label class="font-medium">{m.subscription_form_cancellation_memo_label()}</Label>
+							<textarea
+								{...props}
+								class="border-input focus-visible:ring-ring focus-visible:border-ring bg-background min-h-24 w-full rounded-md border px-3 py-2 text-sm shadow-sm transition outline-none focus-visible:ring-[3px]"
+								placeholder={m.subscription_form_cancellation_memo_placeholder()}
+								bind:value={$cancellationMemoField}
+							></textarea>
+						{/snippet}
+					</Control>
+					<FieldErrors class="text-destructive text-sm" />
+				</Field>
+
+				<Field {form} name="cancellationDeadlineMemo">
+					<Control>
+						{#snippet children({ props })}
+							<Label class="font-medium">
+								{m.subscription_form_cancellation_deadline_memo_label()}
+							</Label>
+							<Input
+								{...props}
+								type="text"
+								placeholder={m.subscription_form_cancellation_deadline_memo_placeholder()}
+								bind:value={$cancellationDeadlineMemoField}
+							/>
+						{/snippet}
+					</Control>
+					<FieldErrors class="text-destructive text-sm" />
+				</Field>
+			</div>
+		</details>
 
 		<Button type="submit" class="h-12 w-full text-base sm:h-10 sm:text-sm">{m.common_save()}</Button
 		>

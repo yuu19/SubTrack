@@ -78,8 +78,11 @@
 	let isCreatingLifetimeCheckout = $state(false);
 	let detailOpen = $state(false);
 	let editOpen = $state(false);
+	let cancelOpen = $state(false);
+	let reactivateOpen = $state(false);
 	let deleteOpen = $state(false);
 	let selectedSubscription = $state<SubscriptionView | null>(null);
+	let lastOpenedSubscriptionParam = $state<string | null>(null);
 	const currentLocale = $derived(resolveLocale(getLocale()));
 	const isPremium = $derived(Boolean(data.currentPlan?.isPremium));
 	const hasSubscriptionAccess = $derived(Boolean(data.currentPlan?.hasSubscriptionAccess));
@@ -93,6 +96,7 @@
 	);
 	const pushGuideHref = $derived(localizeInternalHref(resolve('/push'), currentLocale));
 	const activeTag = $derived(page.url.searchParams.get('tag')?.trim() ?? '');
+	const activeSubscriptionParam = $derived(page.url.searchParams.get('subscription')?.trim() ?? '');
 	const normalizedActiveTag = $derived(activeTag.toLocaleLowerCase());
 
 	const pendingCount = $derived(subscriptions.filter((sub) => sub._pending).length);
@@ -100,10 +104,23 @@
 		Boolean(selectedSubscription) && isOnline && !selectedSubscription?._pending
 	);
 	const hasActiveTagFilter = $derived(activeTag.length > 0);
+	const activeSubscriptions = $derived(
+		subscriptions.filter((sub) => (sub.status ?? 'active') !== 'canceled')
+	);
+	const canceledSubscriptions = $derived(
+		subscriptions.filter((sub) => (sub.status ?? 'active') === 'canceled')
+	);
 	const filteredSubscriptions = $derived.by(() => {
-		if (!normalizedActiveTag) return subscriptions;
+		if (!normalizedActiveTag) return activeSubscriptions;
 
-		return subscriptions.filter((sub) =>
+		return activeSubscriptions.filter((sub) =>
+			sub.tags.some((tag) => tag.trim().toLocaleLowerCase() === normalizedActiveTag)
+		);
+	});
+	const filteredCanceledSubscriptions = $derived.by(() => {
+		if (!normalizedActiveTag) return canceledSubscriptions;
+
+		return canceledSubscriptions.filter((sub) =>
 			sub.tags.some((tag) => tag.trim().toLocaleLowerCase() === normalizedActiveTag)
 		);
 	});
@@ -114,7 +131,7 @@
 		yearly: 365
 	};
 
-	const formatBillingDate = (value?: string | null) => {
+	const formatBillingDate = (value?: string | number | Date | null) => {
 		return formatLongDate(value, currentLocale);
 	};
 
@@ -241,14 +258,41 @@
 	};
 
 	const openDelete = () => {
-		if (!canMutateSelected) return;
+		if (!canMutateSelected || selectedSubscription?.status !== 'canceled') return;
 		detailOpen = false;
 		deleteOpen = true;
+	};
+
+	const openCancel = () => {
+		if (!canMutateSelected || selectedSubscription?.status === 'canceled') return;
+		detailOpen = false;
+		cancelOpen = true;
+	};
+
+	const openReactivate = () => {
+		if (!canMutateSelected || selectedSubscription?.status !== 'canceled') return;
+		detailOpen = false;
+		reactivateOpen = true;
 	};
 
 	const closeEdit = () => {
 		editOpen = false;
 		detailOpen = false;
+	};
+
+	const subscriptionActionEnhance = (
+		onSuccess: (subscriptions: Subscription[]) => Promise<void> | void,
+		close: () => void
+	) => {
+		return async ({ result }: { result: { type: string; data?: unknown } }) => {
+			if (result.type !== 'success') return;
+			const data = result.data as { subscriptions?: Subscription[] };
+			if (data?.subscriptions) {
+				await handleServerResult(data.subscriptions);
+				await onSuccess(data.subscriptions);
+			}
+			close();
+		};
 	};
 
 	const deleteEnhance = () => {
@@ -262,9 +306,33 @@
 			deleteOpen = false;
 			detailOpen = false;
 			editOpen = false;
+			cancelOpen = false;
+			reactivateOpen = false;
 			selectedSubscription = null;
 		};
 	};
+
+	const cancelEnhance = () =>
+		subscriptionActionEnhance(
+			() => {
+				toast.success(m.subscription_canceled_toast());
+			},
+			() => {
+				cancelOpen = false;
+				detailOpen = false;
+			}
+		);
+
+	const reactivateEnhance = () =>
+		subscriptionActionEnhance(
+			() => {
+				toast.success(m.subscription_reactivated_toast());
+			},
+			() => {
+				reactivateOpen = false;
+				detailOpen = false;
+			}
+		);
 
 	onMount(() => {
 		isOnline = navigator.onLine;
@@ -290,6 +358,21 @@
 			window.removeEventListener('online', handleOnline);
 			window.removeEventListener('offline', handleOffline);
 		};
+	});
+
+	$effect(() => {
+		if (!activeSubscriptionParam) {
+			lastOpenedSubscriptionParam = null;
+			return;
+		}
+		if (activeSubscriptionParam === lastOpenedSubscriptionParam) return;
+
+		const target = subscriptions.find((sub) => String(sub.id) === activeSubscriptionParam);
+		if (!target) return;
+
+		selectedSubscription = target;
+		detailOpen = true;
+		lastOpenedSubscriptionParam = activeSubscriptionParam;
 	});
 </script>
 
@@ -382,6 +465,8 @@
 		<div class="text-muted-foreground rounded-lg border border-dashed p-6">
 			{#if hasActiveTagFilter}
 				{m.subscription_tag_filter_empty({ tag: activeTag })}
+			{:else if canceledSubscriptions.length > 0}
+				{m.subscription_active_empty_state()}
 			{:else}
 				{m.subscription_empty_state()}
 			{/if}
@@ -472,6 +557,93 @@
 			{/each}
 		</div>
 	{/if}
+
+	{#if canceledSubscriptions.length > 0}
+		<details class="rounded-lg border">
+			<summary class="cursor-pointer px-4 py-3 text-sm font-semibold">
+				{m.subscription_canceled_section_summary({ count: canceledSubscriptions.length })}
+			</summary>
+			<div class="border-t px-4 py-4">
+				<p class="text-muted-foreground mb-4 text-sm">
+					{m.subscription_canceled_section_description()}
+				</p>
+				{#if filteredCanceledSubscriptions.length === 0}
+					<div class="text-muted-foreground rounded-lg border border-dashed p-4 text-sm">
+						{m.subscription_tag_filter_empty({ tag: activeTag })}
+					</div>
+				{:else}
+					<div class="flex flex-col gap-3">
+						{#each filteredCanceledSubscriptions as sub (sub.id)}
+							<Card
+								class="cursor-pointer overflow-hidden opacity-80"
+								role="button"
+								tabindex={0}
+								onkeydown={(event) => {
+									if (event.key === 'Enter' || event.key === ' ') {
+										event.preventDefault();
+										openDetail(sub);
+									}
+								}}
+								onclick={() => openDetail(sub)}
+							>
+								<CardHeader class="pb-3">
+									<div class="flex items-start justify-between gap-4">
+										<div class="space-y-1">
+											<CardTitle class="text-base">{sub.serviceName}</CardTitle>
+											<CardDescription class="flex flex-wrap items-center gap-2 text-xs">
+												<Badge variant="secondary" class="text-[10px]">
+													{m.subscription_canceled_badge()}
+												</Badge>
+												<span>{getCycleLabel(sub.cycle, currentLocale)}</span>
+											</CardDescription>
+										</div>
+										<div class="text-right">
+											<div class="text-base font-semibold">
+												{formatCurrencyYen(sub.amount, currentLocale)}
+												<span class="text-muted-foreground text-xs">
+													/ {getCycleUnitLabel(sub.cycle, currentLocale)}
+												</span>
+											</div>
+										</div>
+									</div>
+								</CardHeader>
+								<CardContent class="space-y-3 pt-0">
+									<div class="flex items-center justify-between text-sm">
+										<span class="text-muted-foreground">
+											{m.subscription_canceled_at_label()}
+										</span>
+										<span class="text-muted-foreground">
+											{formatBillingDate(sub.canceledAt)}
+										</span>
+									</div>
+									{#if sub.tags.length > 0}
+										<div class="flex flex-wrap gap-2">
+											{#each sub.tags as tag, i (i)}
+												<button
+													type="button"
+													class={cn(
+														badgeVariants({
+															variant: isActiveTag(tag) ? 'default' : 'secondary'
+														}),
+														'cursor-pointer text-[10px]'
+													)}
+													aria-pressed={isActiveTag(tag)}
+													onclick={(event) => void handleTagClick(event, tag)}
+													onkeydown={(event) => event.stopPropagation()}
+												>
+													{tag}
+												</button>
+											{/each}
+										</div>
+									{/if}
+								</CardContent>
+							</Card>
+						{/each}
+					</div>
+				{/if}
+			</div>
+		</details>
+	{/if}
 </section>
 
 <Dialog.Root bind:open={detailOpen}>
@@ -487,6 +659,8 @@
 				locale={currentLocale}
 				canMutate={canMutateSelected}
 				onEdit={openEdit}
+				onCancel={openCancel}
+				onReactivate={openReactivate}
 				onDelete={openDelete}
 			/>
 		{/if}
@@ -512,6 +686,50 @@
 		</div>
 	</Dialog.Content>
 </Dialog.Root>
+
+<AlertDialog.Root bind:open={cancelOpen}>
+	<AlertDialog.Content>
+		<AlertDialog.Header>
+			<AlertDialog.Title>{m.subscription_cancel_title()}</AlertDialog.Title>
+			<AlertDialog.Description>
+				{m.subscription_cancel_description()}
+			</AlertDialog.Description>
+		</AlertDialog.Header>
+		<form method="post" action="?/cancel" {@attach fromAction(kitEnhance, () => cancelEnhance)}>
+			<input type="hidden" name="id" value={selectedSubscription?.id ?? ''} />
+			<AlertDialog.Footer class="mt-4">
+				<AlertDialog.Cancel type="button">{m.common_cancel()}</AlertDialog.Cancel>
+				<AlertDialog.Action type="submit">
+					{m.subscription_cancel_button()}
+				</AlertDialog.Action>
+			</AlertDialog.Footer>
+		</form>
+	</AlertDialog.Content>
+</AlertDialog.Root>
+
+<AlertDialog.Root bind:open={reactivateOpen}>
+	<AlertDialog.Content>
+		<AlertDialog.Header>
+			<AlertDialog.Title>{m.subscription_reactivate_title()}</AlertDialog.Title>
+			<AlertDialog.Description>
+				{m.subscription_reactivate_description()}
+			</AlertDialog.Description>
+		</AlertDialog.Header>
+		<form
+			method="post"
+			action="?/reactivate"
+			{@attach fromAction(kitEnhance, () => reactivateEnhance)}
+		>
+			<input type="hidden" name="id" value={selectedSubscription?.id ?? ''} />
+			<AlertDialog.Footer class="mt-4">
+				<AlertDialog.Cancel type="button">{m.common_cancel()}</AlertDialog.Cancel>
+				<AlertDialog.Action type="submit">
+					{m.subscription_reactivate_button()}
+				</AlertDialog.Action>
+			</AlertDialog.Footer>
+		</form>
+	</AlertDialog.Content>
+</AlertDialog.Root>
 
 <AlertDialog.Root bind:open={deleteOpen}>
 	<AlertDialog.Content>

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { CANCELLATION_METHODS } from '$lib/constant';
 import { defaultSubscriptionColor, subscriptionColors } from '$lib/subscription-colors';
 
 const isValidPhoneNumber = (phone: string): boolean => {
@@ -15,6 +16,34 @@ export const updateNameSchema = z.object({
 	name: z.string().min(3)
 });
 
+const optionalText = (maxLength: number) => z.string().trim().max(maxLength).default('');
+
+const booleanFromForm = z
+	.preprocess((value) => {
+		if (value === true || value === 'true' || value === '1' || value === 'on') return true;
+		if (
+			value === false ||
+			value === 'false' ||
+			value === '0' ||
+			value === '' ||
+			value === null ||
+			value === undefined
+		) {
+			return false;
+		}
+		return value;
+	}, z.boolean())
+	.default(false);
+
+const isHttpsUrl = (value: string): boolean => {
+	if (value === '') return true;
+	try {
+		return new URL(value).protocol === 'https:';
+	} catch {
+		return false;
+	}
+};
+
 export const subscriptionSchema = z.object({
 	select: z
 		.string({ error: 'Please select an option.' })
@@ -30,6 +59,9 @@ export const subscriptionSchema = z.object({
 	text: z
 		.string({ error: 'Please enter the service name.' })
 		.min(1, { error: 'Please enter the service name.' }),
+	serviceTemplateId: optionalText(100),
+	planName: optionalText(120),
+	priceEditedByUser: booleanFromForm,
 	color: z.enum(subscriptionColors).default(defaultSubscriptionColor),
 	tagsinput: z.string().array().default([]),
 	notifyDaysBefore: z
@@ -37,5 +69,11 @@ export const subscriptionSchema = z.object({
 		.int()
 		.min(0)
 		.max(365)
-		.default(1)
+		.default(1),
+	cancellationUrl: optionalText(2048).refine(isHttpsUrl, {
+		message: 'Please enter a URL that starts with https://.'
+	}),
+	cancellationMethod: z.enum(CANCELLATION_METHODS).or(z.literal('')).default(''),
+	cancellationMemo: optionalText(1000),
+	cancellationDeadlineMemo: optionalText(500)
 });

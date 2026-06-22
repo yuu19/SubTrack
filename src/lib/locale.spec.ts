@@ -3,9 +3,12 @@ import {
 	formatCurrencyYen,
 	formatLongDate,
 	formatNotifyDays,
+	getCancellationMethodDescription,
+	getCancellationMethodLabel,
 	getCycleLabel,
 	getCycleUnitLabel,
 	getIntlLocale,
+	getTrackedSubscriptionStatusLabel,
 	resolveLocale
 } from './locale';
 
@@ -45,5 +48,17 @@ describe('locale helpers', () => {
 	it('formats long dates per locale', () => {
 		expect(formatLongDate('2026-03-13', 'ja')).toContain('2026');
 		expect(formatLongDate('2026-03-13', 'en')).toContain('2026');
+	});
+
+	it('returns tracked subscription status labels', () => {
+		expect(getTrackedSubscriptionStatusLabel('active', 'ja')).toBe('登録中');
+		expect(getTrackedSubscriptionStatusLabel('canceled', 'en')).toBe('Canceled');
+	});
+
+	it('returns cancellation method labels and descriptions', () => {
+		expect(getCancellationMethodLabel('app_store', 'ja')).toBe('App Store');
+		expect(getCancellationMethodLabel('google_play', 'en')).toBe('Google Play');
+		expect(getCancellationMethodDescription('phone', 'ja')).toContain('電話');
+		expect(getCancellationMethodDescription(undefined, 'en')).toContain('Save');
 	});
 });

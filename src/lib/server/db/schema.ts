@@ -1,5 +1,13 @@
 import { sql } from 'drizzle-orm';
-import { APP_LOCALES, DEFAULT_LOCALE, NOTIFICATION_METHODS, ROLE, THEMES } from '../../constant';
+import {
+	APP_LOCALES,
+	CANCELLATION_METHODS,
+	DEFAULT_LOCALE,
+	NOTIFICATION_METHODS,
+	ROLE,
+	THEMES,
+	TRACKED_SUBSCRIPTION_STATUSES
+} from '../../constant';
 import { defaultSubscriptionColor } from '../../subscription-colors';
 import { sqliteTable, text, integer, index, uniqueIndex } from 'drizzle-orm/sqlite-core';
 export const timestamps = {
@@ -205,6 +213,10 @@ export const trackedSubscriptionTable = sqliteTable('tracked_subscription', {
 	id: integer('id').primaryKey(),
 	userId: text('user_id').references(() => user.id, { onDelete: 'set null' }),
 	serviceName: text('service_name').notNull(),
+	serviceTemplateId: text('service_template_id'),
+	planName: text('plan_name'),
+	priceEditedByUser: integer('price_edited_by_user', { mode: 'boolean' }).notNull().default(false),
+	status: text('status', { enum: TRACKED_SUBSCRIPTION_STATUSES }).notNull().default('active'),
 	color: text('color').notNull().default(defaultSubscriptionColor),
 	cycle: text('cycle').notNull(),
 	amount: integer('amount').notNull(),
@@ -213,6 +225,11 @@ export const trackedSubscriptionTable = sqliteTable('tracked_subscription', {
 	daysUntilNextBilling: integer('days_until_next_billing').notNull(),
 	notifyDaysBefore: integer('notify_days_before').notNull().default(1),
 	lastNotifiedAt: integer('last_notified_at', { mode: 'timestamp_ms' }),
+	canceledAt: integer('canceled_at', { mode: 'timestamp_ms' }),
+	cancellationUrl: text('cancellation_url'),
+	cancellationMethod: text('cancellation_method', { enum: CANCELLATION_METHODS }),
+	cancellationMemo: text('cancellation_memo'),
+	cancellationDeadlineMemo: text('cancellation_deadline_memo'),
 	tags: array<string>('tags').notNull(),
 	isSample: integer('is_sample', { mode: 'boolean' }).notNull().default(false),
 	...timestamps

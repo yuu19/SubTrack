@@ -113,6 +113,20 @@
       "when": 1781609034437,
       "tag": "0015_unusual_wiccan",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "6",
+      "when": 1782130884990,
+      "tag": "0016_furry_black_tom",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "6",
+      "when": 1782148229030,
+      "tag": "0017_massive_captain_flint",
+      "breakpoints": true
     }
   ]
 }

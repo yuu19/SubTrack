@@ -5,6 +5,11 @@ import {
 	resolveSubscriptionColor,
 	type SubscriptionColor
 } from '$lib/subscription-colors';
+import {
+	CANCELLATION_METHODS,
+	type CancellationMethod,
+	type TrackedSubscriptionStatus
+} from '$lib/constant';
 
 const DB_NAME = 'dishpage-offline';
 const DB_VERSION = 1;
@@ -13,11 +18,18 @@ const PENDING_STORE = 'subscription_pending';
 
 export type SubscriptionPayload = {
 	serviceName: string;
+	serviceTemplateId?: string | null;
+	planName?: string | null;
+	priceEditedByUser?: boolean;
 	color: SubscriptionColor;
 	cycle: string;
 	amount: number;
 	firstPaymentDate: string;
 	notifyDaysBefore: number;
+	cancellationUrl?: string | null;
+	cancellationMethod?: CancellationMethod | null;
+	cancellationMemo?: string | null;
+	cancellationDeadlineMemo?: string | null;
 	tags: string[];
 };
 
@@ -25,6 +37,10 @@ export type SubscriptionRecord = {
 	id: number | string;
 	userId?: string | null;
 	serviceName: string;
+	serviceTemplateId?: string | null;
+	planName?: string | null;
+	priceEditedByUser?: boolean;
+	status?: TrackedSubscriptionStatus;
 	color: SubscriptionColor;
 	cycle: string;
 	amount: number;
@@ -32,6 +48,11 @@ export type SubscriptionRecord = {
 	nextBillingAt: string;
 	daysUntilNextBilling: number;
 	notifyDaysBefore: number;
+	canceledAt?: Date | string | number | null;
+	cancellationUrl?: string | null;
+	cancellationMethod?: CancellationMethod | null;
+	cancellationMemo?: string | null;
+	cancellationDeadlineMemo?: string | null;
 	tags: string[];
 	createdAt?: Date | string | number | null;
 	updatedAt?: Date | string | number | null;
@@ -97,6 +118,23 @@ const createClientId = () => {
 	return `local-${Math.random().toString(36).slice(2, 10)}`;
 };
 
+const normalizeOptionalText = (value: FormDataEntryValue | null) => {
+	const trimmed = `${value ?? ''}`.trim();
+	return trimmed.length > 0 ? trimmed : null;
+};
+
+const normalizeCancellationMethod = (value: FormDataEntryValue | null) => {
+	const normalized = `${value ?? ''}`;
+	return CANCELLATION_METHODS.includes(normalized as CancellationMethod)
+		? (normalized as CancellationMethod)
+		: null;
+};
+
+const toBoolean = (value: FormDataEntryValue | null) => {
+	const normalized = `${value ?? ''}`;
+	return normalized === 'true' || normalized === '1' || normalized === 'on';
+};
+
 const toTimestamp = (value: Date | string | number | null | undefined) => {
 	if (!value) return 0;
 	if (value instanceof Date) return value.getTime();
@@ -105,14 +143,22 @@ const toTimestamp = (value: Date | string | number | null | undefined) => {
 };
 
 const normalizeSubscription = (subscription: SubscriptionRecord) => {
+	const normalizedSubscription: SubscriptionRecord = {
+		...subscription,
+		status: subscription.status ?? 'active'
+	};
 	const today = dayjs().startOf('day');
-	const next = dayjs(subscription.nextBillingAt).startOf('day');
-	if (!next.isValid()) return subscription;
+	const next = dayjs(normalizedSubscription.nextBillingAt).startOf('day');
+	if (!next.isValid()) return normalizedSubscription;
 	const daysUntil = next.diff(today, 'day');
-	if (Number.isFinite(daysUntil) && daysUntil !== subscription.daysUntilNextBilling) {
-		return { ...subscription, daysUntilNextBilling: daysUntil };
+	if (
+		normalizedSubscription.status !== 'canceled' &&
+		Number.isFinite(daysUntil) &&
+		daysUntil !== normalizedSubscription.daysUntilNextBilling
+	) {
+		return { ...normalizedSubscription, daysUntilNextBilling: daysUntil };
 	}
-	return subscription;
+	return normalizedSubscription;
 };
 
 const sortSubscriptions = (subscriptions: SubscriptionRecord[]) => {
@@ -148,11 +194,18 @@ export const payloadFromFormData = (formData: FormData): SubscriptionPayload => 
 
 	return {
 		serviceName: `${formData.get('text') ?? ''}`,
+		serviceTemplateId: normalizeOptionalText(formData.get('serviceTemplateId')),
+		planName: normalizeOptionalText(formData.get('planName')),
+		priceEditedByUser: toBoolean(formData.get('priceEditedByUser')),
 		color: resolveSubscriptionColor(formData.get('color'), defaultSubscriptionColor),
 		cycle: `${formData.get('select') ?? ''}`,
 		amount: toNumber(formData.get('number'), 0),
 		firstPaymentDate: `${formData.get('datepicker') ?? ''}`,
 		notifyDaysBefore: toNumber(formData.get('notifyDaysBefore'), 1),
+		cancellationUrl: normalizeOptionalText(formData.get('cancellationUrl')),
+		cancellationMethod: normalizeCancellationMethod(formData.get('cancellationMethod')),
+		cancellationMemo: normalizeOptionalText(formData.get('cancellationMemo')),
+		cancellationDeadlineMemo: normalizeOptionalText(formData.get('cancellationDeadlineMemo')),
 		tags
 	};
 };
@@ -203,6 +256,10 @@ export const addPendingSubscription = async (
 		_clientId: clientId,
 		_pending: true,
 		serviceName: payload.serviceName,
+		serviceTemplateId: payload.serviceTemplateId ?? null,
+		planName: payload.planName ?? null,
+		priceEditedByUser: Boolean(payload.priceEditedByUser),
+		status: 'active',
 		color: payload.color,
 		cycle: payload.cycle,
 		amount: payload.amount,
@@ -210,6 +267,10 @@ export const addPendingSubscription = async (
 		nextBillingAt,
 		daysUntilNextBilling,
 		notifyDaysBefore: payload.notifyDaysBefore,
+		cancellationUrl: payload.cancellationUrl ?? null,
+		cancellationMethod: payload.cancellationMethod ?? null,
+		cancellationMemo: payload.cancellationMemo ?? null,
+		cancellationDeadlineMemo: payload.cancellationDeadlineMemo ?? null,
 		tags: payload.tags,
 		createdAt: now,
 		updatedAt: now
@@ -236,11 +297,18 @@ export type SyncResult = {
 const buildFormData = (payload: SubscriptionPayload) => {
 	const formData = new FormData();
 	formData.set('text', payload.serviceName);
+	formData.set('serviceTemplateId', payload.serviceTemplateId ?? '');
+	formData.set('planName', payload.planName ?? '');
+	formData.set('priceEditedByUser', payload.priceEditedByUser ? 'true' : 'false');
 	formData.set('color', payload.color);
 	formData.set('select', payload.cycle);
 	formData.set('number', `${payload.amount}`);
 	formData.set('datepicker', payload.firstPaymentDate);
 	formData.set('notifyDaysBefore', `${payload.notifyDaysBefore ?? 1}`);
+	formData.set('cancellationUrl', payload.cancellationUrl ?? '');
+	formData.set('cancellationMethod', payload.cancellationMethod ?? '');
+	formData.set('cancellationMemo', payload.cancellationMemo ?? '');
+	formData.set('cancellationDeadlineMemo', payload.cancellationDeadlineMemo ?? '');
 	for (const tag of payload.tags) {
 		formData.append('tagsinput', tag);
 	}

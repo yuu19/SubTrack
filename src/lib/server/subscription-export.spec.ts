@@ -16,12 +16,15 @@ describe('subscription export', () => {
 				nextBillingAt: '2026-04-01T00:00:00.000Z',
 				daysUntilNextBilling: 8,
 				notifyDaysBefore: 3,
+				status: 'active',
+				canceledAt: null,
+				cancellationMethod: 'web',
 				tags: ['動画', 'エンタメ']
 			}
 		]);
 
 		expect(csv).toBe(
-			`${SUBSCRIPTION_EXPORT_HEADERS.join(',')}\r\nNetflix,monthly,1490,2026-03-01,2026-04-01T00:00:00.000Z,8,3,"動画, エンタメ"`
+			`${SUBSCRIPTION_EXPORT_HEADERS.join(',')}\r\nNetflix,monthly,1490,2026-03-01,2026-04-01T00:00:00.000Z,8,3,active,,web,"動画, エンタメ"`
 		);
 	});
 
@@ -35,11 +38,15 @@ describe('subscription export', () => {
 				nextBillingAt: '2027-01-15T00:00:00.000Z',
 				daysUntilNextBilling: 297,
 				notifyDaysBefore: 14,
+				status: 'canceled',
+				canceledAt: new Date('2026-06-01T00:00:00.000Z'),
+				cancellationMethod: 'email',
 				tags: ['line1\nline2', 'office']
 			}
 		]);
 
 		expect(csv).toContain('"Plan ""A"", Plus"');
+		expect(csv).toContain('2026-06-01T00:00:00.000Z');
 		expect(csv).toContain('"line1\nline2, office"');
 	});
 

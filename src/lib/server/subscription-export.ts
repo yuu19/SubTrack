@@ -9,6 +9,9 @@ export type ExportableTrackedSubscription = Pick<
 	| 'nextBillingAt'
 	| 'daysUntilNextBilling'
 	| 'notifyDaysBefore'
+	| 'status'
+	| 'canceledAt'
+	| 'cancellationMethod'
 	| 'tags'
 >;
 
@@ -20,6 +23,9 @@ export const SUBSCRIPTION_EXPORT_HEADERS = [
 	'next_billing_at',
 	'days_until_next_billing',
 	'notify_days_before',
+	'status',
+	'canceled_at',
+	'cancellation_method',
 	'tags'
 ] as const;
 
@@ -47,6 +53,11 @@ export const buildSubscriptionExportCsv = (subscriptions: ExportableTrackedSubsc
 			subscription.nextBillingAt,
 			subscription.daysUntilNextBilling,
 			subscription.notifyDaysBefore,
+			subscription.status,
+			subscription.canceledAt instanceof Date
+				? subscription.canceledAt.toISOString()
+				: subscription.canceledAt,
+			subscription.cancellationMethod,
 			serializeTags(subscription.tags)
 		]
 			.map(escapeCsvCell)

@@ -39,7 +39,9 @@ const buildPayload = (
 		icon: '/favicon.png',
 		tag: `subscription-${subscription.id}-${dayjs().format('YYYY-MM-DD')}`,
 		data: {
-			url: localizePathname('/subscriptions', locale),
+			url: `${localizePathname('/subscriptions', locale)}?subscription=${encodeURIComponent(
+				String(subscription.id)
+			)}`,
 			subscriptionId: subscription.id
 		}
 	};
@@ -51,19 +53,23 @@ const formatBillingDate = (value: string | null | undefined) => {
 	return parsed.isValid() ? parsed.format('YYYY-MM-DD') : value;
 };
 
-const resolveSubscriptionUrl = (locale: AppLocale) => {
+const resolveSubscriptionUrl = (locale: AppLocale, subscriptionId?: number | string) => {
 	const directBase =
 		process.env.BETTER_AUTH_URL ?? process.env.PUBLIC_BETTER_AUTH_URL ?? process.env.APP_ORIGIN;
 	const subscriptionsPath = localizePathname('/subscriptions', locale);
+	const pathWithDetail =
+		subscriptionId === undefined
+			? subscriptionsPath
+			: `${subscriptionsPath}?subscription=${encodeURIComponent(String(subscriptionId))}`;
 
 	if (directBase) {
-		return new URL(subscriptionsPath, directBase).toString();
+		return new URL(pathWithDetail, directBase).toString();
 	}
 
 	if (process.env.PUSH_CRON_URL) {
 		try {
 			const origin = new URL(process.env.PUSH_CRON_URL).origin;
-			return new URL(subscriptionsPath, origin).toString();
+			return new URL(pathWithDetail, origin).toString();
 		} catch {
 			return null;
 		}
@@ -88,7 +94,12 @@ export const dispatchSubscriptionNotifications = async (
 	const subscriptions = await db
 		.select()
 		.from(trackedSubscriptionTable)
-		.where(eq(trackedSubscriptionTable.isSample, false));
+		.where(
+			and(
+				eq(trackedSubscriptionTable.isSample, false),
+				eq(trackedSubscriptionTable.status, 'active')
+			)
+		);
 	let updated = 0;
 
 	const dueSubscriptions: (typeof trackedSubscriptionTable.$inferSelect)[] = [];
@@ -219,7 +230,7 @@ export const dispatchSubscriptionNotifications = async (
 		}
 
 		if (shouldEmail && user.email && emailEnabled) {
-			const subscriptionUrl = resolveSubscriptionUrl(userLocale);
+			const subscriptionUrl = resolveSubscriptionUrl(userLocale, sub.id);
 			if (!subscriptionUrl) {
 				console.error('[subscription-notify] APP_ORIGIN is not configured');
 				failed += 1;

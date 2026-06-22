@@ -34,6 +34,9 @@ export const GET: RequestHandler = async ({ request, locals: { db } }) => {
 			nextBillingAt: true,
 			daysUntilNextBilling: true,
 			notifyDaysBefore: true,
+			status: true,
+			canceledAt: true,
+			cancellationMethod: true,
 			tags: true
 		},
 		where: (trackedSubscription, { eq }) => eq(trackedSubscription.userId, userId),

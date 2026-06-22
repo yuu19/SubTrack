@@ -90,7 +90,9 @@ sw.addEventListener('notificationclick', (event) => {
 	const rawUrl =
 		(event.notification.data as { url?: string } | undefined)?.url ?? '/ja/subscriptions';
 	const targetUrl = new URL(rawUrl, sw.location.origin).toString();
-	const targetPath = new URL(targetUrl).pathname;
+	const target = new URL(targetUrl);
+	const targetPath = target.pathname;
+	const targetPathWithSearch = `${target.pathname}${target.search}${target.hash}`;
 
 	event.waitUntil(
 		sw.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
@@ -98,6 +100,14 @@ sw.addEventListener('notificationclick', (event) => {
 				if ('focus' in client) {
 					const clientUrl = new URL(client.url);
 					if (clientUrl.pathname === targetPath) {
+						if (
+							'navigate' in client &&
+							`${clientUrl.pathname}${clientUrl.search}${clientUrl.hash}` !== targetPathWithSearch
+						) {
+							return client.navigate(targetUrl).then((navigatedClient) => {
+								return navigatedClient?.focus() ?? client.focus();
+							});
+						}
 						return client.focus();
 					}
 				}

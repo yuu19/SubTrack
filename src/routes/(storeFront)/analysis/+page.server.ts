@@ -31,7 +31,8 @@ export const load: PageServerLoad = async ({ locals, request }) => {
 			cycle: true,
 			amount: true
 		},
-		where: (trackedSubscription, { eq }) => eq(trackedSubscription.userId, userId),
+		where: (trackedSubscription, { and, eq }) =>
+			and(eq(trackedSubscription.userId, userId), eq(trackedSubscription.status, 'active')),
 		orderBy: (trackedSubscription, { desc }) => desc(trackedSubscription.createdAt)
 	});
 

@@ -1,5 +1,5 @@
 import type { PageServerLoad } from './$types';
-import { desc, eq } from 'drizzle-orm';
+import { and, desc, eq } from 'drizzle-orm';
 import { createAuth } from '$lib/auth';
 import { trackedSubscriptionTable } from '$lib/server/db/schema';
 import { redirect } from '@sveltejs/kit';
@@ -21,9 +21,14 @@ export const load: PageServerLoad = async ({ locals, request }) => {
 		userId !== undefined
 			? await db
 					.select()
-				.from(trackedSubscriptionTable)
-				.where(eq(trackedSubscriptionTable.userId, userId))
-				.orderBy(desc(trackedSubscriptionTable.createdAt))
+					.from(trackedSubscriptionTable)
+					.where(
+						and(
+							eq(trackedSubscriptionTable.userId, userId),
+							eq(trackedSubscriptionTable.status, 'active')
+						)
+					)
+					.orderBy(desc(trackedSubscriptionTable.createdAt))
 			: [];
 
 	return { subscriptions };

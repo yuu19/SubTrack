@@ -7,7 +7,13 @@
 	import Button from '$lib/components/ui/button/button.svelte';
 	import Input from '$lib/components/ui/input/input.svelte';
 	import TagsInput from '$lib/components/ui/tags-input/tags-input.svelte';
-	import { formatNotifyDays, getCycleLabel, resolveLocale } from '$lib/locale';
+	import {
+		formatNotifyDays,
+		getCancellationMethodLabel,
+		getCycleLabel,
+		resolveLocale
+	} from '$lib/locale';
+	import { CANCELLATION_METHODS } from '$lib/constant';
 	import { m } from '$lib/paraglide/messages.js';
 	import { getLocale } from '$lib/paraglide/runtime';
 	import { UserConfigContext } from '$lib/states/userConfig.svelte';
@@ -37,6 +43,12 @@
 		}))
 	);
 	const notifyOptions = $derived([0, 1, 3, 7]);
+	const cancellationMethodOptions = $derived(
+		CANCELLATION_METHODS.map((value) => ({
+			value,
+			label: getCancellationMethodLabel(value, currentLocale)
+		}))
+	);
 	const colorFieldLabel = $derived(currentLocale === 'en' ? 'Color' : '色');
 	const colorFieldDescription = $derived(
 		currentLocale === 'en'
@@ -51,22 +63,36 @@
 		if (subscription) {
 			return {
 				text: subscription.serviceName ?? '',
+				serviceTemplateId: subscription.serviceTemplateId ?? '',
+				planName: subscription.planName ?? '',
+				priceEditedByUser: subscription.priceEditedByUser ?? false,
 				color: resolveSubscriptionColor(subscription.color, defaultSubscriptionColor),
 				select: subscription.cycle ?? 'monthly',
 				number: subscription.amount ?? 0,
 				datepicker: subscription.firstPaymentDate ?? '',
 				notifyDaysBefore: subscription.notifyDaysBefore ?? 1,
+				cancellationUrl: subscription.cancellationUrl ?? '',
+				cancellationMethod: subscription.cancellationMethod ?? '',
+				cancellationMemo: subscription.cancellationMemo ?? '',
+				cancellationDeadlineMemo: subscription.cancellationDeadlineMemo ?? '',
 				tagsinput: Array.isArray(subscription.tags) ? subscription.tags : []
 			};
 		}
 
 		return {
 			text: '',
+			serviceTemplateId: '',
+			planName: '',
+			priceEditedByUser: false,
 			color: defaultSubscriptionColor,
 			select: 'monthly',
 			number: 0,
 			datepicker: '',
 			notifyDaysBefore: 1,
+			cancellationUrl: '',
+			cancellationMethod: '',
+			cancellationMemo: '',
+			cancellationDeadlineMemo: '',
 			tagsinput: []
 		};
 	}
@@ -78,11 +104,18 @@
 	const { enhance } = form;
 
 	const textField = fieldProxy(form, 'text');
+	const serviceTemplateIdField = fieldProxy(form, 'serviceTemplateId');
+	const planNameField = fieldProxy(form, 'planName');
+	const priceEditedByUserField = fieldProxy(form, 'priceEditedByUser');
 	const colorField = fieldProxy(form, 'color');
 	const selectField = fieldProxy(form, 'select');
 	const notifyDaysBeforeField = fieldProxy(form, 'notifyDaysBefore');
 	const numberField = fieldProxy(form, 'number');
 	const datepickerField = fieldProxy(form, 'datepicker');
+	const cancellationUrlField = fieldProxy(form, 'cancellationUrl');
+	const cancellationMethodField = fieldProxy(form, 'cancellationMethod');
+	const cancellationMemoField = fieldProxy(form, 'cancellationMemo');
+	const cancellationDeadlineMemoField = fieldProxy(form, 'cancellationDeadlineMemo');
 	const tagsField = fieldProxy(form, 'tagsinput');
 
 	const enhanceEvents = {
@@ -95,11 +128,24 @@
 			}
 		}
 	};
+
+	const markPriceEdited = () => {
+		if ($serviceTemplateIdField) {
+			$priceEditedByUserField = true;
+		}
+	};
 </script>
 
 {#if subscription}
 	<form method="post" {action} class="space-y-4" {@attach fromAction(enhance, () => enhanceEvents)}>
 		<input type="hidden" name="id" value={subscription.id} />
+		<input type="hidden" name="serviceTemplateId" value={$serviceTemplateIdField ?? ''} />
+		<input type="hidden" name="planName" value={$planNameField ?? ''} />
+		<input
+			type="hidden"
+			name="priceEditedByUser"
+			value={$priceEditedByUserField ? 'true' : 'false'}
+		/>
 
 		<Field {form} name="text">
 			<Control>
@@ -197,6 +243,7 @@
 						min="0"
 						step="1"
 						placeholder="1000"
+						oninput={markPriceEdited}
 						bind:value={$numberField}
 					/>
 				{/snippet}
@@ -226,6 +273,86 @@
 			</Control>
 			<FieldErrors class="text-destructive text-sm" />
 		</Field>
+
+		<details class="rounded-lg border p-4">
+			<summary class="cursor-pointer text-sm font-semibold">
+				{m.subscription_form_cancellation_summary()}
+			</summary>
+			<p class="text-muted-foreground mt-2 text-xs">
+				{m.subscription_form_cancellation_description()}
+			</p>
+			<div class="mt-4 space-y-4">
+				<Field {form} name="cancellationUrl">
+					<Control>
+						{#snippet children({ props })}
+							<Label class="font-medium">{m.subscription_form_cancellation_url_label()}</Label>
+							<Input
+								{...props}
+								type="url"
+								inputmode="url"
+								placeholder={m.subscription_form_cancellation_url_placeholder()}
+								bind:value={$cancellationUrlField}
+							/>
+							<Description class="text-muted-foreground text-xs">
+								{m.subscription_form_cancellation_url_description()}
+							</Description>
+						{/snippet}
+					</Control>
+					<FieldErrors class="text-destructive text-sm" />
+				</Field>
+
+				<Field {form} name="cancellationMethod">
+					<Control>
+						{#snippet children({ props })}
+							<Label class="font-medium">{m.subscription_form_cancellation_method_label()}</Label>
+							<select
+								{...props}
+								class="border-input focus-visible:ring-ring focus-visible:border-ring bg-background flex h-10 w-full rounded-md border px-3 text-sm shadow-sm transition"
+								bind:value={$cancellationMethodField}
+							>
+								<option value="">{m.subscription_form_cancellation_method_placeholder()}</option>
+								{#each cancellationMethodOptions as option (option.value)}
+									<option value={option.value}>{option.label}</option>
+								{/each}
+							</select>
+						{/snippet}
+					</Control>
+					<FieldErrors class="text-destructive text-sm" />
+				</Field>
+
+				<Field {form} name="cancellationMemo">
+					<Control>
+						{#snippet children({ props })}
+							<Label class="font-medium">{m.subscription_form_cancellation_memo_label()}</Label>
+							<textarea
+								{...props}
+								class="border-input focus-visible:ring-ring focus-visible:border-ring bg-background min-h-24 w-full rounded-md border px-3 py-2 text-sm shadow-sm transition outline-none focus-visible:ring-[3px]"
+								placeholder={m.subscription_form_cancellation_memo_placeholder()}
+								bind:value={$cancellationMemoField}
+							></textarea>
+						{/snippet}
+					</Control>
+					<FieldErrors class="text-destructive text-sm" />
+				</Field>
+
+				<Field {form} name="cancellationDeadlineMemo">
+					<Control>
+						{#snippet children({ props })}
+							<Label class="font-medium">
+								{m.subscription_form_cancellation_deadline_memo_label()}
+							</Label>
+							<Input
+								{...props}
+								type="text"
+								placeholder={m.subscription_form_cancellation_deadline_memo_placeholder()}
+								bind:value={$cancellationDeadlineMemoField}
+							/>
+						{/snippet}
+					</Control>
+					<FieldErrors class="text-destructive text-sm" />
+				</Field>
+			</div>
+		</details>
 
 		<Button type="submit" class="h-12 w-full text-base sm:h-10 sm:text-sm"
 			>{m.common_update()}</Button
