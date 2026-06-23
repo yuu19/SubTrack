@@ -514,7 +514,7 @@ export const landingPageCopy: Record<AppLocale, LandingPageCopy> = {
 				{ value: '6,000円', label: '買い切り' }
 			],
 			image: {
-				src: '/images/onboarding/subscriptions-real.png',
+				src: '/images/landing/hero-subscriptions-real-ja.png',
 				alt: 'SubTrack のサブスク一覧画面',
 				caption: '支払い額と次回更新日を一覧で確認'
 			}
@@ -783,7 +783,7 @@ export const landingPageCopy: Record<AppLocale, LandingPageCopy> = {
 				{ value: 'JPY 6,000', label: 'Lifetime' }
 			],
 			image: {
-				src: '/images/onboarding/subscriptions-real.png',
+				src: '/images/landing/hero-subscriptions-real-en.png',
 				alt: 'SubTrack subscription list screen',
 				caption: 'Review costs and next billing dates at a glance'
 			}

@@ -130,7 +130,17 @@
 			</div>
 
 			<div class="lp-hero-visual min-w-0">
-				<LandingMotionDemo copy={copy.motionDemo} variant="hero" />
+				<figure class="lp-hero-screenshot">
+					<img
+						src={pageHref(copy.hero.image.src)}
+						alt={copy.hero.image.alt}
+						width="1440"
+						height="900"
+						decoding="async"
+						fetchpriority="high"
+					/>
+					<figcaption class="sr-only">{copy.hero.image.caption}</figcaption>
+				</figure>
 			</div>
 		</div>
 	</section>
@@ -374,6 +384,23 @@
 		animation:
 			lp-visual-in 760ms cubic-bezier(0.22, 1, 0.36, 1) 180ms both,
 			lp-soft-float 8s ease-in-out 1.2s infinite;
+	}
+
+	.lp-hero-screenshot {
+		overflow: hidden;
+		border: 1px solid color-mix(in oklab, var(--border) 82%, transparent);
+		border-radius: 8px;
+		background: var(--background);
+		box-shadow: 0 22px 64px color-mix(in oklab, var(--foreground) 10%, transparent);
+	}
+
+	.lp-hero-screenshot img {
+		display: block;
+		aspect-ratio: 16 / 10;
+		width: 100%;
+		height: auto;
+		object-fit: cover;
+		object-position: top center;
 	}
 
 	.lp-metric {
