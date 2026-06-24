@@ -5,7 +5,9 @@
 	import { authClient } from '$lib/auth-client';
 	import { startLifetimeCheckout } from '$lib/client/lifetime-checkout';
 	import DefaultNotifyModal from '$lib/components/modals/DefaultNotifyModal.svelte';
+	import NotifyTimeModal from '$lib/components/modals/NotifyTimeModal.svelte';
 	import NotificationMethodModal from '$lib/components/modals/NotificationMethodModal.svelte';
+	import TimeZoneModal from '$lib/components/modals/TimeZoneModal.svelte';
 	import UpdateNameModal from '$lib/components/modals/UpdateNameModal.svelte';
 	import ThemeSelectModal from '$lib/components/modals/ThemeSelectModal.svelte';
 	import PushNotificationControl from '$lib/components/push/PushNotificationControl.svelte';
@@ -360,6 +362,24 @@
 					</div>
 					<div class={settingActionClass}>
 						<DefaultNotifyModal />
+					</div>
+				</div>
+				<div class={settingRowWithBorderClass}>
+					<div class={settingTextClass}>
+						<p class="text-sm font-medium">{m.settings_time_zone_label()}</p>
+						<p class="text-muted-foreground text-sm">{m.settings_time_zone_description()}</p>
+					</div>
+					<div class={settingActionClass}>
+						<TimeZoneModal />
+					</div>
+				</div>
+				<div class={settingRowWithBorderClass}>
+					<div class={settingTextClass}>
+						<p class="text-sm font-medium">{m.settings_notify_time_label()}</p>
+						<p class="text-muted-foreground text-sm">{m.settings_notify_time_description()}</p>
+					</div>
+					<div class={settingActionClass}>
+						<NotifyTimeModal />
 					</div>
 				</div>
 				<div class={settingRowWithBorderClass}>

@@ -8,6 +8,7 @@ import {
 	type Themes
 } from '$lib/constant.js';
 import { user } from '$lib/server/db/schema';
+import { isValidNotifyTime, isValidTimeZone } from '$lib/time-zone';
 import { error, json } from '@sveltejs/kit';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod/v4';
@@ -15,8 +16,10 @@ import { z } from 'zod/v4';
 const configSchema = z
 	.object({
 		locale: z.enum(APP_LOCALES).optional(),
+		timeZone: z.string().refine(isValidTimeZone).optional(),
 		activeTheme: z.enum(THEMES).optional(),
 		defaultNotifyDaysBefore: z.number().int().min(0).max(365).optional(),
+		defaultNotifyTime: z.string().refine(isValidNotifyTime).optional(),
 		notificationMethod: z.enum(NOTIFICATION_METHODS).optional()
 	})
 	.refine((data) => Object.keys(data).length > 0, {
@@ -37,18 +40,26 @@ export const POST = async ({ request, locals: { db } }) => {
 
 	const updates: {
 		locale?: AppLocale;
+		timeZone?: string;
 		activeTheme?: Themes;
 		defaultNotifyDaysBefore?: number;
+		defaultNotifyTime?: string;
 		notificationMethod?: NotificationMethod;
 	} = {};
 	if (parsed.data.locale) {
 		updates.locale = parsed.data.locale;
+	}
+	if (parsed.data.timeZone) {
+		updates.timeZone = parsed.data.timeZone;
 	}
 	if (parsed.data.activeTheme) {
 		updates.activeTheme = parsed.data.activeTheme;
 	}
 	if (typeof parsed.data.defaultNotifyDaysBefore === 'number') {
 		updates.defaultNotifyDaysBefore = parsed.data.defaultNotifyDaysBefore;
+	}
+	if (parsed.data.defaultNotifyTime) {
+		updates.defaultNotifyTime = parsed.data.defaultNotifyTime;
 	}
 	if (parsed.data.notificationMethod) {
 		updates.notificationMethod = parsed.data.notificationMethod;

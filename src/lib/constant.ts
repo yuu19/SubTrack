@@ -3,6 +3,8 @@ export const ROLE = ['admin', 'user'] as const;
 export const APP_LOCALES = ['ja', 'en'] as const;
 export type AppLocale = (typeof APP_LOCALES)[number];
 export const DEFAULT_LOCALE: AppLocale = 'ja';
+export const DEFAULT_TIME_ZONE = 'Asia/Tokyo';
+export const DEFAULT_NOTIFY_TIME = '09:00';
 
 export const THEMES = [
 	'default',

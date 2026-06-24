@@ -1,4 +1,9 @@
-import { DEFAULT_LOCALE, type AppLocale } from '$lib/constant';
+import {
+	DEFAULT_LOCALE,
+	DEFAULT_NOTIFY_TIME,
+	DEFAULT_TIME_ZONE,
+	type AppLocale
+} from '$lib/constant';
 import { createAuth } from '$lib/auth.js';
 import { userConfigSchema } from '$lib/states/userConfig.svelte';
 import { trackedSubscriptionTable, user as userTable } from '$lib/server/db/schema';
@@ -84,7 +89,9 @@ export const load = async ({ request, locals, url }) => {
 			];
 
 			for (const sample of samples) {
-				const billing = computeNextBilling(sample.firstPaymentDate, sample.cycle);
+				const billing = computeNextBilling(sample.firstPaymentDate, sample.cycle, {
+					timeZone: user.timeZone ?? DEFAULT_TIME_ZONE
+				});
 				await db.insert(trackedSubscriptionTable).values({
 					userId: user.id,
 					serviceName: sample.serviceName,
@@ -106,8 +113,10 @@ export const load = async ({ request, locals, url }) => {
 	}
 	const parsedConfig = userConfigSchema.safeParse({
 		locale: (user?.locale as AppLocale | null | undefined) ?? DEFAULT_LOCALE,
+		timeZone: user?.timeZone ?? DEFAULT_TIME_ZONE,
 		activeTheme: user?.activeTheme ?? 'rose',
 		defaultNotifyDaysBefore: user?.defaultNotifyDaysBefore ?? 3,
+		defaultNotifyTime: user?.defaultNotifyTime ?? DEFAULT_NOTIFY_TIME,
 		notificationMethod: user?.notificationMethod ?? 'email'
 	});
 	const userConfig = parsedConfig.success ? parsedConfig.data : userConfigSchema.parse({});

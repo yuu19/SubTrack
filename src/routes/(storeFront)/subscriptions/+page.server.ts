@@ -10,6 +10,7 @@ import { computeNextBilling } from '$lib/server/subscriptions';
 import { getCurrentPlan } from '$lib/server/plan';
 import { defaultSubscriptionColor } from '$lib/subscription-colors';
 import { CANCELLATION_METHODS, type CancellationMethod } from '$lib/constant';
+import { resolveTimeZone } from '$lib/time-zone';
 
 const fetchSubscriptions = async (db: NonNullable<App.Locals['db']>, userId: string) => {
 	return db
@@ -86,18 +87,22 @@ const hasReachedFreeActiveLimit = async (
 	return activeSubscriptions.length >= 5;
 };
 
-const resolveDefaultNotifyDaysBefore = async (
+const resolveUserNotificationConfig = async (
 	db: NonNullable<App.Locals['db']>,
 	userId?: string
 ) => {
-	if (!userId) return 3;
+	if (!userId) return { defaultNotifyDaysBefore: 3, timeZone: resolveTimeZone(null) };
 	const userRecord = await db.query.user.findFirst({
 		where: (user, { eq }) => eq(user.id, userId),
 		columns: {
-			defaultNotifyDaysBefore: true
+			defaultNotifyDaysBefore: true,
+			timeZone: true
 		}
 	});
-	return userRecord?.defaultNotifyDaysBefore ?? 3;
+	return {
+		defaultNotifyDaysBefore: userRecord?.defaultNotifyDaysBefore ?? 3,
+		timeZone: resolveTimeZone(userRecord?.timeZone)
+	};
 };
 
 export const load: PageServerLoad = async ({ locals, request }) => {
@@ -125,7 +130,8 @@ export const load: PageServerLoad = async ({ locals, request }) => {
 	const auth = createAuth(db);
 	const session = await auth.api.getSession({ headers: request.headers });
 	const userId = session?.user.id;
-	form.data.notifyDaysBefore = await resolveDefaultNotifyDaysBefore(db, userId);
+	const userNotificationConfig = await resolveUserNotificationConfig(db, userId);
+	form.data.notifyDaysBefore = userNotificationConfig.defaultNotifyDaysBefore;
 	const billingSubscriptions =
 		userId !== undefined
 			? await db.query.subscription.findMany({
@@ -147,7 +153,9 @@ export const load: PageServerLoad = async ({ locals, request }) => {
 	// refresh nextBillingAt/daysUntilNextBilling each load
 	for (const sub of subscriptions) {
 		if (sub.status === 'canceled') continue;
-		const computed = computeNextBilling(sub.firstPaymentDate, sub.cycle);
+		const computed = computeNextBilling(sub.firstPaymentDate, sub.cycle, {
+			timeZone: userNotificationConfig.timeZone
+		});
 		if (
 			computed.nextBillingAt !== sub.nextBillingAt ||
 			computed.daysUntilNextBilling !== sub.daysUntilNextBilling
@@ -200,7 +208,7 @@ export const actions: Actions = {
 		}
 
 		try {
-			const defaultNotifyDaysBefore = await resolveDefaultNotifyDaysBefore(db, userId);
+			const { defaultNotifyDaysBefore, timeZone } = await resolveUserNotificationConfig(db, userId);
 			const currentPlan = await resolveCurrentPlanForUser(db, userId);
 
 			if (!currentPlan.isPremium && (await hasReachedFreeActiveLimit(db, userId))) {
@@ -221,7 +229,8 @@ export const actions: Actions = {
 
 			const { nextBillingAt, daysUntilNextBilling } = computeNextBilling(
 				form.data.datepicker,
-				form.data.select
+				form.data.select,
+				{ timeZone }
 			);
 
 			await db.insert(trackedSubscriptionTable).values({
@@ -276,10 +285,11 @@ export const actions: Actions = {
 		}
 
 		try {
-			const defaultNotifyDaysBefore = await resolveDefaultNotifyDaysBefore(db, userId);
+			const { defaultNotifyDaysBefore, timeZone } = await resolveUserNotificationConfig(db, userId);
 			const { nextBillingAt, daysUntilNextBilling } = computeNextBilling(
 				form.data.datepicker,
-				form.data.select
+				form.data.select,
+				{ timeZone }
 			);
 
 			await db
@@ -385,7 +395,8 @@ export const actions: Actions = {
 
 			const { nextBillingAt, daysUntilNextBilling } = computeNextBilling(
 				subscription.firstPaymentDate,
-				subscription.cycle
+				subscription.cycle,
+				{ timeZone: (await resolveUserNotificationConfig(db, userId)).timeZone }
 			);
 
 			await db
@@ -395,7 +406,8 @@ export const actions: Actions = {
 					canceledAt: null,
 					nextBillingAt,
 					daysUntilNextBilling,
-					lastNotifiedAt: null
+					lastNotifiedAt: null,
+					lastNotifiedDate: null
 				})
 				.where(
 					and(eq(trackedSubscriptionTable.id, id), eq(trackedSubscriptionTable.userId, userId))

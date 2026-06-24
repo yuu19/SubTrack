@@ -13,6 +13,13 @@ import { sendSubscriptionReminderEmail, sendTrialEndingEmail } from '$lib/server
 import { createBillingPortalUrl } from '$lib/server/stripe';
 import { DEFAULT_LOCALE, type AppLocale } from '$lib/constant';
 import { isAppLocale, localizePathname } from '$lib/locale-routing';
+import {
+	getLocalDateString,
+	hasLocalTimeReached,
+	normalizeDateString,
+	resolveNotifyTime,
+	resolveTimeZone
+} from '$lib/time-zone';
 
 export type NotificationDispatchResult = {
 	evaluated: number;
@@ -28,7 +35,8 @@ const resolveUserLocale = (locale: string | null | undefined): AppLocale =>
 
 const buildPayload = (
 	subscription: typeof trackedSubscriptionTable.$inferSelect,
-	locale: AppLocale
+	locale: AppLocale,
+	targetDate: string
 ) => {
 	const notifyDays = subscription.notifyDaysBefore ?? 0;
 	const when = notifyDays === 0 ? '今日が支払い日です。' : `支払いまであと${notifyDays}日です。`;
@@ -37,7 +45,7 @@ const buildPayload = (
 		title: 'サブスクの支払い通知',
 		body: `${subscription.serviceName}：${when}`,
 		icon: '/favicon.png',
-		tag: `subscription-${subscription.id}-${dayjs().format('YYYY-MM-DD')}`,
+		tag: `subscription-${subscription.id}-${targetDate}`,
 		data: {
 			url: `${localizePathname('/subscriptions', locale)}?subscription=${encodeURIComponent(
 				String(subscription.id)
@@ -49,8 +57,8 @@ const buildPayload = (
 
 const formatBillingDate = (value: string | null | undefined) => {
 	if (!value) return '未設定';
-	const parsed = dayjs(value);
-	return parsed.isValid() ? parsed.format('YYYY-MM-DD') : value;
+	const normalized = normalizeDateString(value);
+	return /^\d{4}-\d{2}-\d{2}$/.test(normalized) ? normalized : value;
 };
 
 const resolveSubscriptionUrl = (locale: AppLocale, subscriptionId?: number | string) => {
@@ -81,7 +89,7 @@ const resolveSubscriptionUrl = (locale: AppLocale, subscriptionId?: number | str
 export const dispatchSubscriptionNotifications = async (
 	db: NonNullable<App.Locals['db']>
 ): Promise<NotificationDispatchResult> => {
-	const today = dayjs().startOf('day');
+	const now = new Date();
 	const pushEnabled = Boolean(process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY);
 	const emailEnabled = Boolean(process.env.RESEND_API_KEY);
 
@@ -101,13 +109,34 @@ export const dispatchSubscriptionNotifications = async (
 			)
 		);
 	let updated = 0;
+	const userIds = Array.from(
+		new Set(subscriptions.map((sub) => sub.userId).filter(Boolean))
+	) as string[];
 
-	const dueSubscriptions: (typeof trackedSubscriptionTable.$inferSelect)[] = [];
+	const users =
+		userIds.length > 0
+			? await db.select().from(userTable).where(inArray(userTable.id, userIds))
+			: [];
+
+	const userById = new Map(users.map((user) => [user.id, user]));
+
+	const dueSubscriptions: {
+		subscription: typeof trackedSubscriptionTable.$inferSelect;
+		targetDate: string;
+	}[] = [];
 
 	for (const sub of subscriptions) {
 		if (!sub.userId) continue;
+		const user = userById.get(sub.userId);
+		if (!user) continue;
+		const userTimeZone = resolveTimeZone(user.timeZone);
+		const userNotifyTime = resolveNotifyTime(user.defaultNotifyTime);
+		const today = getLocalDateString(now, userTimeZone);
 
-		const computed = computeNextBilling(sub.firstPaymentDate, sub.cycle);
+		const computed = computeNextBilling(sub.firstPaymentDate, sub.cycle, {
+			timeZone: userTimeZone,
+			now
+		});
 		if (
 			computed.nextBillingAt !== sub.nextBillingAt ||
 			computed.daysUntilNextBilling !== sub.daysUntilNextBilling
@@ -127,12 +156,13 @@ export const dispatchSubscriptionNotifications = async (
 		const notifyDays = Number(sub.notifyDaysBefore ?? 0);
 		if (!Number.isFinite(notifyDays) || notifyDays < 0) continue;
 		if (computed.daysUntilNextBilling !== notifyDays) continue;
+		if (!hasLocalTimeReached(now, userTimeZone, userNotifyTime)) continue;
 
-		if (sub.lastNotifiedAt && dayjs(sub.lastNotifiedAt).isSame(today, 'day')) {
+		if (sub.lastNotifiedDate === today) {
 			continue;
 		}
 
-		dueSubscriptions.push(sub);
+		dueSubscriptions.push({ subscription: sub, targetDate: today });
 	}
 
 	if (dueSubscriptions.length === 0) {
@@ -145,23 +175,6 @@ export const dispatchSubscriptionNotifications = async (
 			updated
 		};
 	}
-
-	const userIds = Array.from(
-		new Set(dueSubscriptions.map((sub) => sub.userId).filter(Boolean))
-	) as string[];
-
-	const users = await db
-		.select({
-			id: userTable.id,
-			email: userTable.email,
-			name: userTable.name,
-			locale: userTable.locale,
-			notificationMethod: userTable.notificationMethod
-		})
-		.from(userTable)
-		.where(inArray(userTable.id, userIds));
-
-	const userById = new Map(users.map((user) => [user.id, user]));
 
 	const pushSubscriptions = await db
 		.select()
@@ -179,7 +192,8 @@ export const dispatchSubscriptionNotifications = async (
 	let failed = 0;
 	let removed = 0;
 
-	for (const sub of dueSubscriptions) {
+	for (const due of dueSubscriptions) {
+		const sub = due.subscription;
 		const userId = sub.userId ?? '';
 		const user = userById.get(userId);
 		if (!user) continue;
@@ -194,7 +208,7 @@ export const dispatchSubscriptionNotifications = async (
 			const userPushSubscriptions = pushByUser.get(userId) ?? [];
 			if (userPushSubscriptions.length > 0) {
 				attempted = true;
-				const payload = buildPayload(sub, userLocale);
+				const payload = buildPayload(sub, userLocale, due.targetDate);
 
 				for (const pushSub of userPushSubscriptions) {
 					try {
@@ -255,7 +269,7 @@ export const dispatchSubscriptionNotifications = async (
 		if (attempted) {
 			await db
 				.update(trackedSubscriptionTable)
-				.set({ lastNotifiedAt: new Date() })
+				.set({ lastNotifiedAt: now, lastNotifiedDate: due.targetDate })
 				.where(eq(trackedSubscriptionTable.id, sub.id));
 		}
 	}
@@ -308,7 +322,7 @@ export const dispatchTrialEndingEmails = async (
 	const targetKey = targetDay.format('YYYY-MM-DD');
 
 	const rows = await db
-		.select({ subscription: subscriptionTable, user: userTable })
+		.select()
 		.from(subscriptionTable)
 		.leftJoin(userTable, eq(subscriptionTable.referenceId, userTable.id))
 		.where(
@@ -329,7 +343,7 @@ export const dispatchTrialEndingEmails = async (
 	);
 
 	const sentRows = await db
-		.select({ identifier: verificationTable.identifier })
+		.select()
 		.from(verificationTable)
 		.where(inArray(verificationTable.identifier, identifiers));
 

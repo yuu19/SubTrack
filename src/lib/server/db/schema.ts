@@ -1,8 +1,10 @@
 import { sql } from 'drizzle-orm';
 import {
 	APP_LOCALES,
+	DEFAULT_NOTIFY_TIME,
 	CANCELLATION_METHODS,
 	DEFAULT_LOCALE,
+	DEFAULT_TIME_ZONE,
 	NOTIFICATION_METHODS,
 	ROLE,
 	THEMES,
@@ -50,8 +52,10 @@ export const user = sqliteTable('user', {
 		.notNull(),
 	role: text('role', { enum: ROLE }).default('user'),
 	locale: text('locale', { enum: APP_LOCALES }).notNull().default(DEFAULT_LOCALE),
+	timeZone: text('time_zone').notNull().default(DEFAULT_TIME_ZONE),
 	activeTheme: text('active_theme', { enum: THEMES }).notNull().default('rose'),
 	defaultNotifyDaysBefore: integer('default_notify_days_before').notNull().default(3),
+	defaultNotifyTime: text('default_notify_time').notNull().default(DEFAULT_NOTIFY_TIME),
 	notificationMethod: text('notification_method', { enum: NOTIFICATION_METHODS })
 		.notNull()
 		.default('email'),
@@ -225,6 +229,7 @@ export const trackedSubscriptionTable = sqliteTable('tracked_subscription', {
 	daysUntilNextBilling: integer('days_until_next_billing').notNull(),
 	notifyDaysBefore: integer('notify_days_before').notNull().default(1),
 	lastNotifiedAt: integer('last_notified_at', { mode: 'timestamp_ms' }),
+	lastNotifiedDate: text('last_notified_date'),
 	canceledAt: integer('canceled_at', { mode: 'timestamp_ms' }),
 	cancellationUrl: text('cancellation_url'),
 	cancellationMethod: text('cancellation_method', { enum: CANCELLATION_METHODS }),

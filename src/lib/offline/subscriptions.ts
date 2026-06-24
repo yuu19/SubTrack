@@ -10,6 +10,12 @@ import {
 	type CancellationMethod,
 	type TrackedSubscriptionStatus
 } from '$lib/constant';
+import {
+	addCalendarMonths,
+	diffCalendarDays,
+	getLocalDateString,
+	normalizeDateString
+} from '$lib/time-zone';
 
 const DB_NAME = 'dishpage-offline';
 const DB_VERSION = 1;
@@ -147,10 +153,10 @@ const normalizeSubscription = (subscription: SubscriptionRecord) => {
 		...subscription,
 		status: subscription.status ?? 'active'
 	};
-	const today = dayjs().startOf('day');
-	const next = dayjs(normalizedSubscription.nextBillingAt).startOf('day');
-	if (!next.isValid()) return normalizedSubscription;
-	const daysUntil = next.diff(today, 'day');
+	const today = dayjs().format('YYYY-MM-DD');
+	const next = normalizeDateString(normalizedSubscription.nextBillingAt);
+	if (!/^\d{4}-\d{2}-\d{2}$/.test(next)) return normalizedSubscription;
+	const daysUntil = diffCalendarDays(next, today);
 	if (
 		normalizedSubscription.status !== 'canceled' &&
 		Number.isFinite(daysUntil) &&
@@ -170,19 +176,19 @@ const sortSubscriptions = (subscriptions: SubscriptionRecord[]) => {
 };
 
 const computeBillingInfo = (payload: SubscriptionPayload) => {
-	const today = dayjs().startOf('day');
-	const first = dayjs(payload.firstPaymentDate);
-	if (!first.isValid()) {
+	const today = getLocalDateString(new Date(), Intl.DateTimeFormat().resolvedOptions().timeZone);
+	const first = normalizeDateString(payload.firstPaymentDate);
+	if (!/^\d{4}-\d{2}-\d{2}$/.test(first)) {
 		return { nextBillingAt: payload.firstPaymentDate, daysUntilNextBilling: 0 };
 	}
 	const monthsToAdd = cycleToMonths(payload.cycle);
 	let next = first;
-	while (next.isBefore(today, 'day')) {
-		next = next.add(monthsToAdd, 'month');
+	while (diffCalendarDays(next, today) < 0) {
+		next = addCalendarMonths(next, monthsToAdd);
 	}
 	return {
-		nextBillingAt: next.toISOString(),
-		daysUntilNextBilling: next.diff(today, 'day')
+		nextBillingAt: next,
+		daysUntilNextBilling: diffCalendarDays(next, today)
 	};
 };
 

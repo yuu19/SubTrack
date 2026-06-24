@@ -1,4 +1,10 @@
-import dayjs from 'dayjs';
+import {
+	addCalendarMonths,
+	diffCalendarDays,
+	getLocalDateString,
+	normalizeDateString,
+	resolveTimeZone
+} from '$lib/time-zone';
 
 const cycleToMonths = (cycle: string) => {
 	if (cycle === 'yearly') return 12;
@@ -6,10 +12,15 @@ const cycleToMonths = (cycle: string) => {
 	return 1;
 };
 
-export const computeNextBilling = (firstPaymentDate: string, cycle: string) => {
-	const today = dayjs().startOf('day');
-	const first = dayjs(firstPaymentDate);
-	if (!first.isValid()) {
+export const computeNextBilling = (
+	firstPaymentDate: string,
+	cycle: string,
+	options: { timeZone?: string; now?: Date } = {}
+) => {
+	const timeZone = resolveTimeZone(options.timeZone);
+	const today = getLocalDateString(options.now ?? new Date(), timeZone);
+	const first = normalizeDateString(firstPaymentDate);
+	if (!/^\d{4}-\d{2}-\d{2}$/.test(first)) {
 		return {
 			nextBillingAt: firstPaymentDate,
 			daysUntilNextBilling: 0
@@ -18,12 +29,12 @@ export const computeNextBilling = (firstPaymentDate: string, cycle: string) => {
 
 	const monthsToAdd = cycleToMonths(cycle);
 	let next = first;
-	while (next.isBefore(today, 'day')) {
-		next = next.add(monthsToAdd, 'month');
+	while (diffCalendarDays(next, today) < 0) {
+		next = addCalendarMonths(next, monthsToAdd);
 	}
 
 	return {
-		nextBillingAt: next.toISOString(),
-		daysUntilNextBilling: next.diff(today, 'day')
+		nextBillingAt: next,
+		daysUntilNextBilling: diffCalendarDays(next, today)
 	};
 };
