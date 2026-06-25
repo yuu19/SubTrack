@@ -223,6 +223,7 @@ export const trackedSubscriptionTable = sqliteTable('tracked_subscription', {
 	serviceName: text('service_name').notNull(),
 	serviceTemplateId: text('service_template_id'),
 	planName: text('plan_name'),
+	serviceUrl: text('service_url'),
 	priceEditedByUser: integer('price_edited_by_user', { mode: 'boolean' }).notNull().default(false),
 	status: text('status', { enum: TRACKED_SUBSCRIPTION_STATUSES }).notNull().default('active'),
 	color: text('color').notNull().default(defaultSubscriptionColor),

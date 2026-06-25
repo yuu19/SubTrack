@@ -38,6 +38,7 @@
 	import {
 		defaultSubscriptionIconType,
 		defaultSubscriptionIconValue,
+		resolveFaviconUrl,
 		subscriptionEmojiOptions,
 		subscriptionPresetIconOptions,
 		type SubscriptionIconType,
@@ -80,6 +81,12 @@
 			: '一覧と詳細画面でサービスを見分けるために使います。'
 	);
 	const iconOptions = $derived(subscriptionEmojiOptions);
+	const serviceUrlFieldLabel = $derived(currentLocale === 'en' ? 'Service URL' : 'サービスURL');
+	const serviceUrlFieldDescription = $derived(
+		currentLocale === 'en'
+			? 'Used only when selecting the favicon icon.'
+			: 'favicon アイコンを選んだときに使用します。'
+	);
 	const presetIconOptions = $derived(
 		subscriptionPresetIconOptions.map((option) => ({
 			...option,
@@ -108,6 +115,7 @@
 	const textField = fieldProxy(form, 'text');
 	const serviceTemplateIdField = fieldProxy(form, 'serviceTemplateId');
 	const planNameField = fieldProxy(form, 'planName');
+	const serviceUrlField = fieldProxy(form, 'serviceUrl');
 	const priceEditedByUserField = fieldProxy(form, 'priceEditedByUser');
 	const colorField = fieldProxy(form, 'color');
 	const iconTypeField = fieldProxy(form, 'iconType');
@@ -173,6 +181,7 @@
 		$serviceTemplateIdField = template.id;
 		selectedPlanId = plan.id;
 		$planNameField = localizedPlanName(plan);
+		$serviceUrlField = template.sourceUrl;
 		$priceEditedByUserField = false;
 		$textField = template.name;
 		$colorField = template.color;
@@ -210,6 +219,7 @@
 		$iconTypeField = iconType;
 		$iconValueField = iconValue;
 	};
+	const serviceFaviconUrl = $derived(resolveFaviconUrl($serviceUrlField));
 
 	const enhanceEvents = {
 		onSubmit: async (input: any) => {
@@ -241,6 +251,7 @@
 			$notifyDaysBeforeField = defaultNotifyDaysBefore;
 			$serviceTemplateIdField = '';
 			$planNameField = '';
+			$serviceUrlField = '';
 			$priceEditedByUserField = false;
 			$cancellationUrlField = '';
 			$cancellationMethodField = '';
@@ -253,6 +264,12 @@
 			selectedPlanId = '';
 		}
 		wasOpen = isOpen;
+	});
+
+	$effect(() => {
+		if ($iconTypeField === 'favicon') {
+			$iconValueField = $serviceUrlField ?? '';
+		}
 	});
 </script>
 
@@ -354,6 +371,25 @@
 			<FieldErrors class="text-destructive text-sm" />
 		</Field>
 
+		<Field {form} name="serviceUrl">
+			<Control>
+				{#snippet children({ props })}
+					<Label class="font-medium">{serviceUrlFieldLabel}</Label>
+					<Input
+						{...props}
+						type="url"
+						inputmode="url"
+						placeholder="https://www.netflix.com/"
+						bind:value={$serviceUrlField}
+					/>
+					<Description class="text-muted-foreground text-xs">
+						{serviceUrlFieldDescription}
+					</Description>
+				{/snippet}
+			</Control>
+			<FieldErrors class="text-destructive text-sm" />
+		</Field>
+
 		<Field {form} name="color">
 			<Control>
 				{#snippet children({ props })}
@@ -418,6 +454,32 @@
 									</button>
 								{/each}
 							</div>
+						</div>
+						<div class="space-y-2">
+							<p class="text-muted-foreground text-xs">Favicon</p>
+							<button
+								type="button"
+								onclick={() => selectIcon('favicon', $serviceUrlField ?? '')}
+								disabled={!serviceFaviconUrl}
+								class="border-border bg-background hover:bg-muted/60 flex size-11 items-center justify-center rounded-md border transition-colors disabled:cursor-not-allowed disabled:opacity-50 {$iconTypeField ===
+								'favicon'
+									? 'border-primary bg-primary/10 outline-primary outline outline-2 outline-offset-2'
+									: ''}"
+								role="radio"
+								aria-checked={$iconTypeField === 'favicon'}
+								aria-label="Favicon"
+								title="Favicon"
+							>
+								{#if serviceFaviconUrl}
+									<SubscriptionIcon
+										iconType="favicon"
+										iconValue={$serviceUrlField}
+										class="size-6 rounded-sm"
+									/>
+								{:else}
+									<span class="text-muted-foreground text-xs">URL</span>
+								{/if}
+							</button>
 						</div>
 						<div class="space-y-2">
 							<p class="text-muted-foreground text-xs">

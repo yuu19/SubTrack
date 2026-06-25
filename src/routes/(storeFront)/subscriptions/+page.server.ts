@@ -43,10 +43,12 @@ const buildCancellationValues = (data: {
 const buildTemplateValues = (data: {
 	serviceTemplateId?: string | null;
 	planName?: string | null;
+	serviceUrl?: string | null;
 	priceEditedByUser?: boolean | null;
 }) => ({
 	serviceTemplateId: normalizeOptionalText(data.serviceTemplateId),
 	planName: normalizeOptionalText(data.planName),
+	serviceUrl: normalizeOptionalText(data.serviceUrl),
 	priceEditedByUser: Boolean(data.priceEditedByUser)
 });
 

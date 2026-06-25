@@ -33,6 +33,7 @@ export type SubscriptionPayload = {
 	serviceName: string;
 	serviceTemplateId?: string | null;
 	planName?: string | null;
+	serviceUrl?: string | null;
 	priceEditedByUser?: boolean;
 	color: SubscriptionColor;
 	iconType: SubscriptionIconType;
@@ -54,6 +55,7 @@ export type SubscriptionRecord = {
 	serviceName: string;
 	serviceTemplateId?: string | null;
 	planName?: string | null;
+	serviceUrl?: string | null;
 	priceEditedByUser?: boolean;
 	status?: TrackedSubscriptionStatus;
 	color: SubscriptionColor;
@@ -215,6 +217,7 @@ export const payloadFromFormData = (formData: FormData): SubscriptionPayload => 
 		serviceName: `${formData.get('text') ?? ''}`,
 		serviceTemplateId: normalizeOptionalText(formData.get('serviceTemplateId')),
 		planName: normalizeOptionalText(formData.get('planName')),
+		serviceUrl: normalizeOptionalText(formData.get('serviceUrl')),
 		priceEditedByUser: toBoolean(formData.get('priceEditedByUser')),
 		color: resolveSubscriptionColor(formData.get('color'), defaultSubscriptionColor),
 		iconType: resolveSubscriptionIconType(formData.get('iconType'), defaultSubscriptionIconType),
@@ -282,6 +285,7 @@ export const addPendingSubscription = async (
 		serviceName: payload.serviceName,
 		serviceTemplateId: payload.serviceTemplateId ?? null,
 		planName: payload.planName ?? null,
+		serviceUrl: payload.serviceUrl ?? null,
 		priceEditedByUser: Boolean(payload.priceEditedByUser),
 		status: 'active',
 		color: payload.color,
@@ -325,6 +329,7 @@ const buildFormData = (payload: SubscriptionPayload) => {
 	formData.set('text', payload.serviceName);
 	formData.set('serviceTemplateId', payload.serviceTemplateId ?? '');
 	formData.set('planName', payload.planName ?? '');
+	formData.set('serviceUrl', payload.serviceUrl ?? '');
 	formData.set('priceEditedByUser', payload.priceEditedByUser ? 'true' : 'false');
 	formData.set('color', payload.color);
 	formData.set('iconType', payload.iconType);

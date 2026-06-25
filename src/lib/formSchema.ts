@@ -66,6 +66,9 @@ export const subscriptionSchema = z.object({
 		.min(1, { error: 'Please enter the service name.' }),
 	serviceTemplateId: optionalText(100),
 	planName: optionalText(120),
+	serviceUrl: optionalText(2048).refine(isHttpsUrl, {
+		message: 'Please enter a URL that starts with https://.'
+	}),
 	priceEditedByUser: booleanFromForm,
 	color: z.enum(subscriptionColors).default(defaultSubscriptionColor),
 	iconType: z.enum(subscriptionIconTypes).default(defaultSubscriptionIconType),
@@ -73,7 +76,7 @@ export const subscriptionSchema = z.object({
 		.string({ error: 'Please select an icon.' })
 		.trim()
 		.min(1, { error: 'Please select an icon.' })
-		.max(64, { error: 'Icon must be 64 characters or fewer.' })
+		.max(2048, { error: 'Icon value must be 2048 characters or fewer.' })
 		.default(defaultSubscriptionIconValue),
 	tagsinput: z.string().array().default([]),
 	notifyDaysBefore: z

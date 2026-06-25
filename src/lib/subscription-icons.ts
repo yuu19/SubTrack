@@ -1,6 +1,6 @@
 import type { AppLocale } from './constant';
 
-export const subscriptionIconTypes = ['emoji', 'preset'] as const;
+export const subscriptionIconTypes = ['emoji', 'preset', 'favicon'] as const;
 
 export type SubscriptionIconType = (typeof subscriptionIconTypes)[number];
 
@@ -79,10 +79,23 @@ export const resolveSubscriptionIconValue = (
 	fallback = defaultSubscriptionIconValue
 ) => {
 	const normalized = typeof value === 'string' ? value.trim() : '';
-	return normalized.length > 0 ? normalized.slice(0, 64) : fallback;
+	return normalized.length > 0 ? normalized.slice(0, 2048) : fallback;
 };
 
 export const resolveSubscriptionPresetIconValue = (
 	value: unknown,
 	fallback: SubscriptionPresetIconValue = defaultSubscriptionPresetIconValue
 ): SubscriptionPresetIconValue => (isSubscriptionPresetIconValue(value) ? value : fallback);
+
+export const resolveFaviconUrl = (value: unknown) => {
+	if (typeof value !== 'string') return '';
+	const normalized = value.trim();
+	if (!normalized) return '';
+	try {
+		const url = new URL(normalized);
+		if (url.protocol !== 'https:') return '';
+		return `https://www.google.com/s2/favicons?sz=64&domain_url=${encodeURIComponent(url.href)}`;
+	} catch {
+		return '';
+	}
+};

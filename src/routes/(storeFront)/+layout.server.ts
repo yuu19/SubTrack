@@ -62,6 +62,7 @@ export const load = async ({ request, locals, url }) => {
 				{
 					serviceName: 'Netflix',
 					color: subscriptionColors[0],
+					serviceUrl: 'https://www.netflix.com/',
 					iconValue: 'video',
 					cycle: 'monthly',
 					amount: 1490,
@@ -72,6 +73,7 @@ export const load = async ({ request, locals, url }) => {
 				{
 					serviceName: 'Spotify',
 					color: subscriptionColors[1],
+					serviceUrl: 'https://www.spotify.com/',
 					iconValue: 'music',
 					cycle: 'monthly',
 					amount: 980,
@@ -82,6 +84,7 @@ export const load = async ({ request, locals, url }) => {
 				{
 					serviceName: 'Notion',
 					color: subscriptionColors[2],
+					serviceUrl: 'https://www.notion.com/',
 					iconValue: 'work',
 					cycle: 'yearly',
 					amount: 12000,
@@ -99,6 +102,7 @@ export const load = async ({ request, locals, url }) => {
 					userId: user.id,
 					serviceName: sample.serviceName,
 					color: sample.color,
+					serviceUrl: sample.serviceUrl,
 					iconType: 'preset',
 					iconValue: sample.iconValue,
 					cycle: sample.cycle,

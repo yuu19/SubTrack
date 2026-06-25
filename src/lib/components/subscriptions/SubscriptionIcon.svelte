@@ -16,6 +16,7 @@
 	import {
 		defaultSubscriptionIconType,
 		defaultSubscriptionIconValue,
+		resolveFaviconUrl,
 		resolveSubscriptionIconType,
 		resolveSubscriptionIconValue,
 		resolveSubscriptionPresetIconValue,
@@ -51,6 +52,7 @@
 	const resolvedIconType = $derived(resolveSubscriptionIconType(iconType));
 	const resolvedPresetValue = $derived(resolveSubscriptionPresetIconValue(iconValue));
 	const resolvedEmojiValue = $derived(resolveSubscriptionIconValue(iconValue));
+	const resolvedFaviconUrl = $derived(resolveFaviconUrl(iconValue));
 	const PresetIcon = $derived(
 		presetIconComponents[resolvedPresetValue as SubscriptionPresetIconValue] ?? Box
 	);
@@ -58,6 +60,14 @@
 
 {#if resolvedIconType === 'preset'}
 	<PresetIcon class={className} aria-hidden="true" />
+{:else if resolvedIconType === 'favicon' && resolvedFaviconUrl}
+	<img
+		src={resolvedFaviconUrl}
+		alt=""
+		class={className}
+		loading="lazy"
+		referrerpolicy="no-referrer"
+	/>
 {:else}
 	<span class={className} aria-hidden="true">{resolvedEmojiValue}</span>
 {/if}

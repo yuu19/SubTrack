@@ -31,6 +31,7 @@
 	type SubscriptionDetail = {
 		serviceName?: string | null;
 		planName?: string | null;
+		serviceUrl?: string | null;
 		status?: string | null;
 		color?: string | null;
 		iconType?: string | null;
