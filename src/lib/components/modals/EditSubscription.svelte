@@ -25,6 +25,13 @@
 		resolveSubscriptionColor,
 		subscriptionColors
 	} from '$lib/subscription-colors';
+	import {
+		defaultSubscriptionIconType,
+		defaultSubscriptionIconValue,
+		resolveSubscriptionIconType,
+		resolveSubscriptionIconValue,
+		subscriptionEmojiOptions
+	} from '$lib/subscription-icons';
 
 	let { subscription, onServerResult, onClose, action = '?/update' } = $props();
 	const userConfig = UserConfigContext.get();
@@ -55,6 +62,13 @@
 			? 'Used for calendar and analysis views.'
 			: 'カレンダーと分析画面で使う表示色です。'
 	);
+	const iconFieldLabel = $derived(currentLocale === 'en' ? 'Icon' : 'アイコン');
+	const iconFieldDescription = $derived(
+		currentLocale === 'en'
+			? 'Shown in subscription lists and detail views.'
+			: '一覧と詳細画面でサービスを見分けるために使います。'
+	);
+	const iconOptions = $derived(subscriptionEmojiOptions);
 
 	const defaultNotifyDaysBefore = $derived(userConfig.current.defaultNotifyDaysBefore ?? 3);
 	const defaultNotifyLabel = $derived(formatNotifyDays(defaultNotifyDaysBefore, currentLocale));
@@ -67,6 +81,11 @@
 				planName: subscription.planName ?? '',
 				priceEditedByUser: subscription.priceEditedByUser ?? false,
 				color: resolveSubscriptionColor(subscription.color, defaultSubscriptionColor),
+				iconType: resolveSubscriptionIconType(subscription.iconType, defaultSubscriptionIconType),
+				iconValue: resolveSubscriptionIconValue(
+					subscription.iconValue,
+					defaultSubscriptionIconValue
+				),
 				select: subscription.cycle ?? 'monthly',
 				number: subscription.amount ?? 0,
 				datepicker: subscription.firstPaymentDate ?? '',
@@ -85,6 +104,8 @@
 			planName: '',
 			priceEditedByUser: false,
 			color: defaultSubscriptionColor,
+			iconType: defaultSubscriptionIconType,
+			iconValue: defaultSubscriptionIconValue,
 			select: 'monthly',
 			number: 0,
 			datepicker: '',
@@ -108,6 +129,8 @@
 	const planNameField = fieldProxy(form, 'planName');
 	const priceEditedByUserField = fieldProxy(form, 'priceEditedByUser');
 	const colorField = fieldProxy(form, 'color');
+	const iconTypeField = fieldProxy(form, 'iconType');
+	const iconValueField = fieldProxy(form, 'iconValue');
 	const selectField = fieldProxy(form, 'select');
 	const notifyDaysBeforeField = fieldProxy(form, 'notifyDaysBefore');
 	const numberField = fieldProxy(form, 'number');
@@ -141,6 +164,7 @@
 		<input type="hidden" name="id" value={subscription.id} />
 		<input type="hidden" name="serviceTemplateId" value={$serviceTemplateIdField ?? ''} />
 		<input type="hidden" name="planName" value={$planNameField ?? ''} />
+		<input type="hidden" name="iconType" value={$iconTypeField ?? defaultSubscriptionIconType} />
 		<input
 			type="hidden"
 			name="priceEditedByUser"
@@ -188,6 +212,35 @@
 						{/each}
 					</div>
 					<Description class="text-muted-foreground text-xs">{colorFieldDescription}</Description>
+				{/snippet}
+			</Control>
+			<FieldErrors class="text-destructive text-sm" />
+		</Field>
+
+		<Field {form} name="iconValue">
+			<Control>
+				{#snippet children({ props })}
+					<Label class="font-medium">{iconFieldLabel}</Label>
+					<input {...props} type="hidden" bind:value={$iconValueField} />
+					<div class="flex flex-wrap gap-2" role="radiogroup" aria-label={iconFieldLabel}>
+						{#each iconOptions as icon (icon)}
+							<button
+								type="button"
+								onclick={() => ($iconValueField = icon)}
+								class="border-border bg-background hover:bg-muted/60 flex size-11 items-center justify-center rounded-md border text-xl transition-colors {icon ===
+								$iconValueField
+									? 'border-primary bg-primary/10 outline-primary outline outline-2 outline-offset-2'
+									: ''}"
+								role="radio"
+								aria-checked={icon === $iconValueField}
+								aria-label={icon}
+								title={icon}
+							>
+								{icon}
+							</button>
+						{/each}
+					</div>
+					<Description class="text-muted-foreground text-xs">{iconFieldDescription}</Description>
 				{/snippet}
 			</Control>
 			<FieldErrors class="text-destructive text-sm" />

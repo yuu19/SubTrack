@@ -6,6 +6,13 @@ import {
 	type SubscriptionColor
 } from '$lib/subscription-colors';
 import {
+	defaultSubscriptionIconType,
+	defaultSubscriptionIconValue,
+	resolveSubscriptionIconType,
+	resolveSubscriptionIconValue,
+	type SubscriptionIconType
+} from '$lib/subscription-icons';
+import {
 	CANCELLATION_METHODS,
 	type CancellationMethod,
 	type TrackedSubscriptionStatus
@@ -28,6 +35,8 @@ export type SubscriptionPayload = {
 	planName?: string | null;
 	priceEditedByUser?: boolean;
 	color: SubscriptionColor;
+	iconType: SubscriptionIconType;
+	iconValue: string;
 	cycle: string;
 	amount: number;
 	firstPaymentDate: string;
@@ -48,6 +57,8 @@ export type SubscriptionRecord = {
 	priceEditedByUser?: boolean;
 	status?: TrackedSubscriptionStatus;
 	color: SubscriptionColor;
+	iconType: SubscriptionIconType;
+	iconValue: string;
 	cycle: string;
 	amount: number;
 	firstPaymentDate: string;
@@ -151,7 +162,9 @@ const toTimestamp = (value: Date | string | number | null | undefined) => {
 const normalizeSubscription = (subscription: SubscriptionRecord) => {
 	const normalizedSubscription: SubscriptionRecord = {
 		...subscription,
-		status: subscription.status ?? 'active'
+		status: subscription.status ?? 'active',
+		iconType: resolveSubscriptionIconType(subscription.iconType, defaultSubscriptionIconType),
+		iconValue: resolveSubscriptionIconValue(subscription.iconValue, defaultSubscriptionIconValue)
 	};
 	const today = dayjs().format('YYYY-MM-DD');
 	const next = normalizeDateString(normalizedSubscription.nextBillingAt);
@@ -204,6 +217,11 @@ export const payloadFromFormData = (formData: FormData): SubscriptionPayload => 
 		planName: normalizeOptionalText(formData.get('planName')),
 		priceEditedByUser: toBoolean(formData.get('priceEditedByUser')),
 		color: resolveSubscriptionColor(formData.get('color'), defaultSubscriptionColor),
+		iconType: resolveSubscriptionIconType(formData.get('iconType'), defaultSubscriptionIconType),
+		iconValue: resolveSubscriptionIconValue(
+			formData.get('iconValue'),
+			defaultSubscriptionIconValue
+		),
 		cycle: `${formData.get('select') ?? ''}`,
 		amount: toNumber(formData.get('number'), 0),
 		firstPaymentDate: `${formData.get('datepicker') ?? ''}`,
@@ -267,6 +285,8 @@ export const addPendingSubscription = async (
 		priceEditedByUser: Boolean(payload.priceEditedByUser),
 		status: 'active',
 		color: payload.color,
+		iconType: payload.iconType,
+		iconValue: payload.iconValue,
 		cycle: payload.cycle,
 		amount: payload.amount,
 		firstPaymentDate: payload.firstPaymentDate,
@@ -307,6 +327,8 @@ const buildFormData = (payload: SubscriptionPayload) => {
 	formData.set('planName', payload.planName ?? '');
 	formData.set('priceEditedByUser', payload.priceEditedByUser ? 'true' : 'false');
 	formData.set('color', payload.color);
+	formData.set('iconType', payload.iconType);
+	formData.set('iconValue', payload.iconValue);
 	formData.set('select', payload.cycle);
 	formData.set('number', `${payload.amount}`);
 	formData.set('datepicker', payload.firstPaymentDate);

@@ -1,6 +1,11 @@
 import { z } from 'zod';
 import { CANCELLATION_METHODS } from '$lib/constant';
 import { defaultSubscriptionColor, subscriptionColors } from '$lib/subscription-colors';
+import {
+	defaultSubscriptionIconType,
+	defaultSubscriptionIconValue,
+	subscriptionIconTypes
+} from '$lib/subscription-icons';
 
 const isValidPhoneNumber = (phone: string): boolean => {
 	const regex = /^([0|+[0-9]{1,5})?([7-9][0-9]{9})$/;
@@ -63,6 +68,13 @@ export const subscriptionSchema = z.object({
 	planName: optionalText(120),
 	priceEditedByUser: booleanFromForm,
 	color: z.enum(subscriptionColors).default(defaultSubscriptionColor),
+	iconType: z.enum(subscriptionIconTypes).default(defaultSubscriptionIconType),
+	iconValue: z
+		.string({ error: 'Please select an icon.' })
+		.trim()
+		.min(1, { error: 'Please select an icon.' })
+		.max(64, { error: 'Icon must be 64 characters or fewer.' })
+		.default(defaultSubscriptionIconValue),
 	tagsinput: z.string().array().default([]),
 	notifyDaysBefore: z
 		.number({ error: 'Please select notify days.' })

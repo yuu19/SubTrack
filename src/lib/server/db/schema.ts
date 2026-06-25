@@ -11,6 +11,10 @@ import {
 	TRACKED_SUBSCRIPTION_STATUSES
 } from '../../constant';
 import { defaultSubscriptionColor } from '../../subscription-colors';
+import {
+	defaultSubscriptionIconType,
+	defaultSubscriptionIconValue
+} from '../../subscription-icons';
 import { sqliteTable, text, integer, index, uniqueIndex } from 'drizzle-orm/sqlite-core';
 export const timestamps = {
 	updatedAt: integer('updated_at', {
@@ -222,6 +226,8 @@ export const trackedSubscriptionTable = sqliteTable('tracked_subscription', {
 	priceEditedByUser: integer('price_edited_by_user', { mode: 'boolean' }).notNull().default(false),
 	status: text('status', { enum: TRACKED_SUBSCRIPTION_STATUSES }).notNull().default('active'),
 	color: text('color').notNull().default(defaultSubscriptionColor),
+	iconType: text('icon_type').notNull().default(defaultSubscriptionIconType),
+	iconValue: text('icon_value').notNull().default(defaultSubscriptionIconValue),
 	cycle: text('cycle').notNull(),
 	amount: integer('amount').notNull(),
 	firstPaymentDate: text('first_payment_date').notNull(),

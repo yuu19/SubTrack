@@ -12,6 +12,7 @@ import { isAdminUser, parseAdminUserIds } from '$lib/server/admin';
 import { listActiveEntitlementsForUser } from '$lib/server/entitlements';
 import { getCurrentPlan } from '$lib/server/plan';
 import { isPublicDemoPathname } from '$lib/server/public-routes';
+import { defaultSubscriptionIconType } from '$lib/subscription-icons';
 import { subscriptionColors } from '$lib/subscription-colors';
 import { eq } from 'drizzle-orm';
 
@@ -62,6 +63,7 @@ export const load = async ({ request, locals, url }) => {
 				{
 					serviceName: 'Netflix',
 					color: subscriptionColors[0],
+					iconValue: '🎬',
 					cycle: 'monthly',
 					amount: 1490,
 					firstPaymentDate: dateSeed,
@@ -71,6 +73,7 @@ export const load = async ({ request, locals, url }) => {
 				{
 					serviceName: 'Spotify',
 					color: subscriptionColors[1],
+					iconValue: '🎧',
 					cycle: 'monthly',
 					amount: 980,
 					firstPaymentDate: dateSeed,
@@ -80,6 +83,7 @@ export const load = async ({ request, locals, url }) => {
 				{
 					serviceName: 'Notion',
 					color: subscriptionColors[2],
+					iconValue: '💼',
 					cycle: 'yearly',
 					amount: 12000,
 					firstPaymentDate: dateSeed,
@@ -96,6 +100,8 @@ export const load = async ({ request, locals, url }) => {
 					userId: user.id,
 					serviceName: sample.serviceName,
 					color: sample.color,
+					iconType: defaultSubscriptionIconType,
+					iconValue: sample.iconValue,
 					cycle: sample.cycle,
 					amount: sample.amount,
 					firstPaymentDate: sample.firstPaymentDate,

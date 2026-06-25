@@ -11,6 +11,15 @@
 	import type { AppLocale } from '$lib/constant';
 	import { m } from '$lib/paraglide/messages.js';
 	import {
+		getSubscriptionColorStyle,
+		getSubscriptionColorSurfaceStyle,
+		resolveSubscriptionColor
+	} from '$lib/subscription-colors';
+	import {
+		defaultSubscriptionIconValue,
+		resolveSubscriptionIconValue
+	} from '$lib/subscription-icons';
+	import {
 		Bell,
 		CalendarDays,
 		ExternalLink,
@@ -26,6 +35,9 @@
 		serviceName?: string | null;
 		planName?: string | null;
 		status?: string | null;
+		color?: string | null;
+		iconType?: string | null;
+		iconValue?: string | null;
 		amount: number;
 		cycle: string;
 		nextBillingAt?: string | null;
@@ -58,6 +70,10 @@
 	}>();
 
 	const isCanceled = $derived(subscription?.status === 'canceled');
+	const iconValue = $derived(
+		resolveSubscriptionIconValue(subscription?.iconValue, defaultSubscriptionIconValue)
+	);
+	const iconColor = $derived(resolveSubscriptionColor(subscription?.color));
 	const cancellationUrl = $derived(subscription?.cancellationUrl?.trim() ?? '');
 	const cancellationHost = $derived.by(() => {
 		if (!cancellationUrl) return '';
@@ -88,6 +104,14 @@
 {#if subscription}
 	<div class="space-y-4 p-4">
 		<div class="bg-card rounded-xl border px-4 py-5 text-center">
+			<div
+				class="mx-auto mb-3 flex size-14 items-center justify-center rounded-md border text-2xl"
+				style:border-color={getSubscriptionColorStyle(iconColor)}
+				style:background={getSubscriptionColorSurfaceStyle(iconColor)}
+				aria-hidden="true"
+			>
+				{iconValue}
+			</div>
 			<p class="text-muted-foreground text-xs">{m.subscription_amount_label()}</p>
 			<p class="text-3xl font-bold">
 				{formatCurrencyYen(subscription.amount, locale)}

@@ -42,6 +42,15 @@
 	import { page } from '$app/state';
 	import { fromAction } from 'svelte/attachments';
 	import { cn } from '$lib/utils';
+	import {
+		getSubscriptionColorStyle,
+		getSubscriptionColorSurfaceStyle,
+		resolveSubscriptionColor
+	} from '$lib/subscription-colors';
+	import {
+		defaultSubscriptionIconValue,
+		resolveSubscriptionIconValue
+	} from '$lib/subscription-icons';
 	import { onMount } from 'svelte';
 	import { toast } from 'svelte-sonner';
 	import type { trackedSubscriptionTable } from '$lib/server/db/schema';
@@ -133,6 +142,17 @@
 
 	const formatBillingDate = (value?: string | number | Date | null) => {
 		return formatLongDate(value, currentLocale);
+	};
+
+	const getSubscriptionIconValue = (subscription: SubscriptionView) =>
+		resolveSubscriptionIconValue(subscription.iconValue, defaultSubscriptionIconValue);
+
+	const getSubscriptionIconStyle = (subscription: SubscriptionView) => {
+		const color = resolveSubscriptionColor(subscription.color);
+		return {
+			border: getSubscriptionColorStyle(color),
+			background: getSubscriptionColorSurfaceStyle(color)
+		};
 	};
 
 	const getCycleProgress = (subscription: SubscriptionView) => {
@@ -488,16 +508,26 @@
 				>
 					<CardHeader class="pb-3">
 						<div class="flex items-start justify-between gap-4">
-							<div class="space-y-1">
-								<CardTitle class="text-base">{sub.serviceName}</CardTitle>
-								<CardDescription class="flex flex-wrap items-center gap-2 text-xs">
-									<span>{getCycleLabel(sub.cycle, currentLocale)}</span>
-									{#if sub._pending}
-										<Badge variant="secondary" class="text-[10px]"
-											>{m.subscription_pending_badge()}</Badge
-										>
-									{/if}
-								</CardDescription>
+							<div class="flex min-w-0 items-start gap-3">
+								<div
+									class="flex size-11 shrink-0 items-center justify-center rounded-md border text-xl"
+									style:border-color={getSubscriptionIconStyle(sub).border}
+									style:background={getSubscriptionIconStyle(sub).background}
+									aria-hidden="true"
+								>
+									{getSubscriptionIconValue(sub)}
+								</div>
+								<div class="min-w-0 space-y-1">
+									<CardTitle class="truncate text-base">{sub.serviceName}</CardTitle>
+									<CardDescription class="flex flex-wrap items-center gap-2 text-xs">
+										<span>{getCycleLabel(sub.cycle, currentLocale)}</span>
+										{#if sub._pending}
+											<Badge variant="secondary" class="text-[10px]"
+												>{m.subscription_pending_badge()}</Badge
+											>
+										{/if}
+									</CardDescription>
+								</div>
 							</div>
 							<div class="text-right">
 								<div class="text-base font-semibold">
@@ -588,14 +618,24 @@
 							>
 								<CardHeader class="pb-3">
 									<div class="flex items-start justify-between gap-4">
-										<div class="space-y-1">
-											<CardTitle class="text-base">{sub.serviceName}</CardTitle>
-											<CardDescription class="flex flex-wrap items-center gap-2 text-xs">
-												<Badge variant="secondary" class="text-[10px]">
-													{m.subscription_canceled_badge()}
-												</Badge>
-												<span>{getCycleLabel(sub.cycle, currentLocale)}</span>
-											</CardDescription>
+										<div class="flex min-w-0 items-start gap-3">
+											<div
+												class="flex size-10 shrink-0 items-center justify-center rounded-md border text-lg"
+												style:border-color={getSubscriptionIconStyle(sub).border}
+												style:background={getSubscriptionIconStyle(sub).background}
+												aria-hidden="true"
+											>
+												{getSubscriptionIconValue(sub)}
+											</div>
+											<div class="min-w-0 space-y-1">
+												<CardTitle class="truncate text-base">{sub.serviceName}</CardTitle>
+												<CardDescription class="flex flex-wrap items-center gap-2 text-xs">
+													<Badge variant="secondary" class="text-[10px]">
+														{m.subscription_canceled_badge()}
+													</Badge>
+													<span>{getCycleLabel(sub.cycle, currentLocale)}</span>
+												</CardDescription>
+											</div>
 										</div>
 										<div class="text-right">
 											<div class="text-base font-semibold">
@@ -649,8 +689,20 @@
 <Dialog.Root bind:open={detailOpen}>
 	<Dialog.Content class="w-full max-w-md overflow-hidden p-0">
 		<div class="flex items-center justify-between border-b px-4 py-3">
-			<Dialog.Title class="text-base font-semibold">
-				{selectedSubscription?.serviceName ?? m.subscription_detail_fallback_title()}
+			<Dialog.Title class="flex min-w-0 items-center gap-3 text-base font-semibold">
+				{#if selectedSubscription}
+					<span
+						class="flex size-9 shrink-0 items-center justify-center rounded-md border text-lg"
+						style:border-color={getSubscriptionIconStyle(selectedSubscription).border}
+						style:background={getSubscriptionIconStyle(selectedSubscription).background}
+						aria-hidden="true"
+					>
+						{getSubscriptionIconValue(selectedSubscription)}
+					</span>
+				{/if}
+				<span class="truncate">
+					{selectedSubscription?.serviceName ?? m.subscription_detail_fallback_title()}
+				</span>
 			</Dialog.Title>
 		</div>
 		{#if selectedSubscription}
