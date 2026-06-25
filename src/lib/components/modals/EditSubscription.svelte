@@ -6,6 +6,7 @@
 	import { Field, Control, Label, Description, FieldErrors } from 'formsnap';
 	import Button from '$lib/components/ui/button/button.svelte';
 	import Input from '$lib/components/ui/input/input.svelte';
+	import SubscriptionIcon from '$lib/components/subscriptions/SubscriptionIcon.svelte';
 	import TagsInput from '$lib/components/ui/tags-input/tags-input.svelte';
 	import {
 		formatNotifyDays,
@@ -30,7 +31,9 @@
 		defaultSubscriptionIconValue,
 		resolveSubscriptionIconType,
 		resolveSubscriptionIconValue,
-		subscriptionEmojiOptions
+		subscriptionEmojiOptions,
+		subscriptionPresetIconOptions,
+		type SubscriptionIconType
 	} from '$lib/subscription-icons';
 
 	let { subscription, onServerResult, onClose, action = '?/update' } = $props();
@@ -69,6 +72,12 @@
 			: '一覧と詳細画面でサービスを見分けるために使います。'
 	);
 	const iconOptions = $derived(subscriptionEmojiOptions);
+	const presetIconOptions = $derived(
+		subscriptionPresetIconOptions.map((option) => ({
+			...option,
+			label: option.label[currentLocale]
+		}))
+	);
 
 	const defaultNotifyDaysBefore = $derived(userConfig.current.defaultNotifyDaysBefore ?? 3);
 	const defaultNotifyLabel = $derived(formatNotifyDays(defaultNotifyDaysBefore, currentLocale));
@@ -157,6 +166,11 @@
 			$priceEditedByUserField = true;
 		}
 	};
+
+	const selectIcon = (iconType: SubscriptionIconType, iconValue: string) => {
+		$iconTypeField = iconType;
+		$iconValueField = iconValue;
+	};
 </script>
 
 {#if subscription}
@@ -222,23 +236,53 @@
 				{#snippet children({ props })}
 					<Label class="font-medium">{iconFieldLabel}</Label>
 					<input {...props} type="hidden" bind:value={$iconValueField} />
-					<div class="flex flex-wrap gap-2" role="radiogroup" aria-label={iconFieldLabel}>
-						{#each iconOptions as icon (icon)}
-							<button
-								type="button"
-								onclick={() => ($iconValueField = icon)}
-								class="border-border bg-background hover:bg-muted/60 flex size-11 items-center justify-center rounded-md border text-xl transition-colors {icon ===
-								$iconValueField
-									? 'border-primary bg-primary/10 outline-primary outline outline-2 outline-offset-2'
-									: ''}"
-								role="radio"
-								aria-checked={icon === $iconValueField}
-								aria-label={icon}
-								title={icon}
-							>
-								{icon}
-							</button>
-						{/each}
+					<div class="space-y-3">
+						<div class="space-y-2">
+							<p class="text-muted-foreground text-xs">
+								{currentLocale === 'en' ? 'Emoji' : '絵文字'}
+							</p>
+							<div class="flex flex-wrap gap-2" role="radiogroup" aria-label={iconFieldLabel}>
+								{#each iconOptions as icon (icon)}
+									<button
+										type="button"
+										onclick={() => selectIcon('emoji', icon)}
+										class="border-border bg-background hover:bg-muted/60 flex size-11 items-center justify-center rounded-md border text-xl transition-colors {$iconTypeField ===
+											'emoji' && icon === $iconValueField
+											? 'border-primary bg-primary/10 outline-primary outline outline-2 outline-offset-2'
+											: ''}"
+										role="radio"
+										aria-checked={$iconTypeField === 'emoji' && icon === $iconValueField}
+										aria-label={icon}
+										title={icon}
+									>
+										{icon}
+									</button>
+								{/each}
+							</div>
+						</div>
+						<div class="space-y-2">
+							<p class="text-muted-foreground text-xs">
+								{currentLocale === 'en' ? 'Preset icons' : 'プリセット'}
+							</p>
+							<div class="flex flex-wrap gap-2" role="radiogroup" aria-label={iconFieldLabel}>
+								{#each presetIconOptions as icon (icon.value)}
+									<button
+										type="button"
+										onclick={() => selectIcon('preset', icon.value)}
+										class="border-border bg-background hover:bg-muted/60 flex size-11 items-center justify-center rounded-md border transition-colors {$iconTypeField ===
+											'preset' && icon.value === $iconValueField
+											? 'border-primary bg-primary/10 outline-primary outline outline-2 outline-offset-2'
+											: ''}"
+										role="radio"
+										aria-checked={$iconTypeField === 'preset' && icon.value === $iconValueField}
+										aria-label={icon.label}
+										title={icon.label}
+									>
+										<SubscriptionIcon iconType="preset" iconValue={icon.value} class="size-5" />
+									</button>
+								{/each}
+							</div>
+						</div>
 					</div>
 					<Description class="text-muted-foreground text-xs">{iconFieldDescription}</Description>
 				{/snippet}

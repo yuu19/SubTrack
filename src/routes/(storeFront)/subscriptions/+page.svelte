@@ -3,6 +3,7 @@
 	import EditSubscription from '$lib/components/modals/EditSubscription.svelte';
 	import PushNotificationControl from '$lib/components/push/PushNotificationControl.svelte';
 	import SubscriptionDetailPanel from '$lib/components/subscriptions/SubscriptionDetailPanel.svelte';
+	import SubscriptionIcon from '$lib/components/subscriptions/SubscriptionIcon.svelte';
 	import * as AlertDialog from '$lib/components/ui/alert-dialog';
 	import { Badge, badgeVariants } from '$lib/components/ui/badge';
 	import Button from '$lib/components/ui/button/button.svelte';
@@ -47,10 +48,6 @@
 		getSubscriptionColorSurfaceStyle,
 		resolveSubscriptionColor
 	} from '$lib/subscription-colors';
-	import {
-		defaultSubscriptionIconValue,
-		resolveSubscriptionIconValue
-	} from '$lib/subscription-icons';
 	import { onMount } from 'svelte';
 	import { toast } from 'svelte-sonner';
 	import type { trackedSubscriptionTable } from '$lib/server/db/schema';
@@ -143,9 +140,6 @@
 	const formatBillingDate = (value?: string | number | Date | null) => {
 		return formatLongDate(value, currentLocale);
 	};
-
-	const getSubscriptionIconValue = (subscription: SubscriptionView) =>
-		resolveSubscriptionIconValue(subscription.iconValue, defaultSubscriptionIconValue);
 
 	const getSubscriptionIconStyle = (subscription: SubscriptionView) => {
 		const color = resolveSubscriptionColor(subscription.color);
@@ -515,7 +509,11 @@
 									style:background={getSubscriptionIconStyle(sub).background}
 									aria-hidden="true"
 								>
-									{getSubscriptionIconValue(sub)}
+									<SubscriptionIcon
+										iconType={sub.iconType}
+										iconValue={sub.iconValue}
+										class="size-6"
+									/>
 								</div>
 								<div class="min-w-0 space-y-1">
 									<CardTitle class="truncate text-base">{sub.serviceName}</CardTitle>
@@ -625,7 +623,11 @@
 												style:background={getSubscriptionIconStyle(sub).background}
 												aria-hidden="true"
 											>
-												{getSubscriptionIconValue(sub)}
+												<SubscriptionIcon
+													iconType={sub.iconType}
+													iconValue={sub.iconValue}
+													class="size-5"
+												/>
 											</div>
 											<div class="min-w-0 space-y-1">
 												<CardTitle class="truncate text-base">{sub.serviceName}</CardTitle>
@@ -697,7 +699,11 @@
 						style:background={getSubscriptionIconStyle(selectedSubscription).background}
 						aria-hidden="true"
 					>
-						{getSubscriptionIconValue(selectedSubscription)}
+						<SubscriptionIcon
+							iconType={selectedSubscription.iconType}
+							iconValue={selectedSubscription.iconValue}
+							class="size-5"
+						/>
 					</span>
 				{/if}
 				<span class="truncate">

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import SubscriptionIcon from '$lib/components/subscriptions/SubscriptionIcon.svelte';
 	import Button from '$lib/components/ui/button/button.svelte';
 	import {
 		formatCurrencyYen,
@@ -15,10 +16,6 @@
 		getSubscriptionColorSurfaceStyle,
 		resolveSubscriptionColor
 	} from '$lib/subscription-colors';
-	import {
-		defaultSubscriptionIconValue,
-		resolveSubscriptionIconValue
-	} from '$lib/subscription-icons';
 	import {
 		Bell,
 		CalendarDays,
@@ -70,9 +67,6 @@
 	}>();
 
 	const isCanceled = $derived(subscription?.status === 'canceled');
-	const iconValue = $derived(
-		resolveSubscriptionIconValue(subscription?.iconValue, defaultSubscriptionIconValue)
-	);
 	const iconColor = $derived(resolveSubscriptionColor(subscription?.color));
 	const cancellationUrl = $derived(subscription?.cancellationUrl?.trim() ?? '');
 	const cancellationHost = $derived.by(() => {
@@ -110,7 +104,11 @@
 				style:background={getSubscriptionColorSurfaceStyle(iconColor)}
 				aria-hidden="true"
 			>
-				{iconValue}
+				<SubscriptionIcon
+					iconType={subscription.iconType}
+					iconValue={subscription.iconValue}
+					class="size-7"
+				/>
 			</div>
 			<p class="text-muted-foreground text-xs">{m.subscription_amount_label()}</p>
 			<p class="text-3xl font-bold">
