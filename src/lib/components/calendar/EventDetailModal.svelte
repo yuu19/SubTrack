@@ -1,9 +1,10 @@
 <script lang="ts">
 	import SubscriptionDetailPanel from '$lib/components/subscriptions/SubscriptionDetailPanel.svelte';
+	import SubscriptionIcon from '$lib/components/subscriptions/SubscriptionIcon.svelte';
 	import type { AppLocale } from '$lib/constant';
 	import { formatCalendarDate, formatCurrencyYen } from '$lib/locale';
 	import { m } from '$lib/paraglide/messages.js';
-	import { getSubscriptionColorStyle, type SubscriptionColor } from '$lib/subscription-colors';
+	import type { SubscriptionColor } from '$lib/subscription-colors';
 	import { CalendarDays, ChevronLeft, ChevronRight, Clock, X } from 'lucide-svelte';
 
 	type CalendarEvent = {
@@ -13,6 +14,8 @@
 		date: string;
 		amount: number;
 		color: SubscriptionColor;
+		iconType?: string | null;
+		iconValue?: string | null;
 	};
 
 	type SubscriptionDetail = {
@@ -158,11 +161,17 @@
 										? 'border-border border-b'
 										: ''}"
 								>
-									<span class="flex min-w-0 items-center gap-2">
+									<span class="flex min-w-0 items-center gap-3">
 										<span
-											class="size-2.5 shrink-0 rounded-full"
-											style:background-color={getSubscriptionColorStyle(item.color)}
-										></span>
+											class="bg-muted flex size-10 shrink-0 items-center justify-center rounded-xl border"
+										>
+											<SubscriptionIcon
+												iconType={item.iconType}
+												iconValue={item.iconValue}
+												subscriptionId={item.subscriptionId}
+												class="size-6"
+											/>
+										</span>
 										<span class="text-foreground truncate text-sm">{item.title}</span>
 									</span>
 									<span class="flex shrink-0 items-center gap-2">

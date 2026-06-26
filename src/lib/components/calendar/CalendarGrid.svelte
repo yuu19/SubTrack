@@ -1,5 +1,6 @@
 <script lang="ts">
 	import dayjs from 'dayjs';
+	import SubscriptionIcon from '$lib/components/subscriptions/SubscriptionIcon.svelte';
 	import { formatMonthDay, getWeekdayLabels } from '$lib/locale';
 	import { m } from '$lib/paraglide/messages.js';
 	import type { Dayjs } from 'dayjs';
@@ -58,9 +59,12 @@
 
 	type CalendarEvent = {
 		id: string;
+		subscriptionId: number;
 		title: string;
 		date: string;
 		color: SubscriptionColor;
+		iconType: string | null;
+		iconValue: string | null;
 	};
 
 	function getEventsForDate(date: Dayjs): CalendarEvent[] {
@@ -172,16 +176,28 @@
 						{formatDate(dayjs(date))}
 					</button>
 
-					<div class="mt-1 flex-1 space-y-0.5 overflow-hidden">
+					<div
+						class="mt-1 flex flex-1 flex-wrap content-start gap-1 overflow-hidden sm:block sm:space-y-1"
+					>
 						{#each dayEvents.slice(0, 3) as event (event.id)}
 							<button
 								type="button"
 								onclick={() => onEventClick(event)}
-								class="text-primary-foreground w-full truncate rounded px-1.5 py-0.5 text-left text-xs transition-opacity hover:opacity-80"
-								style:background-color={getSubscriptionColorStyle(event.color)}
+								class="bg-muted/70 hover:bg-muted flex size-8 items-center justify-center rounded-xl border transition-colors sm:h-7 sm:w-full sm:justify-start sm:gap-1.5 sm:rounded-lg sm:px-1.5"
 								aria-label={eventAriaLabel(event.title)}
 							>
-								{event.title}
+								<SubscriptionIcon
+									iconType={event.iconType}
+									iconValue={event.iconValue}
+									subscriptionId={event.subscriptionId}
+									class="size-5 shrink-0 sm:size-4"
+								/>
+								<span
+									class="hidden min-w-0 truncate text-xs font-medium sm:inline"
+									style:color={getSubscriptionColorStyle(event.color)}
+								>
+									{event.title}
+								</span>
 							</button>
 						{/each}
 						{#if dayEvents.length > 3}

@@ -34,6 +34,8 @@
 		date: string;
 		amount: number;
 		color: SubscriptionColor;
+		iconType: string | null;
+		iconValue: string | null;
 		description?: string | null;
 	};
 
@@ -87,6 +89,8 @@
 					date: occurrence.format('YYYY-MM-DD'),
 					amount: Number(sub.amount ?? 0),
 					color,
+					iconType: sub.iconType,
+					iconValue: sub.iconValue,
 					description: sub.tags?.length ? sub.tags.join(' / ') : ''
 				});
 				occurrence = occurrence.add(interval, 'month');
@@ -139,7 +143,7 @@
 		isDetailModalOpen = true;
 	}
 
-	function handleCalendarEventSelect(event: CalendarEvent) {
+	function handleCalendarEventSelect(event: { subscriptionId: number }) {
 		selectedSubscription =
 			subscriptions.find((subscription) => subscription.id === event.subscriptionId) ?? null;
 	}

@@ -26,10 +26,14 @@ export const load: PageServerLoad = async ({ locals, request }) => {
 
 	const subscriptions = await db.query.trackedSubscriptionTable.findMany({
 		columns: {
+			id: true,
 			serviceName: true,
 			color: true,
+			iconType: true,
+			iconValue: true,
 			cycle: true,
-			amount: true
+			amount: true,
+			firstPaymentDate: true
 		},
 		where: (trackedSubscription, { and, eq }) =>
 			and(eq(trackedSubscription.userId, userId), eq(trackedSubscription.status, 'active')),
