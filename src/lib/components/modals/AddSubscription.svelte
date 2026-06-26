@@ -35,8 +35,7 @@
 		resolveFaviconUrl,
 		subscriptionEmojiOptions,
 		subscriptionPresetIconOptions,
-		type SubscriptionIconType,
-		type SubscriptionPresetIconValue
+		type SubscriptionIconType
 	} from '$lib/subscription-icons';
 
 	let { data, onOfflineSubmit, onServerResult } = $props();
@@ -61,17 +60,26 @@
 			: '一覧と詳細画面でサービスを見分けるために使います。'
 	);
 	const iconOptions = $derived(subscriptionEmojiOptions);
-	const serviceUrlFieldLabel = $derived(currentLocale === 'en' ? 'Favicon URL' : 'Favicon URL');
+	const serviceUrlFieldLabel = $derived(
+		currentLocale === 'en' ? 'Official website URL' : '公式サイトURL'
+	);
 	const serviceUrlFieldDescription = $derived(
 		currentLocale === 'en'
-			? 'Used only when selecting the favicon icon.'
-			: 'favicon アイコンを選んだときに使用します。'
+			? 'The icon is retrieved automatically from this official website URL.'
+			: 'この公式サイトURLからアイコンを自動取得します。'
 	);
 	const presetIconOptions = $derived(
 		subscriptionPresetIconOptions.map((option) => ({
 			...option,
 			label: option.label[currentLocale]
 		}))
+	);
+	const recommendedPresetIconOptions = $derived(
+		presetIconOptions.filter((option) =>
+			['box', 'video', 'music', 'cloud', 'payment', 'shopping', 'game', 'work'].includes(
+				option.value
+			)
+		)
 	);
 
 	const defaultNotifyDaysBefore = $derived(userConfig.current.defaultNotifyDaysBefore ?? 3);
@@ -200,6 +208,10 @@
 		$iconValueField = iconValue;
 	};
 	const serviceFaviconUrl = $derived(resolveFaviconUrl($serviceUrlField));
+	const selectOfficialSiteIcon = () => {
+		if (!serviceFaviconUrl) return;
+		selectIcon('favicon', $serviceUrlField ?? '');
+	};
 
 	const enhanceEvents = {
 		onSubmit: async (input: any) => {
@@ -373,30 +385,34 @@
 				</span>
 			</summary>
 			<div class="mt-4 space-y-4">
-				<Field {form} name="serviceUrl">
-					<Control>
-						{#snippet children({ props })}
-							<Label class="font-medium">{serviceUrlFieldLabel}</Label>
-							<Input
-								{...props}
-								type="url"
-								inputmode="url"
-								placeholder="https://www.netflix.com/"
-								bind:value={$serviceUrlField}
-							/>
-							<Description class="text-muted-foreground text-xs">
-								{serviceUrlFieldDescription}
-							</Description>
-						{/snippet}
-					</Control>
-					<FieldErrors class="text-destructive text-sm" />
-				</Field>
-
 				<Field {form} name="iconValue">
 					<Control>
 						{#snippet children({ props })}
 							<input {...props} type="hidden" bind:value={$iconValueField} />
 							<div class="space-y-3">
+								<div class="space-y-2">
+									<p class="text-muted-foreground text-xs">
+										{currentLocale === 'en' ? 'Recommended' : 'おすすめ'}
+									</p>
+									<div class="flex flex-wrap gap-2" role="radiogroup" aria-label={iconFieldLabel}>
+										{#each recommendedPresetIconOptions as icon (icon.value)}
+											<button
+												type="button"
+												onclick={() => selectIcon('preset', icon.value)}
+												class="border-border bg-background hover:bg-muted/60 flex size-11 items-center justify-center rounded-md border transition-colors {$iconTypeField ===
+													'preset' && icon.value === $iconValueField
+													? 'border-primary bg-primary/10 outline-primary outline outline-2 outline-offset-2'
+													: ''}"
+												role="radio"
+												aria-checked={$iconTypeField === 'preset' && icon.value === $iconValueField}
+												aria-label={icon.label}
+												title={icon.label}
+											>
+												<SubscriptionIcon iconType="preset" iconValue={icon.value} class="size-5" />
+											</button>
+										{/each}
+									</div>
+								</div>
 								<div class="space-y-2">
 									<p class="text-muted-foreground text-xs">
 										{currentLocale === 'en' ? 'Emoji' : '絵文字'}
@@ -421,53 +437,37 @@
 									</div>
 								</div>
 								<div class="space-y-2">
-									<p class="text-muted-foreground text-xs">Favicon</p>
-									<button
-										type="button"
-										onclick={() => selectIcon('favicon', $serviceUrlField ?? '')}
-										disabled={!serviceFaviconUrl}
-										class="border-border bg-background hover:bg-muted/60 flex size-11 items-center justify-center rounded-md border transition-colors disabled:cursor-not-allowed disabled:opacity-50 {$iconTypeField ===
-										'favicon'
-											? 'border-primary bg-primary/10 outline-primary outline outline-2 outline-offset-2'
-											: ''}"
-										role="radio"
-										aria-checked={$iconTypeField === 'favicon'}
-										aria-label="Favicon"
-										title="Favicon"
-									>
-										{#if serviceFaviconUrl}
-											<SubscriptionIcon
-												iconType="favicon"
-												iconValue={$serviceUrlField}
-												class="size-6 rounded-sm"
-											/>
-										{:else}
-											<span class="text-muted-foreground text-xs">URL</span>
-										{/if}
-									</button>
-								</div>
-								<div class="space-y-2">
 									<p class="text-muted-foreground text-xs">
-										{currentLocale === 'en' ? 'Preset icons' : 'プリセット'}
+										{currentLocale === 'en' ? 'Get from official website' : '公式サイトから取得'}
 									</p>
-									<div class="flex flex-wrap gap-2" role="radiogroup" aria-label={iconFieldLabel}>
-										{#each presetIconOptions as icon (icon.value)}
-											<button
-												type="button"
-												onclick={() => selectIcon('preset', icon.value)}
-												class="border-border bg-background hover:bg-muted/60 flex size-11 items-center justify-center rounded-md border transition-colors {$iconTypeField ===
-													'preset' && icon.value === $iconValueField
-													? 'border-primary bg-primary/10 outline-primary outline outline-2 outline-offset-2'
-													: ''}"
-												role="radio"
-												aria-checked={$iconTypeField === 'preset' && icon.value === $iconValueField}
-												aria-label={icon.label}
-												title={icon.label}
-											>
-												<SubscriptionIcon iconType="preset" iconValue={icon.value} class="size-5" />
-											</button>
-										{/each}
-									</div>
+									<Field {form} name="serviceUrl">
+										<Control>
+											{#snippet children({ props })}
+												<Label class="sr-only">{serviceUrlFieldLabel}</Label>
+												<div class="grid gap-2 sm:grid-cols-[1fr_auto]">
+													<Input
+														{...props}
+														type="url"
+														inputmode="url"
+														placeholder="https://www.netflix.com/"
+														bind:value={$serviceUrlField}
+													/>
+													<Button
+														type="button"
+														variant="outline"
+														disabled={!serviceFaviconUrl}
+														onclick={selectOfficialSiteIcon}
+													>
+														{currentLocale === 'en' ? 'Use this URL' : 'このURLから取得'}
+													</Button>
+												</div>
+												<Description class="text-muted-foreground text-xs">
+													{serviceUrlFieldDescription}
+												</Description>
+											{/snippet}
+										</Control>
+										<FieldErrors class="text-destructive text-sm" />
+									</Field>
 								</div>
 							</div>
 							<Description class="text-muted-foreground text-xs">{iconFieldDescription}</Description

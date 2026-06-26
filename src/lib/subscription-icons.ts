@@ -4,9 +4,9 @@ export const subscriptionIconTypes = ['emoji', 'preset', 'favicon', 'image'] as 
 
 export type SubscriptionIconType = (typeof subscriptionIconTypes)[number];
 
-export const defaultSubscriptionIconType: SubscriptionIconType = 'emoji';
-export const defaultSubscriptionIconValue = '📦';
 export const defaultSubscriptionPresetIconValue = 'box';
+export const defaultSubscriptionIconType: SubscriptionIconType = 'preset';
+export const defaultSubscriptionIconValue = defaultSubscriptionPresetIconValue;
 
 export const subscriptionEmojiOptions = [
 	'📦',
