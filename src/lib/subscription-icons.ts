@@ -1,6 +1,6 @@
 import type { AppLocale } from './constant';
 
-export const subscriptionIconTypes = ['emoji', 'preset', 'favicon'] as const;
+export const subscriptionIconTypes = ['emoji', 'preset', 'favicon', 'image'] as const;
 
 export type SubscriptionIconType = (typeof subscriptionIconTypes)[number];
 

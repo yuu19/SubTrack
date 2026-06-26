@@ -512,6 +512,7 @@
 									<SubscriptionIcon
 										iconType={sub.iconType}
 										iconValue={sub.iconValue}
+										subscriptionId={sub.id}
 										class="size-6"
 									/>
 								</div>
@@ -626,6 +627,7 @@
 												<SubscriptionIcon
 													iconType={sub.iconType}
 													iconValue={sub.iconValue}
+													subscriptionId={sub.id}
 													class="size-5"
 												/>
 											</div>
@@ -702,6 +704,7 @@
 						<SubscriptionIcon
 							iconType={selectedSubscription.iconType}
 							iconValue={selectedSubscription.iconValue}
+							subscriptionId={selectedSubscription.id}
 							class="size-5"
 						/>
 					</span>
@@ -737,6 +740,7 @@
 			{#key selectedSubscription?.id}
 				<EditSubscription
 					subscription={selectedSubscription}
+					{isPremium}
 					onServerResult={handleUpdateResult}
 					onClose={closeEdit}
 				/>

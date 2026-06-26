@@ -11,6 +11,7 @@ import { getCurrentPlan } from '$lib/server/plan';
 import { defaultSubscriptionColor } from '$lib/subscription-colors';
 import { CANCELLATION_METHODS, type CancellationMethod } from '$lib/constant';
 import { resolveTimeZone } from '$lib/time-zone';
+import { deleteSubscriptionIconImage } from '$lib/server/subscription-icon-images';
 
 const fetchSubscriptions = async (db: NonNullable<App.Locals['db']>, userId: string) => {
 	return db
@@ -210,6 +211,10 @@ export const actions: Actions = {
 		}
 
 		try {
+			if (form.data.iconType === 'image') {
+				return fail(400, { form, error: '画像は作成後に編集画面から設定してください。' });
+			}
+
 			const { defaultNotifyDaysBefore, timeZone } = await resolveUserNotificationConfig(db, userId);
 			const currentPlan = await resolveCurrentPlanForUser(db, userId);
 
@@ -289,6 +294,23 @@ export const actions: Actions = {
 		}
 
 		try {
+			const existingSubscription = await db.query.trackedSubscriptionTable.findFirst({
+				where: (trackedSubscription, { and, eq }) =>
+					and(eq(trackedSubscription.id, id), eq(trackedSubscription.userId, userId))
+			});
+
+			if (!existingSubscription) {
+				return fail(404, { form, error: 'Subscription not found' });
+			}
+
+			if (
+				form.data.iconType === 'image' &&
+				(existingSubscription.iconType !== 'image' ||
+					existingSubscription.iconValue !== form.data.iconValue)
+			) {
+				return fail(400, { form, error: '画像はアップロード操作から設定してください。' });
+			}
+
 			const { defaultNotifyDaysBefore, timeZone } = await resolveUserNotificationConfig(db, userId);
 			const { nextBillingAt, daysUntilNextBilling } = computeNextBilling(
 				form.data.datepicker,
@@ -316,6 +338,13 @@ export const actions: Actions = {
 				.where(
 					and(eq(trackedSubscriptionTable.id, id), eq(trackedSubscriptionTable.userId, userId))
 				);
+
+			if (
+				existingSubscription.iconType === 'image' &&
+				(form.data.iconType !== 'image' || existingSubscription.iconValue !== form.data.iconValue)
+			) {
+				await deleteSubscriptionIconImage(locals.bucket, existingSubscription.iconValue);
+			}
 
 			const subscriptions = await fetchSubscriptions(db, userId);
 			return { form, subscriptions };
@@ -447,11 +476,20 @@ export const actions: Actions = {
 		}
 
 		try {
+			const subscription = await db.query.trackedSubscriptionTable.findFirst({
+				where: (trackedSubscription, { and, eq }) =>
+					and(eq(trackedSubscription.id, id), eq(trackedSubscription.userId, userId))
+			});
+
 			await db
 				.delete(trackedSubscriptionTable)
 				.where(
 					and(eq(trackedSubscriptionTable.id, id), eq(trackedSubscriptionTable.userId, userId))
 				);
+
+			if (subscription?.iconType === 'image') {
+				await deleteSubscriptionIconImage(locals.bucket, subscription.iconValue);
+			}
 
 			const subscriptions = await fetchSubscriptions(db, userId);
 			return { subscriptions };

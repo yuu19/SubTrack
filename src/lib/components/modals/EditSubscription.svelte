@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { base } from '$app/paths';
 	import { defaults, fieldProxy, superForm } from 'sveltekit-superforms';
 	import { zod4Client } from 'sveltekit-superforms/adapters';
 	import { subscriptionSchema } from '$lib/formSchema';
@@ -37,7 +38,7 @@
 		type SubscriptionIconType
 	} from '$lib/subscription-icons';
 
-	let { subscription, onServerResult, onClose, action = '?/update' } = $props();
+	let { subscription, isPremium = false, onServerResult, onClose, action = '?/update' } = $props();
 	const userConfig = UserConfigContext.get();
 	const currentLocale = $derived(resolveLocale(getLocale()));
 	const cycleOptions = $derived([
@@ -79,6 +80,12 @@
 			? 'Used only when selecting the favicon icon.'
 			: 'favicon アイコンを選んだときに使用します。'
 	);
+	const imageFieldLabel = $derived(currentLocale === 'en' ? 'Uploaded image' : 'アップロード画像');
+	const imageFieldDescription = $derived(
+		currentLocale === 'en'
+			? 'Premium users can upload PNG, JPEG, or WebP images up to 1MB.'
+			: 'Premiumでは1MBまでのPNG、JPEG、WebP画像をアップロードできます。'
+	);
 	const presetIconOptions = $derived(
 		subscriptionPresetIconOptions.map((option) => ({
 			...option,
@@ -88,6 +95,9 @@
 
 	const defaultNotifyDaysBefore = $derived(userConfig.current.defaultNotifyDaysBefore ?? 3);
 	const defaultNotifyLabel = $derived(formatNotifyDays(defaultNotifyDaysBefore, currentLocale));
+	let imageInput = $state<HTMLInputElement | null>(null);
+	let isUploadingImage = $state(false);
+	let imageUploadError = $state('');
 
 	function getInitialData() {
 		if (subscription) {
@@ -182,6 +192,87 @@
 		$iconValueField = iconValue;
 	};
 	const serviceFaviconUrl = $derived(resolveFaviconUrl($serviceUrlField));
+	const hasUploadedImage = $derived($iconTypeField === 'image' && Boolean($iconValueField));
+
+	const validateImageFile = (file: File) => {
+		const allowedTypes = ['image/png', 'image/jpeg', 'image/webp'];
+		if (!allowedTypes.includes(file.type)) {
+			return currentLocale === 'en'
+				? 'Please select a PNG, JPEG, or WebP image.'
+				: 'PNG、JPEG、WebP画像を選択してください。';
+		}
+		if (file.size > 1024 * 1024) {
+			return currentLocale === 'en'
+				? 'Image file must be 1MB or smaller.'
+				: '画像ファイルは1MB以下にしてください。';
+		}
+		return '';
+	};
+
+	const handleImageFileChange = async (event: Event) => {
+		const input = event.currentTarget as HTMLInputElement;
+		const file = input.files?.[0];
+		imageUploadError = '';
+		if (!file || !subscription?.id) return;
+		if (!isPremium) {
+			imageUploadError =
+				currentLocale === 'en'
+					? 'Image uploads are available on Premium.'
+					: '画像アップロードはPremiumで利用できます。';
+			input.value = '';
+			return;
+		}
+
+		const validationError = validateImageFile(file);
+		if (validationError) {
+			imageUploadError = validationError;
+			input.value = '';
+			return;
+		}
+
+		const formData = new FormData();
+		formData.set('image', file);
+		isUploadingImage = true;
+		try {
+			const response = await fetch(`${base}/api/subscription-icons/${subscription.id}`, {
+				method: 'POST',
+				body: formData,
+				headers: {
+					accept: 'application/json'
+				},
+				credentials: 'same-origin'
+			});
+			const result = (await response.json()) as {
+				iconType?: SubscriptionIconType;
+				iconValue?: string;
+				subscriptions?: unknown;
+				error?: string;
+			};
+			if (!response.ok) {
+				imageUploadError =
+					result.error ??
+					(currentLocale === 'en'
+						? 'Failed to upload image.'
+						: '画像のアップロードに失敗しました。');
+				return;
+			}
+
+			if (result.iconType === 'image' && result.iconValue) {
+				$iconTypeField = 'image';
+				$iconValueField = result.iconValue;
+			}
+			if (Array.isArray(result.subscriptions)) {
+				await onServerResult?.(result.subscriptions);
+			}
+		} catch (error) {
+			console.error('Failed to upload subscription icon image', error);
+			imageUploadError =
+				currentLocale === 'en' ? 'Failed to upload image.' : '画像のアップロードに失敗しました。';
+		} finally {
+			isUploadingImage = false;
+			input.value = '';
+		}
+	};
 
 	$effect(() => {
 		if ($iconTypeField === 'favicon') {
@@ -273,6 +364,73 @@
 					<Label class="font-medium">{iconFieldLabel}</Label>
 					<input {...props} type="hidden" bind:value={$iconValueField} />
 					<div class="space-y-3">
+						<div class="space-y-2">
+							<p class="text-muted-foreground text-xs">{imageFieldLabel}</p>
+							<div class="flex flex-wrap items-center gap-2">
+								<button
+									type="button"
+									onclick={() =>
+										$iconValueField ? selectIcon('image', $iconValueField) : undefined}
+									disabled={!hasUploadedImage}
+									class="border-border bg-background hover:bg-muted/60 flex size-11 items-center justify-center rounded-md border transition-colors disabled:cursor-not-allowed disabled:opacity-50 {$iconTypeField ===
+									'image'
+										? 'border-primary bg-primary/10 outline-primary outline outline-2 outline-offset-2'
+										: ''}"
+									role="radio"
+									aria-checked={$iconTypeField === 'image'}
+									aria-label={imageFieldLabel}
+									title={imageFieldLabel}
+								>
+									{#if hasUploadedImage}
+										<SubscriptionIcon
+											iconType="image"
+											iconValue={$iconValueField}
+											subscriptionId={subscription.id}
+											class="size-8 rounded-sm object-cover"
+										/>
+									{:else}
+										<span class="text-muted-foreground text-xs">IMG</span>
+									{/if}
+								</button>
+								{#if isPremium}
+									<input
+										bind:this={imageInput}
+										type="file"
+										accept="image/png,image/jpeg,image/webp"
+										class="hidden"
+										onchange={handleImageFileChange}
+									/>
+									<Button
+										type="button"
+										variant="outline"
+										size="sm"
+										disabled={isUploadingImage}
+										onclick={() => imageInput?.click()}
+									>
+										{#if isUploadingImage}
+											{currentLocale === 'en' ? 'Uploading...' : 'アップロード中...'}
+										{:else if hasUploadedImage}
+											{currentLocale === 'en' ? 'Replace image' : '画像を差し替え'}
+										{:else}
+											{currentLocale === 'en' ? 'Upload image' : '画像をアップロード'}
+										{/if}
+									</Button>
+								{/if}
+							</div>
+							<Description class="text-muted-foreground text-xs"
+								>{imageFieldDescription}</Description
+							>
+							{#if !isPremium}
+								<p class="text-muted-foreground text-xs">
+									{currentLocale === 'en'
+										? 'Image uploads are available on Premium.'
+										: '画像アップロードはPremiumで利用できます。'}
+								</p>
+							{/if}
+							{#if imageUploadError}
+								<p class="text-destructive text-xs" aria-live="polite">{imageUploadError}</p>
+							{/if}
+						</div>
 						<div class="space-y-2">
 							<p class="text-muted-foreground text-xs">
 								{currentLocale === 'en' ? 'Emoji' : '絵文字'}

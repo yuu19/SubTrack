@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { base } from '$app/paths';
 	import {
 		Bot,
 		BookOpen,
@@ -42,10 +43,12 @@
 	let {
 		iconType = defaultSubscriptionIconType,
 		iconValue = defaultSubscriptionIconValue,
+		subscriptionId = null,
 		class: className = 'size-5'
 	} = $props<{
 		iconType?: SubscriptionIconType | string | null;
 		iconValue?: string | null;
+		subscriptionId?: number | string | null;
 		class?: string;
 	}>();
 
@@ -53,6 +56,11 @@
 	const resolvedPresetValue = $derived(resolveSubscriptionPresetIconValue(iconValue));
 	const resolvedEmojiValue = $derived(resolveSubscriptionIconValue(iconValue));
 	const resolvedFaviconUrl = $derived(resolveFaviconUrl(iconValue));
+	const imageUrl = $derived(
+		resolvedIconType === 'image' && subscriptionId !== null && subscriptionId !== undefined
+			? `${base}/api/subscription-icons/${subscriptionId}`
+			: ''
+	);
 	const PresetIcon = $derived(
 		presetIconComponents[resolvedPresetValue as SubscriptionPresetIconValue] ?? Box
 	);
@@ -60,6 +68,8 @@
 
 {#if resolvedIconType === 'preset'}
 	<PresetIcon class={className} aria-hidden="true" />
+{:else if resolvedIconType === 'image' && imageUrl}
+	<img src={imageUrl} alt="" class={`${className} object-cover`} loading="lazy" />
 {:else if resolvedIconType === 'favicon' && resolvedFaviconUrl}
 	<img
 		src={resolvedFaviconUrl}

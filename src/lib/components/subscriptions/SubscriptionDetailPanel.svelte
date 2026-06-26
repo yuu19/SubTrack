@@ -29,6 +29,7 @@
 	} from 'lucide-svelte';
 
 	type SubscriptionDetail = {
+		id?: number | string | null;
 		serviceName?: string | null;
 		planName?: string | null;
 		serviceUrl?: string | null;
@@ -108,6 +109,7 @@
 				<SubscriptionIcon
 					iconType={subscription.iconType}
 					iconValue={subscription.iconValue}
+					subscriptionId={subscription.id}
 					class="size-7"
 				/>
 			</div>
