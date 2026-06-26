@@ -1,6 +1,12 @@
 import type { AppLocale } from './constant';
 
-export const subscriptionIconTypes = ['emoji', 'preset', 'favicon', 'image'] as const;
+export const subscriptionIconTypes = [
+	'emoji',
+	'preset',
+	'favicon',
+	'image',
+	'templateImage'
+] as const;
 
 export type SubscriptionIconType = (typeof subscriptionIconTypes)[number];
 
@@ -98,4 +104,11 @@ export const resolveFaviconUrl = (value: unknown) => {
 	} catch {
 		return '';
 	}
+};
+
+export const resolveTemplateImageUrl = (value: unknown) => {
+	if (typeof value !== 'string') return '';
+	const normalized = value.trim();
+	if (!/^[a-z0-9-]+$/.test(normalized)) return '';
+	return `/api/template-icons/${encodeURIComponent(normalized)}`;
 };

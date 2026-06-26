@@ -147,14 +147,6 @@
 	const selectedTemplateVerifiedAt = $derived(
 		selectedTemplate ? formatLongDate(selectedTemplate.lastVerifiedAt, currentLocale) : ''
 	);
-	const templateIconByCategory: Record<ServiceTemplate['category'], SubscriptionPresetIconValue> = {
-		video: 'video',
-		music: 'music',
-		shopping: 'shopping',
-		cloud: 'cloud',
-		ai: 'ai'
-	};
-
 	const mergeTemplateTags = (template: ServiceTemplate) => {
 		const tags = localizedTemplateTags(template);
 		const existingTags = Array.isArray($tagsField) ? $tagsField : [];
@@ -165,7 +157,12 @@
 		];
 	};
 
-	const applyTemplatePlan = (template: ServiceTemplate, plan: ServiceTemplatePlan) => {
+	const applyTemplatePlan = (
+		template: ServiceTemplate,
+		plan: ServiceTemplatePlan,
+		options: { applyIcon?: boolean } = {}
+	) => {
+		const { applyIcon = true } = options;
 		$serviceTemplateIdField = template.id;
 		selectedPlanId = plan.id;
 		$planNameField = localizedPlanName(plan);
@@ -173,8 +170,10 @@
 		$priceEditedByUserField = false;
 		$textField = template.name;
 		$colorField = template.color;
-		$iconTypeField = 'preset';
-		$iconValueField = templateIconByCategory[template.category] ?? 'box';
+		if (applyIcon) {
+			$iconTypeField = 'templateImage';
+			$iconValueField = template.id;
+		}
 		$selectField = plan.cycle;
 		$numberField = plan.price ?? 0;
 		$cancellationUrlField = template.cancellation.url ?? '';
@@ -194,7 +193,7 @@
 		if (!selectedTemplate) return;
 		const plan = selectedTemplate.plans.find((item) => item.id === planId);
 		if (!plan) return;
-		applyTemplatePlan(selectedTemplate, plan);
+		applyTemplatePlan(selectedTemplate, plan, { applyIcon: false });
 	};
 
 	const markPriceEdited = () => {
@@ -309,10 +308,22 @@
 								: ''}"
 							onclick={() => selectTemplate(template)}
 						>
-							<span>
-								<span class="block font-medium">{template.name}</span>
-								<span class="text-muted-foreground block text-xs">
-									{localizedTemplateTags(template).join(', ')}
+							<span class="flex min-w-0 items-start gap-3">
+								<span
+									class="border-border bg-muted/50 flex size-9 shrink-0 items-center justify-center rounded-md border"
+									aria-hidden="true"
+								>
+									<SubscriptionIcon
+										iconType="templateImage"
+										iconValue={template.id}
+										class="size-6"
+									/>
+								</span>
+								<span class="min-w-0">
+									<span class="block truncate font-medium">{template.name}</span>
+									<span class="text-muted-foreground block text-xs">
+										{localizedTemplateTags(template).join(', ')}
+									</span>
 								</span>
 							</span>
 							{#if template.id === $serviceTemplateIdField}

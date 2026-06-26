@@ -21,6 +21,7 @@
 		resolveSubscriptionIconType,
 		resolveSubscriptionIconValue,
 		resolveSubscriptionPresetIconValue,
+		resolveTemplateImageUrl,
 		type SubscriptionIconType,
 		type SubscriptionPresetIconValue
 	} from '$lib/subscription-icons';
@@ -56,9 +57,15 @@
 	const resolvedPresetValue = $derived(resolveSubscriptionPresetIconValue(iconValue));
 	const resolvedEmojiValue = $derived(resolveSubscriptionIconValue(iconValue));
 	const resolvedFaviconUrl = $derived(resolveFaviconUrl(iconValue));
+	const resolvedTemplateImageUrl = $derived(resolveTemplateImageUrl(iconValue));
 	const imageUrl = $derived(
 		resolvedIconType === 'image' && subscriptionId !== null && subscriptionId !== undefined
 			? `${base}/api/subscription-icons/${subscriptionId}`
+			: ''
+	);
+	const templateImageUrl = $derived(
+		resolvedIconType === 'templateImage' && resolvedTemplateImageUrl
+			? `${base}${resolvedTemplateImageUrl}`
 			: ''
 	);
 	const PresetIcon = $derived(
@@ -70,6 +77,8 @@
 	<PresetIcon class={className} aria-hidden="true" />
 {:else if resolvedIconType === 'image' && imageUrl}
 	<img src={imageUrl} alt="" class={`${className} object-cover`} loading="lazy" />
+{:else if resolvedIconType === 'templateImage' && templateImageUrl}
+	<img src={templateImageUrl} alt="" class={`${className} object-contain`} loading="lazy" />
 {:else if resolvedIconType === 'favicon' && resolvedFaviconUrl}
 	<img
 		src={resolvedFaviconUrl}

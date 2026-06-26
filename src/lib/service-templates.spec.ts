@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
 import { CANCELLATION_METHODS } from '$lib/constant';
 import { serviceTemplates } from './service-templates';
 
@@ -39,5 +41,13 @@ describe('serviceTemplates', () => {
 		expect(
 			serviceTemplates.find((template) => template.id === 'chatgpt')?.plans[0].price
 		).toBeNull();
+	});
+
+	it('has a checked-in template icon asset for each service template', () => {
+		for (const template of serviceTemplates) {
+			expect(
+				existsSync(join(process.cwd(), 'static', 'template-icons', `${template.id}.png`))
+			).toBe(true);
+		}
 	});
 });

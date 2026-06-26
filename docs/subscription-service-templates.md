@@ -11,6 +11,9 @@
 ## MVPの方針
 
 - テンプレートはDBではなく静的データとして `src/lib/service-templates.ts` に持つ。
+- テンプレートアイコンは公式 favicon / app icon 相当を `64x64 PNG` に正規化し、`static/template-icons/*.png` に保持する。
+- テンプレートアイコンはR2の `template-icons/{templateId}.png` へ同期し、公開API `/api/template-icons/{templateId}` から配信する。
+- テンプレートアイコンは全ユーザー共通の共有資産として扱い、ユーザーアップロード画像とは分ける。
 - 保存済みサブスクには `serviceTemplateId` を残し、将来DB管理へ移行しやすくする。
 - カテゴリは専用カラムではなく、既存の `tags` に自動入力する。
 - 価格は参考値としてフォームに入れる。ユーザーが料金欄を編集したら `priceEditedByUser=true` で保存する。
@@ -30,6 +33,8 @@
 | `plan_name`            | 選択した候補プラン名。未選択なら `null`            |
 | `price_edited_by_user` | 料金欄をユーザーが編集したか。デフォルトは `false` |
 
+テンプレート選択時は `icon_type='templateImage'`、`icon_value='{templateId}'` をフォームに反映する。利用者がアイコンを手動変更した場合は、手動選択した値を正として保存する。
+
 `lastVerifiedAt` と `sourceUrl` は保存しない。保存後はユーザーが確認した `amount`、`planName`、`cancellationUrl` を正とする。
 
 ## UI
@@ -42,6 +47,7 @@
 4. プラン候補を選ぶ。
 5. サービス名、周期、料金、タグ、解約URL、解約方法、解約メモをフォームへ反映する。
 6. 料金欄の下に参考価格の注意文を表示する。
+7. テンプレートアイコンを初期アイコンとして反映する。
 
 注意文の要点:
 
@@ -74,6 +80,13 @@
 | iCloud+         | クラウド / Cloud               | Apple公式サポートで確認できるプラン | Appleサブスクリプション管理   |
 | Google One      | クラウド / Cloud               | 価格なし                            | Google One設定                |
 | ChatGPT         | AI, 仕事 / AI, Work            | 価格なし                            | ChatGPTサブスクリプション設定 |
+
+## テンプレートアイコン運用
+
+- 外部取得と正規化は `pnpm run fetch:template-icons` で明示的に行う。
+- R2への同期は `pnpm run sync:template-icons -- --remote` で行う。
+- ローカル検証時は `pnpm run sync:template-icons -- --local` を使う。必要に応じて `--persist-to <dir>` を併用する。
+- 通常デプロイでは外部サイトからアイコンを取得し直さない。レビュー済みの `static/template-icons/*.png` をR2へ同期する。
 
 ## 今回確認した公式情報
 

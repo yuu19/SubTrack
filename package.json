@@ -19,6 +19,8 @@
 		"db:studio": "drizzle-kit studio",
 		"deploy": "pnpm run build && wrangler deploy",
 		"cf-typegen": "wrangler types && mv worker-configuration.d.ts src/",
+		"fetch:template-icons": "node scripts/fetch-template-icons.mjs",
+		"sync:template-icons": "node scripts/sync-template-icons.mjs",
 		"test:unit": "vitest",
 		"test": "npm run test:unit -- --run && npm run test:e2e",
 		"test:e2e": "playwright test"
@@ -56,6 +58,7 @@
 		"prettier": "^3.7.4",
 		"prettier-plugin-svelte": "^3.4.0",
 		"prettier-plugin-tailwindcss": "^0.7.2",
+		"sharp": "0.34.5",
 		"svelte": "^5.45.5",
 		"svelte-check": "^4.3.4",
 		"svelte-sonner": "^1.0.7",

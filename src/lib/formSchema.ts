@@ -6,6 +6,7 @@ import {
 	defaultSubscriptionIconValue,
 	subscriptionIconTypes
 } from '$lib/subscription-icons';
+import { findServiceTemplate } from '$lib/service-templates';
 
 const isValidPhoneNumber = (phone: string): boolean => {
 	const regex = /^([0|+[0-9]{1,5})?([7-9][0-9]{9})$/;
@@ -49,46 +50,57 @@ const isHttpsUrl = (value: string): boolean => {
 	}
 };
 
-export const subscriptionSchema = z.object({
-	select: z
-		.string({ error: 'Please select an option.' })
-		.min(1, { error: 'Please select an option.' }),
-	number: z
-		.number({ error: 'Please enter a valid number.' })
-		.int({ error: 'Please enter a whole number.' })
-		.min(0, { error: 'Value must be at least 0.' })
-		.max(1000000, { error: 'Value must not exceed 1000000.' }),
-	datepicker: z
-		.string({ error: 'Please select a date.' })
-		.refine((v) => v, { error: 'Please select a date.' }),
-	text: z
-		.string({ error: 'Please enter the service name.' })
-		.min(1, { error: 'Please enter the service name.' }),
-	serviceTemplateId: optionalText(100),
-	planName: optionalText(120),
-	serviceUrl: optionalText(2048).refine(isHttpsUrl, {
-		message: 'Please enter a URL that starts with https://.'
-	}),
-	priceEditedByUser: booleanFromForm,
-	color: z.enum(subscriptionColors).default(defaultSubscriptionColor),
-	iconType: z.enum(subscriptionIconTypes).default(defaultSubscriptionIconType),
-	iconValue: z
-		.string({ error: 'Please select an icon.' })
-		.trim()
-		.min(1, { error: 'Please select an icon.' })
-		.max(2048, { error: 'Icon value must be 2048 characters or fewer.' })
-		.default(defaultSubscriptionIconValue),
-	tagsinput: z.string().array().default([]),
-	notifyDaysBefore: z
-		.number({ error: 'Please select notify days.' })
-		.int()
-		.min(0)
-		.max(365)
-		.default(1),
-	cancellationUrl: optionalText(2048).refine(isHttpsUrl, {
-		message: 'Please enter a URL that starts with https://.'
-	}),
-	cancellationMethod: z.enum(CANCELLATION_METHODS).or(z.literal('')).default(''),
-	cancellationMemo: optionalText(1000),
-	cancellationDeadlineMemo: optionalText(500)
-});
+export const subscriptionSchema = z
+	.object({
+		select: z
+			.string({ error: 'Please select an option.' })
+			.min(1, { error: 'Please select an option.' }),
+		number: z
+			.number({ error: 'Please enter a valid number.' })
+			.int({ error: 'Please enter a whole number.' })
+			.min(0, { error: 'Value must be at least 0.' })
+			.max(1000000, { error: 'Value must not exceed 1000000.' }),
+		datepicker: z
+			.string({ error: 'Please select a date.' })
+			.refine((v) => v, { error: 'Please select a date.' }),
+		text: z
+			.string({ error: 'Please enter the service name.' })
+			.min(1, { error: 'Please enter the service name.' }),
+		serviceTemplateId: optionalText(100),
+		planName: optionalText(120),
+		serviceUrl: optionalText(2048).refine(isHttpsUrl, {
+			message: 'Please enter a URL that starts with https://.'
+		}),
+		priceEditedByUser: booleanFromForm,
+		color: z.enum(subscriptionColors).default(defaultSubscriptionColor),
+		iconType: z.enum(subscriptionIconTypes).default(defaultSubscriptionIconType),
+		iconValue: z
+			.string({ error: 'Please select an icon.' })
+			.trim()
+			.min(1, { error: 'Please select an icon.' })
+			.max(2048, { error: 'Icon value must be 2048 characters or fewer.' })
+			.default(defaultSubscriptionIconValue),
+		tagsinput: z.string().array().default([]),
+		notifyDaysBefore: z
+			.number({ error: 'Please select notify days.' })
+			.int()
+			.min(0)
+			.max(365)
+			.default(1),
+		cancellationUrl: optionalText(2048).refine(isHttpsUrl, {
+			message: 'Please enter a URL that starts with https://.'
+		}),
+		cancellationMethod: z.enum(CANCELLATION_METHODS).or(z.literal('')).default(''),
+		cancellationMemo: optionalText(1000),
+		cancellationDeadlineMemo: optionalText(500)
+	})
+	.superRefine((value, ctx) => {
+		if (value.iconType !== 'templateImage') return;
+		if (findServiceTemplate(value.iconValue)) return;
+
+		ctx.addIssue({
+			code: 'custom',
+			path: ['iconValue'],
+			message: 'Please select a valid service icon.'
+		});
+	});
