@@ -32,8 +32,7 @@ export const load: PageServerLoad = async ({ locals, request }) => {
 			iconType: true,
 			iconValue: true,
 			cycle: true,
-			amount: true,
-			firstPaymentDate: true
+			amount: true
 		},
 		where: (trackedSubscription, { and, eq }) =>
 			and(eq(trackedSubscription.userId, userId), eq(trackedSubscription.status, 'active')),

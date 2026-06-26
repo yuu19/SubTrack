@@ -6,7 +6,7 @@ export type AnalyticsPeriod = 'monthly' | 'yearly';
 
 export type AnalyticsSubscription = Pick<
 	typeof trackedSubscriptionTable.$inferSelect,
-	'id' | 'serviceName' | 'cycle' | 'amount' | 'firstPaymentDate'
+	'id' | 'serviceName' | 'cycle' | 'amount'
 > & {
 	color?: SubscriptionColor | null;
 	iconType?: SubscriptionIconType | string | null;
@@ -24,16 +24,10 @@ export type SubscriptionAnalyticsItem = {
 	subscriptionCount: number;
 };
 
-export type SubscriptionAnalyticsTrendPoint = {
-	month: string;
-	amount: number;
-};
-
 export type SubscriptionAnalyticsSummary = {
 	total: number;
 	items: SubscriptionAnalyticsItem[];
 	subscriptionCount: number;
-	trend: SubscriptionAnalyticsTrendPoint[];
 };
 
 export type SubscriptionAnalyticsSnapshot = Record<AnalyticsPeriod, SubscriptionAnalyticsSummary>;
@@ -57,8 +51,7 @@ const normalizeAmount = (amount: number, cycle: string, period: AnalyticsPeriod)
 const createEmptySummary = (): SubscriptionAnalyticsSummary => ({
 	total: 0,
 	items: [],
-	subscriptionCount: 0,
-	trend: []
+	subscriptionCount: 0
 });
 
 export const emptySubscriptionAnalytics = (): SubscriptionAnalyticsSnapshot => ({
@@ -66,88 +59,8 @@ export const emptySubscriptionAnalytics = (): SubscriptionAnalyticsSnapshot => (
 	yearly: createEmptySummary()
 });
 
-const cycleToMonths = (cycle: string) => {
-	if (cycle === 'yearly') return 12;
-	if (cycle === 'quarterly') return 3;
-	return 1;
-};
-
-const parseDateParts = (value: string) => {
-	const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
-	if (!match) return null;
-
-	const year = Number(match[1]);
-	const month = Number(match[2]) - 1;
-	const day = Number(match[3]);
-	const parsed = new Date(Date.UTC(year, month, day));
-
-	if (
-		parsed.getUTCFullYear() !== year ||
-		parsed.getUTCMonth() !== month ||
-		parsed.getUTCDate() !== day
-	) {
-		return null;
-	}
-
-	return { year, month, day };
-};
-
-const daysInMonth = (year: number, month: number) =>
-	new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
-
-const addMonths = (parts: { year: number; month: number; day: number }, months: number) => {
-	const targetMonthIndex = parts.month + months;
-	const year = parts.year + Math.floor(targetMonthIndex / 12);
-	const month = ((targetMonthIndex % 12) + 12) % 12;
-	return {
-		year,
-		month,
-		day: Math.min(parts.day, daysInMonth(year, month))
-	};
-};
-
-const compareMonth = (parts: { year: number; month: number }, year: number, month: number) =>
-	parts.year === year ? parts.month - month : parts.year - year;
-
-const buildTrend = (
-	subscriptions: AnalyticsSubscription[],
-	from: Date,
-	months = 6
-): SubscriptionAnalyticsTrendPoint[] => {
-	const startYear = from.getFullYear();
-	const startMonth = from.getMonth();
-
-	return Array.from({ length: months }, (_, offset) => {
-		const target = addMonths({ year: startYear, month: startMonth, day: 1 }, offset);
-		const amount = subscriptions.reduce((sum, subscription) => {
-			if (!Number.isFinite(subscription.amount) || subscription.amount <= 0) return sum;
-
-			const first = parseDateParts(subscription.firstPaymentDate);
-			if (!first) return sum;
-
-			const interval = cycleToMonths(subscription.cycle);
-			let occurrence = first;
-			let guard = 0;
-			while (compareMonth(occurrence, target.year, target.month) < 0 && guard < 240) {
-				occurrence = addMonths(occurrence, interval);
-				guard += 1;
-			}
-
-			return compareMonth(occurrence, target.year, target.month) === 0
-				? sum + subscription.amount
-				: sum;
-		}, 0);
-
-		return {
-			month: `${target.year}-${String(target.month + 1).padStart(2, '0')}`,
-			amount
-		};
-	});
-};
-
 export const buildSubscriptionAnalytics = (
-	subscriptions: AnalyticsSubscription[],
-	options: { now?: Date } = {}
+	subscriptions: AnalyticsSubscription[]
 ): SubscriptionAnalyticsSnapshot => {
 	const grouped = {
 		monthly: new Map<
@@ -207,8 +120,6 @@ export const buildSubscriptionAnalytics = (
 	}
 
 	const snapshot = emptySubscriptionAnalytics();
-	const trend =
-		subscriptions.length > 0 ? buildTrend(subscriptions, options.now ?? new Date()) : [];
 
 	for (const period of PERIODS) {
 		const items = Array.from(grouped[period].entries())
@@ -231,7 +142,6 @@ export const buildSubscriptionAnalytics = (
 		snapshot[period] = {
 			total,
 			subscriptionCount: subscriptions.length,
-			trend,
 			items: items.map((item) => ({
 				...item,
 				share: total > 0 ? item.amount / total : 0
