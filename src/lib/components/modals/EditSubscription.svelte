@@ -19,14 +19,7 @@
 	import { m } from '$lib/paraglide/messages.js';
 	import { getLocale } from '$lib/paraglide/runtime';
 	import { UserConfigContext } from '$lib/states/userConfig.svelte';
-	import {
-		defaultSubscriptionColor,
-		getSubscriptionColorLabel,
-		getSubscriptionColorSurfaceStyle,
-		getSubscriptionColorStyle,
-		resolveSubscriptionColor,
-		subscriptionColors
-	} from '$lib/subscription-colors';
+	import { defaultSubscriptionColor, resolveSubscriptionColor } from '$lib/subscription-colors';
 	import {
 		defaultSubscriptionIconType,
 		defaultSubscriptionIconValue,
@@ -46,26 +39,12 @@
 		{ value: 'quarterly', label: getCycleLabel('quarterly', currentLocale) },
 		{ value: 'yearly', label: getCycleLabel('yearly', currentLocale) }
 	]);
-	const colorOptions = $derived(
-		subscriptionColors.map((value) => ({
-			value,
-			label: getSubscriptionColorLabel(value, currentLocale),
-			style: getSubscriptionColorStyle(value),
-			surface: getSubscriptionColorSurfaceStyle(value)
-		}))
-	);
 	const notifyOptions = $derived([0, 1, 3, 7]);
 	const cancellationMethodOptions = $derived(
 		CANCELLATION_METHODS.map((value) => ({
 			value,
 			label: getCancellationMethodLabel(value, currentLocale)
 		}))
-	);
-	const colorFieldLabel = $derived(currentLocale === 'en' ? 'Color' : '色');
-	const colorFieldDescription = $derived(
-		currentLocale === 'en'
-			? 'Used for calendar and analysis views.'
-			: 'カレンダーと分析画面で使う表示色です。'
 	);
 	const iconFieldLabel = $derived(currentLocale === 'en' ? 'Icon' : 'アイコン');
 	const iconFieldDescription = $derived(
@@ -74,7 +53,7 @@
 			: '一覧と詳細画面でサービスを見分けるために使います。'
 	);
 	const iconOptions = $derived(subscriptionEmojiOptions);
-	const serviceUrlFieldLabel = $derived(currentLocale === 'en' ? 'Service URL' : 'サービスURL');
+	const serviceUrlFieldLabel = $derived(currentLocale === 'en' ? 'Favicon URL' : 'Favicon URL');
 	const serviceUrlFieldDescription = $derived(
 		currentLocale === 'en'
 			? 'Used only when selecting the favicon icon.'
@@ -286,6 +265,7 @@
 		<input type="hidden" name="id" value={subscription.id} />
 		<input type="hidden" name="serviceTemplateId" value={$serviceTemplateIdField ?? ''} />
 		<input type="hidden" name="planName" value={$planNameField ?? ''} />
+		<input type="hidden" name="color" value={$colorField ?? defaultSubscriptionColor} />
 		<input type="hidden" name="iconType" value={$iconTypeField ?? defaultSubscriptionIconType} />
 		<input
 			type="hidden"
@@ -303,212 +283,200 @@
 			<FieldErrors class="text-destructive text-sm" />
 		</Field>
 
-		<Field {form} name="serviceUrl">
-			<Control>
-				{#snippet children({ props })}
-					<Label class="font-medium">{serviceUrlFieldLabel}</Label>
-					<Input
-						{...props}
-						type="url"
-						inputmode="url"
-						placeholder="https://www.netflix.com/"
-						bind:value={$serviceUrlField}
-					/>
-					<Description class="text-muted-foreground text-xs">
-						{serviceUrlFieldDescription}
-					</Description>
-				{/snippet}
-			</Control>
-			<FieldErrors class="text-destructive text-sm" />
-		</Field>
+		<details class="rounded-lg border p-4">
+			<summary
+				class="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-medium"
+			>
+				<span>{iconFieldLabel}</span>
+				<span class="ml-auto flex items-center gap-3">
+					<span
+						class="border-border bg-muted/50 flex size-9 items-center justify-center rounded-md border"
+					>
+						<SubscriptionIcon
+							iconType={$iconTypeField}
+							iconValue={$iconValueField}
+							subscriptionId={subscription.id}
+							class="size-5"
+						/>
+					</span>
+					<span class="text-primary text-xs font-medium">
+						{currentLocale === 'en' ? 'Change' : '変更する'}
+					</span>
+				</span>
+			</summary>
+			<div class="mt-4 space-y-4">
+				<Field {form} name="serviceUrl">
+					<Control>
+						{#snippet children({ props })}
+							<Label class="font-medium">{serviceUrlFieldLabel}</Label>
+							<Input
+								{...props}
+								type="url"
+								inputmode="url"
+								placeholder="https://www.netflix.com/"
+								bind:value={$serviceUrlField}
+							/>
+							<Description class="text-muted-foreground text-xs">
+								{serviceUrlFieldDescription}
+							</Description>
+						{/snippet}
+					</Control>
+					<FieldErrors class="text-destructive text-sm" />
+				</Field>
 
-		<Field {form} name="color">
-			<Control>
-				{#snippet children({ props })}
-					<Label class="font-medium">{colorFieldLabel}</Label>
-					<input {...props} type="hidden" bind:value={$colorField} />
-					<div class="flex flex-wrap gap-3" role="radiogroup" aria-label={colorFieldLabel}>
-						{#each colorOptions as option (option.value)}
-							<button
-								type="button"
-								onclick={() => ($colorField = option.value)}
-								class="flex items-center gap-2 rounded-full border px-3 py-2 text-sm transition-colors {option.value ===
-								$colorField
-									? 'outline outline-2 outline-offset-2'
-									: 'border-border hover:bg-muted/60'}"
-								style:border-color={option.value === $colorField ? option.style : undefined}
-								style:background-color={option.value === $colorField ? option.surface : undefined}
-								style:outline-color={option.value === $colorField ? option.style : undefined}
-								role="radio"
-								aria-checked={option.value === $colorField}
-								aria-label={option.label}
-								title={option.label}
-							>
-								<span
-									class="size-4 rounded-full border border-black/10"
-									style:background-color={option.style}
-								></span>
-								<span class:font-semibold={option.value === $colorField}>{option.label}</span>
-							</button>
-						{/each}
-					</div>
-					<Description class="text-muted-foreground text-xs">{colorFieldDescription}</Description>
-				{/snippet}
-			</Control>
-			<FieldErrors class="text-destructive text-sm" />
-		</Field>
-
-		<Field {form} name="iconValue">
-			<Control>
-				{#snippet children({ props })}
-					<Label class="font-medium">{iconFieldLabel}</Label>
-					<input {...props} type="hidden" bind:value={$iconValueField} />
-					<div class="space-y-3">
-						<div class="space-y-2">
-							<p class="text-muted-foreground text-xs">{imageFieldLabel}</p>
-							<div class="flex flex-wrap items-center gap-2">
-								<button
-									type="button"
-									onclick={() =>
-										$iconValueField ? selectIcon('image', $iconValueField) : undefined}
-									disabled={!hasUploadedImage}
-									class="border-border bg-background hover:bg-muted/60 flex size-11 items-center justify-center rounded-md border transition-colors disabled:cursor-not-allowed disabled:opacity-50 {$iconTypeField ===
-									'image'
-										? 'border-primary bg-primary/10 outline-primary outline outline-2 outline-offset-2'
-										: ''}"
-									role="radio"
-									aria-checked={$iconTypeField === 'image'}
-									aria-label={imageFieldLabel}
-									title={imageFieldLabel}
-								>
-									{#if hasUploadedImage}
-										<SubscriptionIcon
-											iconType="image"
-											iconValue={$iconValueField}
-											subscriptionId={subscription.id}
-											class="size-8 rounded-sm object-cover"
-										/>
-									{:else}
-										<span class="text-muted-foreground text-xs">IMG</span>
-									{/if}
-								</button>
-								{#if isPremium}
-									<input
-										bind:this={imageInput}
-										type="file"
-										accept="image/png,image/jpeg,image/webp"
-										class="hidden"
-										onchange={handleImageFileChange}
-									/>
-									<Button
-										type="button"
-										variant="outline"
-										size="sm"
-										disabled={isUploadingImage}
-										onclick={() => imageInput?.click()}
-									>
-										{#if isUploadingImage}
-											{currentLocale === 'en' ? 'Uploading...' : 'アップロード中...'}
-										{:else if hasUploadedImage}
-											{currentLocale === 'en' ? 'Replace image' : '画像を差し替え'}
-										{:else}
-											{currentLocale === 'en' ? 'Upload image' : '画像をアップロード'}
+				<Field {form} name="iconValue">
+					<Control>
+						{#snippet children({ props })}
+							<input {...props} type="hidden" bind:value={$iconValueField} />
+							<div class="space-y-3">
+								<div class="space-y-2">
+									<p class="text-muted-foreground text-xs">{imageFieldLabel}</p>
+									<div class="flex flex-wrap items-center gap-2">
+										<button
+											type="button"
+											onclick={() =>
+												$iconValueField ? selectIcon('image', $iconValueField) : undefined}
+											disabled={!hasUploadedImage}
+											class="border-border bg-background hover:bg-muted/60 flex size-11 items-center justify-center rounded-md border transition-colors disabled:cursor-not-allowed disabled:opacity-50 {$iconTypeField ===
+											'image'
+												? 'border-primary bg-primary/10 outline-primary outline outline-2 outline-offset-2'
+												: ''}"
+											role="radio"
+											aria-checked={$iconTypeField === 'image'}
+											aria-label={imageFieldLabel}
+											title={imageFieldLabel}
+										>
+											{#if hasUploadedImage}
+												<SubscriptionIcon
+													iconType="image"
+													iconValue={$iconValueField}
+													subscriptionId={subscription.id}
+													class="size-8 rounded-sm object-cover"
+												/>
+											{:else}
+												<span class="text-muted-foreground text-xs">IMG</span>
+											{/if}
+										</button>
+										{#if isPremium}
+											<input
+												bind:this={imageInput}
+												type="file"
+												accept="image/png,image/jpeg,image/webp"
+												class="hidden"
+												onchange={handleImageFileChange}
+											/>
+											<Button
+												type="button"
+												variant="outline"
+												size="sm"
+												disabled={isUploadingImage}
+												onclick={() => imageInput?.click()}
+											>
+												{#if isUploadingImage}
+													{currentLocale === 'en' ? 'Uploading...' : 'アップロード中...'}
+												{:else if hasUploadedImage}
+													{currentLocale === 'en' ? 'Replace image' : '画像を差し替え'}
+												{:else}
+													{currentLocale === 'en' ? 'Upload image' : '画像をアップロード'}
+												{/if}
+											</Button>
 										{/if}
-									</Button>
-								{/if}
-							</div>
-							<Description class="text-muted-foreground text-xs"
-								>{imageFieldDescription}</Description
-							>
-							{#if !isPremium}
-								<p class="text-muted-foreground text-xs">
-									{currentLocale === 'en'
-										? 'Image uploads are available on Premium.'
-										: '画像アップロードはPremiumで利用できます。'}
-								</p>
-							{/if}
-							{#if imageUploadError}
-								<p class="text-destructive text-xs" aria-live="polite">{imageUploadError}</p>
-							{/if}
-						</div>
-						<div class="space-y-2">
-							<p class="text-muted-foreground text-xs">
-								{currentLocale === 'en' ? 'Emoji' : '絵文字'}
-							</p>
-							<div class="flex flex-wrap gap-2" role="radiogroup" aria-label={iconFieldLabel}>
-								{#each iconOptions as icon (icon)}
+									</div>
+									<Description class="text-muted-foreground text-xs"
+										>{imageFieldDescription}</Description
+									>
+									{#if !isPremium}
+										<p class="text-muted-foreground text-xs">
+											{currentLocale === 'en'
+												? 'Image uploads are available on Premium.'
+												: '画像アップロードはPremiumで利用できます。'}
+										</p>
+									{/if}
+									{#if imageUploadError}
+										<p class="text-destructive text-xs" aria-live="polite">{imageUploadError}</p>
+									{/if}
+								</div>
+								<div class="space-y-2">
+									<p class="text-muted-foreground text-xs">
+										{currentLocale === 'en' ? 'Emoji' : '絵文字'}
+									</p>
+									<div class="flex flex-wrap gap-2" role="radiogroup" aria-label={iconFieldLabel}>
+										{#each iconOptions as icon (icon)}
+											<button
+												type="button"
+												onclick={() => selectIcon('emoji', icon)}
+												class="border-border bg-background hover:bg-muted/60 flex size-11 items-center justify-center rounded-md border text-xl transition-colors {$iconTypeField ===
+													'emoji' && icon === $iconValueField
+													? 'border-primary bg-primary/10 outline-primary outline outline-2 outline-offset-2'
+													: ''}"
+												role="radio"
+												aria-checked={$iconTypeField === 'emoji' && icon === $iconValueField}
+												aria-label={icon}
+												title={icon}
+											>
+												{icon}
+											</button>
+										{/each}
+									</div>
+								</div>
+								<div class="space-y-2">
+									<p class="text-muted-foreground text-xs">Favicon</p>
 									<button
 										type="button"
-										onclick={() => selectIcon('emoji', icon)}
-										class="border-border bg-background hover:bg-muted/60 flex size-11 items-center justify-center rounded-md border text-xl transition-colors {$iconTypeField ===
-											'emoji' && icon === $iconValueField
+										onclick={() => selectIcon('favicon', $serviceUrlField ?? '')}
+										disabled={!serviceFaviconUrl}
+										class="border-border bg-background hover:bg-muted/60 flex size-11 items-center justify-center rounded-md border transition-colors disabled:cursor-not-allowed disabled:opacity-50 {$iconTypeField ===
+										'favicon'
 											? 'border-primary bg-primary/10 outline-primary outline outline-2 outline-offset-2'
 											: ''}"
 										role="radio"
-										aria-checked={$iconTypeField === 'emoji' && icon === $iconValueField}
-										aria-label={icon}
-										title={icon}
+										aria-checked={$iconTypeField === 'favicon'}
+										aria-label="Favicon"
+										title="Favicon"
 									>
-										{icon}
+										{#if serviceFaviconUrl}
+											<SubscriptionIcon
+												iconType="favicon"
+												iconValue={$serviceUrlField}
+												class="size-6 rounded-sm"
+											/>
+										{:else}
+											<span class="text-muted-foreground text-xs">URL</span>
+										{/if}
 									</button>
-								{/each}
+								</div>
+								<div class="space-y-2">
+									<p class="text-muted-foreground text-xs">
+										{currentLocale === 'en' ? 'Preset icons' : 'プリセット'}
+									</p>
+									<div class="flex flex-wrap gap-2" role="radiogroup" aria-label={iconFieldLabel}>
+										{#each presetIconOptions as icon (icon.value)}
+											<button
+												type="button"
+												onclick={() => selectIcon('preset', icon.value)}
+												class="border-border bg-background hover:bg-muted/60 flex size-11 items-center justify-center rounded-md border transition-colors {$iconTypeField ===
+													'preset' && icon.value === $iconValueField
+													? 'border-primary bg-primary/10 outline-primary outline outline-2 outline-offset-2'
+													: ''}"
+												role="radio"
+												aria-checked={$iconTypeField === 'preset' && icon.value === $iconValueField}
+												aria-label={icon.label}
+												title={icon.label}
+											>
+												<SubscriptionIcon iconType="preset" iconValue={icon.value} class="size-5" />
+											</button>
+										{/each}
+									</div>
+								</div>
 							</div>
-						</div>
-						<div class="space-y-2">
-							<p class="text-muted-foreground text-xs">Favicon</p>
-							<button
-								type="button"
-								onclick={() => selectIcon('favicon', $serviceUrlField ?? '')}
-								disabled={!serviceFaviconUrl}
-								class="border-border bg-background hover:bg-muted/60 flex size-11 items-center justify-center rounded-md border transition-colors disabled:cursor-not-allowed disabled:opacity-50 {$iconTypeField ===
-								'favicon'
-									? 'border-primary bg-primary/10 outline-primary outline outline-2 outline-offset-2'
-									: ''}"
-								role="radio"
-								aria-checked={$iconTypeField === 'favicon'}
-								aria-label="Favicon"
-								title="Favicon"
+							<Description class="text-muted-foreground text-xs">{iconFieldDescription}</Description
 							>
-								{#if serviceFaviconUrl}
-									<SubscriptionIcon
-										iconType="favicon"
-										iconValue={$serviceUrlField}
-										class="size-6 rounded-sm"
-									/>
-								{:else}
-									<span class="text-muted-foreground text-xs">URL</span>
-								{/if}
-							</button>
-						</div>
-						<div class="space-y-2">
-							<p class="text-muted-foreground text-xs">
-								{currentLocale === 'en' ? 'Preset icons' : 'プリセット'}
-							</p>
-							<div class="flex flex-wrap gap-2" role="radiogroup" aria-label={iconFieldLabel}>
-								{#each presetIconOptions as icon (icon.value)}
-									<button
-										type="button"
-										onclick={() => selectIcon('preset', icon.value)}
-										class="border-border bg-background hover:bg-muted/60 flex size-11 items-center justify-center rounded-md border transition-colors {$iconTypeField ===
-											'preset' && icon.value === $iconValueField
-											? 'border-primary bg-primary/10 outline-primary outline outline-2 outline-offset-2'
-											: ''}"
-										role="radio"
-										aria-checked={$iconTypeField === 'preset' && icon.value === $iconValueField}
-										aria-label={icon.label}
-										title={icon.label}
-									>
-										<SubscriptionIcon iconType="preset" iconValue={icon.value} class="size-5" />
-									</button>
-								{/each}
-							</div>
-						</div>
-					</div>
-					<Description class="text-muted-foreground text-xs">{iconFieldDescription}</Description>
-				{/snippet}
-			</Control>
-			<FieldErrors class="text-destructive text-sm" />
-		</Field>
+						{/snippet}
+					</Control>
+					<FieldErrors class="text-destructive text-sm" />
+				</Field>
+			</div>
+		</details>
 
 		<Field {form} name="select">
 			<Control>

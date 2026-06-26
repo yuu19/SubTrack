@@ -2,6 +2,7 @@ import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
 import dayjs from 'dayjs';
 import {
 	defaultSubscriptionColor,
+	getFallbackSubscriptionColor,
 	resolveSubscriptionColor,
 	type SubscriptionColor
 } from '$lib/subscription-colors';
@@ -277,6 +278,7 @@ export const addPendingSubscription = async (
 	const db = await getDb();
 	const clientId = createClientId();
 	const { nextBillingAt, daysUntilNextBilling } = computeBillingInfo(payload);
+	const existing = await db.getAll(SUBSCRIPTIONS_STORE);
 	const now = new Date();
 	const record: SubscriptionRecord = {
 		id: clientId,
@@ -288,7 +290,7 @@ export const addPendingSubscription = async (
 		serviceUrl: payload.serviceUrl ?? null,
 		priceEditedByUser: Boolean(payload.priceEditedByUser),
 		status: 'active',
-		color: payload.color,
+		color: getFallbackSubscriptionColor(existing.length),
 		iconType: payload.iconType,
 		iconValue: payload.iconValue,
 		cycle: payload.cycle,

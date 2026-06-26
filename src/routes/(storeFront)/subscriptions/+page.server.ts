@@ -8,10 +8,11 @@ import { createAuth } from '$lib/auth';
 import { listActiveEntitlementsForUser } from '$lib/server/entitlements';
 import { computeNextBilling } from '$lib/server/subscriptions';
 import { getCurrentPlan } from '$lib/server/plan';
-import { defaultSubscriptionColor } from '$lib/subscription-colors';
+import { defaultSubscriptionColor, getFallbackSubscriptionColor } from '$lib/subscription-colors';
 import { CANCELLATION_METHODS, type CancellationMethod } from '$lib/constant';
 import { resolveTimeZone } from '$lib/time-zone';
 import { deleteSubscriptionIconImage } from '$lib/server/subscription-icon-images';
+import { serviceTemplates } from '$lib/service-templates';
 
 const fetchSubscriptions = async (db: NonNullable<App.Locals['db']>, userId: string) => {
 	return db
@@ -52,6 +53,29 @@ const buildTemplateValues = (data: {
 	serviceUrl: normalizeOptionalText(data.serviceUrl),
 	priceEditedByUser: Boolean(data.priceEditedByUser)
 });
+
+const resolveTemplateColor = (serviceTemplateId: string | null | undefined) => {
+	const normalized = normalizeOptionalText(serviceTemplateId);
+	return serviceTemplates.find((template) => template.id === normalized)?.color ?? null;
+};
+
+const resolveCreateSubscriptionColor = async (
+	db: NonNullable<App.Locals['db']>,
+	userId: string,
+	serviceTemplateId: string | null | undefined
+) => {
+	const templateColor = resolveTemplateColor(serviceTemplateId);
+	if (templateColor) return templateColor;
+
+	const existingSubscriptions = await db.query.trackedSubscriptionTable.findMany({
+		columns: {
+			id: true
+		},
+		where: (trackedSubscription, { eq }) => eq(trackedSubscription.userId, userId)
+	});
+
+	return getFallbackSubscriptionColor(existingSubscriptions.length);
+};
 
 const resolveCurrentPlanForUser = async (db: NonNullable<App.Locals['db']>, userId: string) => {
 	const billingSubscriptions = await db.query.subscription.findMany({
@@ -239,13 +263,14 @@ export const actions: Actions = {
 				form.data.select,
 				{ timeZone }
 			);
+			const color = await resolveCreateSubscriptionColor(db, userId, form.data.serviceTemplateId);
 
 			await db.insert(trackedSubscriptionTable).values({
 				userId,
 				serviceName: form.data.text,
 				...buildTemplateValues(form.data),
 				status: 'active',
-				color: form.data.color,
+				color,
 				iconType: form.data.iconType,
 				iconValue: form.data.iconValue,
 				cycle: form.data.select,
@@ -323,7 +348,7 @@ export const actions: Actions = {
 				.set({
 					serviceName: form.data.text,
 					...buildTemplateValues(form.data),
-					color: form.data.color,
+					color: existingSubscription.color,
 					iconType: form.data.iconType,
 					iconValue: form.data.iconValue,
 					cycle: form.data.select,

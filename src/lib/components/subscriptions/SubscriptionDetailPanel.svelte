@@ -12,11 +12,6 @@
 	import type { AppLocale } from '$lib/constant';
 	import { m } from '$lib/paraglide/messages.js';
 	import {
-		getSubscriptionColorStyle,
-		getSubscriptionColorSurfaceStyle,
-		resolveSubscriptionColor
-	} from '$lib/subscription-colors';
-	import {
 		Bell,
 		CalendarDays,
 		ExternalLink,
@@ -69,7 +64,6 @@
 	}>();
 
 	const isCanceled = $derived(subscription?.status === 'canceled');
-	const iconColor = $derived(resolveSubscriptionColor(subscription?.color));
 	const cancellationUrl = $derived(subscription?.cancellationUrl?.trim() ?? '');
 	const cancellationHost = $derived.by(() => {
 		if (!cancellationUrl) return '';
@@ -101,9 +95,7 @@
 	<div class="space-y-4 p-4">
 		<div class="bg-card rounded-xl border px-4 py-5 text-center">
 			<div
-				class="mx-auto mb-3 flex size-14 items-center justify-center rounded-md border text-2xl"
-				style:border-color={getSubscriptionColorStyle(iconColor)}
-				style:background={getSubscriptionColorSurfaceStyle(iconColor)}
+				class="border-border bg-muted/50 mx-auto mb-3 flex size-14 items-center justify-center rounded-md border text-2xl"
 				aria-hidden="true"
 			>
 				<SubscriptionIcon

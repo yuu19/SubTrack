@@ -43,11 +43,6 @@
 	import { page } from '$app/state';
 	import { fromAction } from 'svelte/attachments';
 	import { cn } from '$lib/utils';
-	import {
-		getSubscriptionColorStyle,
-		getSubscriptionColorSurfaceStyle,
-		resolveSubscriptionColor
-	} from '$lib/subscription-colors';
 	import { onMount } from 'svelte';
 	import { toast } from 'svelte-sonner';
 	import type { trackedSubscriptionTable } from '$lib/server/db/schema';
@@ -139,14 +134,6 @@
 
 	const formatBillingDate = (value?: string | number | Date | null) => {
 		return formatLongDate(value, currentLocale);
-	};
-
-	const getSubscriptionIconStyle = (subscription: SubscriptionView) => {
-		const color = resolveSubscriptionColor(subscription.color);
-		return {
-			border: getSubscriptionColorStyle(color),
-			background: getSubscriptionColorSurfaceStyle(color)
-		};
 	};
 
 	const getCycleProgress = (subscription: SubscriptionView) => {
@@ -504,9 +491,7 @@
 						<div class="flex items-start justify-between gap-4">
 							<div class="flex min-w-0 items-start gap-3">
 								<div
-									class="flex size-11 shrink-0 items-center justify-center rounded-md border text-xl"
-									style:border-color={getSubscriptionIconStyle(sub).border}
-									style:background={getSubscriptionIconStyle(sub).background}
+									class="border-border bg-muted/50 flex size-11 shrink-0 items-center justify-center rounded-md border text-xl"
 									aria-hidden="true"
 								>
 									<SubscriptionIcon
@@ -619,9 +604,7 @@
 									<div class="flex items-start justify-between gap-4">
 										<div class="flex min-w-0 items-start gap-3">
 											<div
-												class="flex size-10 shrink-0 items-center justify-center rounded-md border text-lg"
-												style:border-color={getSubscriptionIconStyle(sub).border}
-												style:background={getSubscriptionIconStyle(sub).background}
+												class="border-border bg-muted/50 flex size-10 shrink-0 items-center justify-center rounded-md border text-lg"
 												aria-hidden="true"
 											>
 												<SubscriptionIcon
@@ -696,9 +679,7 @@
 			<Dialog.Title class="flex min-w-0 items-center gap-3 text-base font-semibold">
 				{#if selectedSubscription}
 					<span
-						class="flex size-9 shrink-0 items-center justify-center rounded-md border text-lg"
-						style:border-color={getSubscriptionIconStyle(selectedSubscription).border}
-						style:background={getSubscriptionIconStyle(selectedSubscription).background}
+						class="border-border bg-muted/50 flex size-9 shrink-0 items-center justify-center rounded-md border text-lg"
 						aria-hidden="true"
 					>
 						<SubscriptionIcon
