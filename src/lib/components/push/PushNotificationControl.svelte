@@ -80,6 +80,11 @@
 		await userConfig.updateConfig({ notificationMethod: method });
 	};
 
+	const ensureNotificationMethodBoth = () => {
+		if (userConfig.current.notificationMethod === 'both') return;
+		void persistNotificationMethod('both');
+	};
+
 	const getAutoPromptSuppressedUntil = () => {
 		if (!browser) return 0;
 		try {
@@ -178,6 +183,7 @@
 				void syncPushSubscription(subscription).catch((error) => {
 					console.error('Failed to sync push subscription', error);
 				});
+				ensureNotificationMethodBoth();
 			} else {
 				pushSubscribed = false;
 			}
@@ -275,7 +281,11 @@
 	$effect(() => {
 		if (!pendingPostCreatePrompt || !pushInitialized) return;
 		pendingPostCreatePrompt = false;
-		if (!canUsePush || pushSubscribed || pushPermission === 'denied') return;
+		if (pushSubscribed) {
+			ensureNotificationMethodBoth();
+			return;
+		}
+		if (!canUsePush || pushPermission === 'denied') return;
 		if (variant === 'banner' && isAutoPromptSuppressed()) return;
 		optInOpen = true;
 	});
