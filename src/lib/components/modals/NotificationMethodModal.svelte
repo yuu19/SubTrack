@@ -4,6 +4,11 @@
 	import { m } from '$lib/paraglide/messages.js';
 	import { UserConfigContext } from '$lib/states/userConfig.svelte';
 
+	let {
+		onRequestPushSetup
+	}: {
+		onRequestPushSetup?: () => void;
+	} = $props();
 	let modalState = $state(false);
 	const userConfig = UserConfigContext.get();
 
@@ -17,9 +22,14 @@
 		options.find((option) => option.value === currentValue)?.label ?? m.notification_method_email()
 	);
 
-	const selectMethod = (value: string) => {
-		userConfig.setConfig({ notificationMethod: value as 'email' | 'both' });
+	const selectMethod = async (value: string) => {
 		modalState = false;
+		if (value === 'both') {
+			onRequestPushSetup?.();
+			return;
+		}
+
+		await userConfig.updateConfig({ notificationMethod: 'email' });
 	};
 </script>
 

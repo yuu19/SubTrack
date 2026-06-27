@@ -264,6 +264,8 @@
 	"subscription_push_opt_in_description": "SubTrack can send push notifications before subscription renewal dates so it is easier to review cancellations and payments.",
 	"subscription_push_banner_title": "Renewal reminders are currently sent by email",
 	"subscription_push_banner_description": "Enable push notifications to also review upcoming renewals on your phone.",
+	"subscription_push_banner_enabled_title": "Push notifications are enabled",
+	"subscription_push_banner_enabled_description": "You can review upcoming renewal reminders by email and phone notifications.",
 	"subscription_push_hint": "Receive push notifications on reminder dates.",
 	"subscription_push_details_link": "View the push guide",
 	"subscription_push_permission_denied": "Allow browser notifications for this site.",

@@ -34,6 +34,7 @@
 		page.url;
 		return resolveLocale(getLocale());
 	});
+	let pushSetupPromptKey = $state(0);
 	const pushGuideHref = $derived(localizeInternalHref(resolve('/push'), currentLocale));
 	const commercialTransactionsHref = $derived(
 		localizeInternalHref(resolve('/commercial-transactions'), currentLocale)
@@ -94,6 +95,10 @@
 	let isUpgrading = $state(false);
 	let isCreatingLifetimeCheckout = $state(false);
 	let isRestoringCancel = $state(false);
+
+	function requestPushSetup() {
+		pushSetupPromptKey += 1;
+	}
 
 	async function handleUpgrade() {
 		if (isUpgrading) return;
@@ -390,7 +395,7 @@
 						</p>
 					</div>
 					<div class={settingActionClass}>
-						<NotificationMethodModal />
+						<NotificationMethodModal onRequestPushSetup={requestPushSetup} />
 					</div>
 				</div>
 				<div class="border-t px-4 py-4 sm:px-5">
@@ -399,6 +404,7 @@
 						{vapidPublicKey}
 						initialSubscribed={Boolean(hasPushSubscription)}
 						guideHref={pushGuideHref}
+						promptKey={pushSetupPromptKey}
 					/>
 				</div>
 			</div>

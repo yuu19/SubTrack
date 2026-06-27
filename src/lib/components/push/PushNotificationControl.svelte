@@ -14,6 +14,11 @@
 
 	type Variant = 'banner' | 'settings';
 
+	const autoPromptSuppressedUntilKey = 'subtrack:push-opt-in-prompt-suppressed-until';
+	const dayMs = 24 * 60 * 60 * 1000;
+	const laterSnoozeMs = 7 * dayMs;
+	const emailOnlySnoozeMs = 30 * dayMs;
+
 	let {
 		vapidPublicKey = '',
 		initialSubscribed = false,
@@ -51,6 +56,14 @@
 	});
 	const statusBadgeVariant = $derived(pushSubscribed ? 'default' : 'secondary');
 	const shouldRenderBanner = $derived(pushInitialized && canUsePush);
+	const bannerTitle = $derived(
+		pushSubscribed ? m.subscription_push_banner_enabled_title() : m.subscription_push_banner_title()
+	);
+	const bannerDescription = $derived(
+		pushSubscribed
+			? m.subscription_push_banner_enabled_description()
+			: m.subscription_push_banner_description()
+	);
 
 	const urlBase64ToUint8Array = (base64String: string) => {
 		const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
@@ -65,6 +78,41 @@
 
 	const persistNotificationMethod = async (method: 'email' | 'both') => {
 		await userConfig.updateConfig({ notificationMethod: method });
+	};
+
+	const getAutoPromptSuppressedUntil = () => {
+		if (!browser) return 0;
+		try {
+			const value = Number(window.localStorage.getItem(autoPromptSuppressedUntilKey));
+			if (!Number.isFinite(value) || value <= 0) return 0;
+			if (value <= Date.now()) {
+				window.localStorage.removeItem(autoPromptSuppressedUntilKey);
+				return 0;
+			}
+			return value;
+		} catch {
+			return 0;
+		}
+	};
+
+	const isAutoPromptSuppressed = () => getAutoPromptSuppressedUntil() > Date.now();
+
+	const suppressAutoPromptFor = (durationMs: number) => {
+		if (!browser) return;
+		try {
+			window.localStorage.setItem(autoPromptSuppressedUntilKey, String(Date.now() + durationMs));
+		} catch {
+			// Ignore storage failures; the prompt can still be dismissed for this render.
+		}
+	};
+
+	const clearAutoPromptSuppression = () => {
+		if (!browser) return;
+		try {
+			window.localStorage.removeItem(autoPromptSuppressedUntilKey);
+		} catch {
+			// Ignore storage failures.
+		}
 	};
 
 	const getServiceWorkerRegistration = async () => {
@@ -169,6 +217,7 @@
 			await persistNotificationMethod('both');
 			pushSubscribed = true;
 			optInOpen = false;
+			clearAutoPromptSuppression();
 			toast.success(m.subscription_push_enabled_toast());
 		} catch (error) {
 			console.error('Failed to enable push notifications', error);
@@ -203,8 +252,14 @@
 
 	const keepEmailOnly = async () => {
 		await persistNotificationMethod('email');
+		suppressAutoPromptFor(emailOnlySnoozeMs);
 		optInOpen = false;
 		toast.message(m.subscription_push_email_only_toast());
+	};
+
+	const setUpLater = () => {
+		suppressAutoPromptFor(laterSnoozeMs);
+		optInOpen = false;
 	};
 
 	$effect(() => {
@@ -221,6 +276,7 @@
 		if (!pendingPostCreatePrompt || !pushInitialized) return;
 		pendingPostCreatePrompt = false;
 		if (!canUsePush || pushSubscribed || pushPermission === 'denied') return;
+		if (variant === 'banner' && isAutoPromptSuppressed()) return;
 		optInOpen = true;
 	});
 
@@ -241,10 +297,10 @@
 				<BellIcon class="text-primary mt-0.5 size-4 shrink-0" />
 				<div class="min-w-0 space-y-1">
 					<div class="flex flex-wrap items-center gap-2">
-						<p class="font-medium">{m.subscription_push_banner_title()}</p>
+						<p class="font-medium">{bannerTitle}</p>
 						<Badge variant={statusBadgeVariant} class="text-[10px]">{statusLabel}</Badge>
 					</div>
-					<p class="text-muted-foreground text-xs">{m.subscription_push_banner_description()}</p>
+					<p class="text-muted-foreground text-xs">{bannerDescription}</p>
 					<div class="text-muted-foreground flex flex-wrap items-center gap-2 text-xs">
 						<span>{m.subscription_push_hint()}</span>
 						{#if guideHref}
@@ -344,7 +400,7 @@
 			<Button variant="outline" onclick={keepEmailOnly} disabled={pushBusy}>
 				{m.subscription_push_email_only()}
 			</Button>
-			<Button variant="ghost" onclick={() => (optInOpen = false)} disabled={pushBusy}>
+			<Button variant="ghost" onclick={setUpLater} disabled={pushBusy}>
 				{m.subscription_push_later()}
 			</Button>
 		</div>

@@ -264,6 +264,8 @@
 	"subscription_push_opt_in_description": "サブスクの更新日前にプッシュ通知でお知らせします。解約忘れや支払い忘れに気づきやすくなります。",
 	"subscription_push_banner_title": "更新通知はメールで受け取れます",
 	"subscription_push_banner_description": "プッシュ通知を有効にすると、更新日前にスマホでも確認できます。",
+	"subscription_push_banner_enabled_title": "プッシュ通知は有効です",
+	"subscription_push_banner_enabled_description": "更新日前にメールとスマホ通知で確認できます。",
 	"subscription_push_hint": "通知日にプッシュ通知を受け取れます。",
 	"subscription_push_details_link": "Push通知の詳細を見る",
 	"subscription_push_permission_denied": "ブラウザの通知設定を許可してください。",
