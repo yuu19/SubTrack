@@ -44,10 +44,10 @@ export type UserConfigType = z.infer<typeof userConfigSchema>;
  * サーバ側をたたく処理が入っているので、この部分はService層を作ったほうがいいかも
  */
 export class UserConfig {
-	#config: UserConfigType;
+	#config = $state<UserConfigType>(userConfigSchema.parse({}));
 
 	constructor(config: UserConfigType) {
-		this.#config = $state.raw(config);
+		this.#config = config;
 	}
 
 	get current(): UserConfigType {
