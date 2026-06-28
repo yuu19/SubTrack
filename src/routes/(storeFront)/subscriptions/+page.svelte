@@ -674,7 +674,7 @@
 </section>
 
 <Dialog.Root bind:open={detailOpen}>
-	<Dialog.Content class="w-full max-w-md overflow-hidden p-0">
+	<Dialog.Content class="flex max-h-[90vh] w-full max-w-md flex-col overflow-hidden p-0">
 		<div class="flex items-center justify-between border-b px-4 py-3">
 			<Dialog.Title class="flex min-w-0 items-center gap-3 text-base font-semibold">
 				{#if selectedSubscription}
