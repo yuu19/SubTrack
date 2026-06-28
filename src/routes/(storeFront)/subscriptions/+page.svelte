@@ -24,7 +24,7 @@
 		type SubscriptionRecord
 	} from '$lib/offline/subscriptions';
 	import {
-		formatCurrencyYen,
+		formatCurrency,
 		formatLongDate,
 		formatNotifyDays,
 		getCycleLabel,
@@ -515,7 +515,7 @@
 							</div>
 							<div class="text-right">
 								<div class="text-base font-semibold">
-									{formatCurrencyYen(sub.amount, currentLocale)}
+									{formatCurrency(sub.amount, sub.currency, currentLocale)}
 									<span class="text-muted-foreground text-xs">
 										/ {getCycleUnitLabel(sub.cycle, currentLocale)}
 									</span>
@@ -626,7 +626,7 @@
 										</div>
 										<div class="text-right">
 											<div class="text-base font-semibold">
-												{formatCurrencyYen(sub.amount, currentLocale)}
+												{formatCurrency(sub.amount, sub.currency, currentLocale)}
 												<span class="text-muted-foreground text-xs">
 													/ {getCycleUnitLabel(sub.cycle, currentLocale)}
 												</span>

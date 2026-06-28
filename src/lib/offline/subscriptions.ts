@@ -15,7 +15,10 @@ import {
 } from '$lib/subscription-icons';
 import {
 	CANCELLATION_METHODS,
+	DEFAULT_SUBSCRIPTION_CURRENCY,
+	SUPPORTED_CURRENCIES,
 	type CancellationMethod,
+	type SubscriptionCurrency,
 	type TrackedSubscriptionStatus
 } from '$lib/constant';
 import {
@@ -41,6 +44,7 @@ export type SubscriptionPayload = {
 	iconValue: string;
 	cycle: string;
 	amount: number;
+	currency: SubscriptionCurrency;
 	firstPaymentDate: string;
 	notifyDaysBefore: number;
 	cancellationUrl?: string | null;
@@ -64,6 +68,7 @@ export type SubscriptionRecord = {
 	iconValue: string;
 	cycle: string;
 	amount: number;
+	currency?: SubscriptionCurrency | string | null;
 	firstPaymentDate: string;
 	nextBillingAt: string;
 	daysUntilNextBilling: number;
@@ -130,6 +135,11 @@ const toNumber = (value: FormDataEntryValue | null, fallback = 0) => {
 	const parsed = Number(value);
 	return Number.isFinite(parsed) ? parsed : fallback;
 };
+
+const resolveCurrency = (value: FormDataEntryValue | string | null | undefined) =>
+	SUPPORTED_CURRENCIES.includes(value as SubscriptionCurrency)
+		? (value as SubscriptionCurrency)
+		: DEFAULT_SUBSCRIPTION_CURRENCY;
 
 const createClientId = () => {
 	if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
@@ -228,6 +238,7 @@ export const payloadFromFormData = (formData: FormData): SubscriptionPayload => 
 		),
 		cycle: `${formData.get('select') ?? ''}`,
 		amount: toNumber(formData.get('number'), 0),
+		currency: resolveCurrency(formData.get('currency')),
 		firstPaymentDate: `${formData.get('datepicker') ?? ''}`,
 		notifyDaysBefore: toNumber(formData.get('notifyDaysBefore'), 1),
 		cancellationUrl: normalizeOptionalText(formData.get('cancellationUrl')),
@@ -295,6 +306,7 @@ export const addPendingSubscription = async (
 		iconValue: payload.iconValue,
 		cycle: payload.cycle,
 		amount: payload.amount,
+		currency: payload.currency,
 		firstPaymentDate: payload.firstPaymentDate,
 		nextBillingAt,
 		daysUntilNextBilling,
@@ -338,6 +350,7 @@ const buildFormData = (payload: SubscriptionPayload) => {
 	formData.set('iconValue', payload.iconValue);
 	formData.set('select', payload.cycle);
 	formData.set('number', `${payload.amount}`);
+	formData.set('currency', resolveCurrency(payload.currency));
 	formData.set('datepicker', payload.firstPaymentDate);
 	formData.set('notifyDaysBefore', `${payload.notifyDaysBefore ?? 1}`);
 	formData.set('cancellationUrl', payload.cancellationUrl ?? '');

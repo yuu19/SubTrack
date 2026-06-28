@@ -15,7 +15,11 @@
 		getCycleLabel,
 		resolveLocale
 	} from '$lib/locale';
-	import { CANCELLATION_METHODS } from '$lib/constant';
+	import {
+		CANCELLATION_METHODS,
+		DEFAULT_SUBSCRIPTION_CURRENCY,
+		SUPPORTED_CURRENCIES
+	} from '$lib/constant';
 	import { m } from '$lib/paraglide/messages.js';
 	import { getLocale } from '$lib/paraglide/runtime';
 	import { UserConfigContext } from '$lib/states/userConfig.svelte';
@@ -80,6 +84,8 @@
 			)
 		)
 	);
+	const currencyFieldLabel = $derived(currentLocale === 'en' ? 'Currency' : '通貨');
+	const currencyOptions = $derived(SUPPORTED_CURRENCIES.map((currency) => ({ value: currency })));
 
 	const defaultNotifyDaysBefore = $derived(userConfig.current.defaultNotifyDaysBefore ?? 3);
 	const defaultNotifyLabel = $derived(formatNotifyDays(defaultNotifyDaysBefore, currentLocale));
@@ -103,6 +109,7 @@
 				),
 				select: subscription.cycle ?? 'monthly',
 				number: subscription.amount ?? 0,
+				currency: subscription.currency ?? DEFAULT_SUBSCRIPTION_CURRENCY,
 				datepicker: subscription.firstPaymentDate ?? '',
 				notifyDaysBefore: subscription.notifyDaysBefore ?? 1,
 				cancellationUrl: subscription.cancellationUrl ?? '',
@@ -124,6 +131,7 @@
 			iconValue: defaultSubscriptionIconValue,
 			select: 'monthly',
 			number: 0,
+			currency: DEFAULT_SUBSCRIPTION_CURRENCY,
 			datepicker: '',
 			notifyDaysBefore: 1,
 			cancellationUrl: '',
@@ -151,6 +159,7 @@
 	const selectField = fieldProxy(form, 'select');
 	const notifyDaysBeforeField = fieldProxy(form, 'notifyDaysBefore');
 	const numberField = fieldProxy(form, 'number');
+	const currencyField = fieldProxy(form, 'currency');
 	const datepickerField = fieldProxy(form, 'datepicker');
 	const cancellationUrlField = fieldProxy(form, 'cancellationUrl');
 	const cancellationMethodField = fieldProxy(form, 'cancellationMethod');
@@ -519,23 +528,43 @@
 			<FieldErrors class="text-destructive text-sm" />
 		</Field>
 
-		<Field {form} name="number">
-			<Control>
-				{#snippet children({ props })}
-					<Label class="font-medium">{m.subscription_form_amount_label()}</Label>
-					<Input
-						{...props}
-						type="number"
-						min="0"
-						step="1"
-						placeholder="1000"
-						oninput={markPriceEdited}
-						bind:value={$numberField}
-					/>
-				{/snippet}
-			</Control>
-			<FieldErrors class="text-destructive text-sm" />
-		</Field>
+		<div class="grid gap-3 sm:grid-cols-[minmax(0,1fr)_8rem]">
+			<Field {form} name="number">
+				<Control>
+					{#snippet children({ props })}
+						<Label class="font-medium">{m.subscription_form_amount_label()}</Label>
+						<Input
+							{...props}
+							type="number"
+							min="0"
+							step="1"
+							placeholder="1000"
+							oninput={markPriceEdited}
+							bind:value={$numberField}
+						/>
+					{/snippet}
+				</Control>
+				<FieldErrors class="text-destructive text-sm" />
+			</Field>
+
+			<Field {form} name="currency">
+				<Control>
+					{#snippet children({ props })}
+						<Label class="font-medium">{currencyFieldLabel}</Label>
+						<select
+							{...props}
+							class="border-input focus-visible:ring-ring focus-visible:border-ring bg-background flex h-10 w-full rounded-md border px-3 text-sm shadow-sm transition"
+							bind:value={$currencyField}
+						>
+							{#each currencyOptions as option (option.value)}
+								<option value={option.value}>{option.value}</option>
+							{/each}
+						</select>
+					{/snippet}
+				</Control>
+				<FieldErrors class="text-destructive text-sm" />
+			</Field>
+		</div>
 
 		<Field {form} name="datepicker">
 			<Control>

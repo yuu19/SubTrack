@@ -372,8 +372,8 @@ export const serviceTemplates: ServiceTemplate[] = [
 				price: null,
 				cycle: 'monthly',
 				note: {
-					ja: '日本円の請求額はアカウントの表示に合わせて入力してください。',
-					en: 'Enter the JPY charge shown in your account.'
+					ja: '請求額と通貨はアカウントの表示に合わせて入力してください。',
+					en: 'Enter the amount and currency shown in your account.'
 				}
 			},
 			{
@@ -382,8 +382,8 @@ export const serviceTemplates: ServiceTemplate[] = [
 				price: null,
 				cycle: 'monthly',
 				note: {
-					ja: '日本円の請求額はアカウントの表示に合わせて入力してください。',
-					en: 'Enter the JPY charge shown in your account.'
+					ja: '請求額と通貨はアカウントの表示に合わせて入力してください。',
+					en: 'Enter the amount and currency shown in your account.'
 				}
 			}
 		],

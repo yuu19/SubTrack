@@ -6,6 +6,10 @@ export const DEFAULT_LOCALE: AppLocale = 'ja';
 export const DEFAULT_TIME_ZONE = 'Asia/Tokyo';
 export const DEFAULT_NOTIFY_TIME = '09:00';
 
+export const SUPPORTED_CURRENCIES = ['JPY', 'USD', 'EUR', 'GBP'] as const;
+export type SubscriptionCurrency = (typeof SUPPORTED_CURRENCIES)[number];
+export const DEFAULT_SUBSCRIPTION_CURRENCY: SubscriptionCurrency = 'JPY';
+
 export const THEMES = [
 	'default',
 	'blue',

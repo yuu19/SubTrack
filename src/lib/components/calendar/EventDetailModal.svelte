@@ -2,7 +2,7 @@
 	import SubscriptionDetailPanel from '$lib/components/subscriptions/SubscriptionDetailPanel.svelte';
 	import SubscriptionIcon from '$lib/components/subscriptions/SubscriptionIcon.svelte';
 	import type { AppLocale } from '$lib/constant';
-	import { formatCalendarDate, formatCurrencyYen } from '$lib/locale';
+	import { formatCalendarDate, formatCurrency } from '$lib/locale';
 	import { m } from '$lib/paraglide/messages.js';
 	import type { SubscriptionColor } from '$lib/subscription-colors';
 	import { CalendarDays, ChevronLeft, ChevronRight, Clock, X } from 'lucide-svelte';
@@ -13,6 +13,7 @@
 		title: string;
 		date: string;
 		amount: number;
+		currency?: string | null;
 		color: SubscriptionColor;
 		iconType?: string | null;
 		iconValue?: string | null;
@@ -21,6 +22,7 @@
 	type SubscriptionDetail = {
 		serviceName?: string | null;
 		amount: number;
+		currency?: string | null;
 		cycle: string;
 		nextBillingAt?: string | null;
 		daysUntilNextBilling?: number | null;
@@ -58,16 +60,27 @@
 		return formatCalendarDate(dateStr, locale);
 	}
 
-	function formatCurrency(amount: number) {
+	function formatEventAmount(amount: number, currency: string | null | undefined) {
 		const value = Number(amount);
 		if (!Number.isFinite(value)) return '';
-		return formatCurrencyYen(value, locale);
+		return formatCurrency(value, currency, locale);
 	}
 
-	const totalAmount = $derived.by(
-		() =>
-			events?.reduce((sum: number, item: CalendarEvent) => sum + Number(item.amount ?? 0), 0) ?? 0
-	);
+	const totalAmounts = $derived.by(() => {
+		const totals: { currency: string; amount: number }[] = [];
+		for (const item of events ?? []) {
+			const amount = Number(item.amount ?? 0);
+			if (!Number.isFinite(amount)) continue;
+			const currency = item.currency ?? 'JPY';
+			const existing = totals.find((total) => total.currency === currency);
+			if (existing) {
+				existing.amount += amount;
+			} else {
+				totals.push({ currency, amount });
+			}
+		}
+		return totals.length > 0 ? totals : [{ currency: 'JPY', amount: 0 }];
+	});
 
 	function handleBackdropClick(e: MouseEvent) {
 		if (e.target === e.currentTarget) {
@@ -145,8 +158,10 @@
 							<Clock class="size-3.5" />
 							<span>{scheduledPaymentsLabel}</span>
 						</div>
-						<div class="text-foreground mt-1 text-2xl font-semibold">
-							{formatCurrency(totalAmount)}
+						<div class="text-foreground mt-1 space-y-1 text-2xl font-semibold">
+							{#each totalAmounts as total (total.currency)}
+								<p>{formatEventAmount(total.amount, total.currency)}</p>
+							{/each}
 						</div>
 					</div>
 
@@ -176,7 +191,7 @@
 									</span>
 									<span class="flex shrink-0 items-center gap-2">
 										<span class="text-foreground text-sm font-semibold">
-											{formatCurrency(item.amount)}
+											{formatEventAmount(item.amount, item.currency)}
 										</span>
 										<ChevronRight class="text-muted-foreground size-4" />
 									</span>

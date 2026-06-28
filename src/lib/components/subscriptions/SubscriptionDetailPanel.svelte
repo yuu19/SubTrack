@@ -2,7 +2,7 @@
 	import SubscriptionIcon from '$lib/components/subscriptions/SubscriptionIcon.svelte';
 	import Button from '$lib/components/ui/button/button.svelte';
 	import {
-		formatCurrencyYen,
+		formatCurrency,
 		formatLongDate,
 		formatNotifyDays,
 		getCancellationMethodDescription,
@@ -109,7 +109,7 @@
 				</div>
 				<p class="text-muted-foreground text-xs">{m.subscription_amount_label()}</p>
 				<p class="text-3xl font-bold">
-					{formatCurrencyYen(subscription.amount, locale)}
+					{formatCurrency(subscription.amount, subscription.currency, locale)}
 				</p>
 				<div class="text-muted-foreground mt-4 flex items-center justify-center gap-2 text-sm">
 					<Repeat class="size-4" />

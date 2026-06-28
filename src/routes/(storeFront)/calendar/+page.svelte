@@ -33,6 +33,7 @@
 		title: string;
 		date: string;
 		amount: number;
+		currency: string;
 		color: SubscriptionColor;
 		iconType: string | null;
 		iconValue: string | null;
@@ -88,6 +89,7 @@
 					title: sub.serviceName,
 					date: occurrence.format('YYYY-MM-DD'),
 					amount: Number(sub.amount ?? 0),
+					currency: sub.currency ?? 'JPY',
 					color,
 					iconType: sub.iconType,
 					iconValue: sub.iconValue,

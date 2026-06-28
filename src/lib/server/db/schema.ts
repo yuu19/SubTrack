@@ -4,9 +4,11 @@ import {
 	DEFAULT_NOTIFY_TIME,
 	CANCELLATION_METHODS,
 	DEFAULT_LOCALE,
+	DEFAULT_SUBSCRIPTION_CURRENCY,
 	DEFAULT_TIME_ZONE,
 	NOTIFICATION_METHODS,
 	ROLE,
+	SUPPORTED_CURRENCIES,
 	THEMES,
 	TRACKED_SUBSCRIPTION_STATUSES
 } from '../../constant';
@@ -231,6 +233,9 @@ export const trackedSubscriptionTable = sqliteTable('tracked_subscription', {
 	iconValue: text('icon_value').notNull().default(defaultSubscriptionIconValue),
 	cycle: text('cycle').notNull(),
 	amount: integer('amount').notNull(),
+	currency: text('currency', { enum: SUPPORTED_CURRENCIES })
+		.notNull()
+		.default(DEFAULT_SUBSCRIPTION_CURRENCY),
 	firstPaymentDate: text('first_payment_date').notNull(),
 	nextBillingAt: text('next_billing_at').notNull(),
 	daysUntilNextBilling: integer('days_until_next_billing').notNull(),

@@ -1,5 +1,9 @@
 import { z } from 'zod';
-import { CANCELLATION_METHODS } from '$lib/constant';
+import {
+	CANCELLATION_METHODS,
+	DEFAULT_SUBSCRIPTION_CURRENCY,
+	SUPPORTED_CURRENCIES
+} from '$lib/constant';
 import { defaultSubscriptionColor, subscriptionColors } from '$lib/subscription-colors';
 import {
 	defaultSubscriptionIconType,
@@ -60,6 +64,7 @@ export const subscriptionSchema = z
 			.int({ error: 'Please enter a whole number.' })
 			.min(0, { error: 'Value must be at least 0.' })
 			.max(1000000, { error: 'Value must not exceed 1000000.' }),
+		currency: z.enum(SUPPORTED_CURRENCIES).default(DEFAULT_SUBSCRIPTION_CURRENCY),
 		datepicker: z
 			.string({ error: 'Please select a date.' })
 			.refine((v) => v, { error: 'Please select a date.' }),

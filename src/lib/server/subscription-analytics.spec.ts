@@ -13,32 +13,37 @@ describe('subscription analytics', () => {
 				serviceName: 'Netflix',
 				color: 'red',
 				cycle: 'monthly',
-				amount: 1000
+				amount: 1000,
+				currency: 'JPY'
 			},
 			{
 				id: 2,
 				serviceName: 'Notion',
 				color: 'blue',
 				cycle: 'yearly',
-				amount: 12000
+				amount: 12000,
+				currency: 'JPY'
 			},
 			{
 				id: 3,
 				serviceName: 'Figma',
 				color: 'purple',
 				cycle: 'quarterly',
-				amount: 9000
+				amount: 9000,
+				currency: 'JPY'
 			}
 		]);
+		const monthly = analytics.monthly.summaries[0];
+		const yearly = analytics.yearly.summaries[0];
 
-		expect(analytics.monthly.total).toBe(5000);
-		expect(analytics.yearly.total).toBe(60000);
-		expect(analytics.monthly.items.map((item) => [item.serviceName, item.amount])).toEqual([
+		expect(monthly.total).toBe(5000);
+		expect(yearly.total).toBe(60000);
+		expect(monthly.items.map((item) => [item.serviceName, item.amount])).toEqual([
 			['Figma', 3000],
 			['Netflix', 1000],
 			['Notion', 1000]
 		]);
-		expect(analytics.yearly.items.map((item) => [item.serviceName, item.amount])).toEqual([
+		expect(yearly.items.map((item) => [item.serviceName, item.amount])).toEqual([
 			['Figma', 36000],
 			['Netflix', 12000],
 			['Notion', 12000]
@@ -54,7 +59,8 @@ describe('subscription analytics', () => {
 				iconType: 'preset',
 				iconValue: 'music',
 				cycle: 'monthly',
-				amount: 980
+				amount: 980,
+				currency: 'JPY'
 			},
 			{
 				id: 2,
@@ -63,12 +69,15 @@ describe('subscription analytics', () => {
 				iconType: 'preset',
 				iconValue: 'box',
 				cycle: 'yearly',
-				amount: 12000
+				amount: 12000,
+				currency: 'JPY'
 			}
 		]);
+		const monthly = analytics.monthly.summaries[0];
+		const yearly = analytics.yearly.summaries[0];
 
-		expect(analytics.monthly.items).toHaveLength(1);
-		expect(analytics.monthly.items[0]).toMatchObject({
+		expect(monthly.items).toHaveLength(1);
+		expect(monthly.items[0]).toMatchObject({
 			subscriptionId: 1,
 			serviceName: 'Spotify',
 			color: 'green',
@@ -77,7 +86,34 @@ describe('subscription analytics', () => {
 			amount: 1980,
 			subscriptionCount: 2
 		});
-		expect(analytics.yearly.items[0].amount).toBe(23760);
+		expect(yearly.items[0].amount).toBe(23760);
+	});
+
+	it('keeps currency totals and shares separate', () => {
+		const analytics = buildSubscriptionAnalytics([
+			{
+				id: 1,
+				serviceName: 'Netflix',
+				color: 'red',
+				cycle: 'monthly',
+				amount: 1000,
+				currency: 'JPY'
+			},
+			{
+				id: 2,
+				serviceName: 'OpenAI',
+				color: 'purple',
+				cycle: 'monthly',
+				amount: 20,
+				currency: 'USD'
+			}
+		]);
+
+		expect(analytics.monthly.summaries.map((summary) => summary.currency)).toEqual(['JPY', 'USD']);
+		expect(analytics.monthly.summaries.map((summary) => summary.total)).toEqual([1000, 20]);
+		expect(
+			analytics.monthly.summaries.flatMap((summary) => summary.items.map((item) => item.share))
+		).toEqual([1, 1]);
 	});
 
 	it('keeps the first available color for grouped services', () => {
@@ -87,29 +123,29 @@ describe('subscription analytics', () => {
 				serviceName: 'YouTube',
 				color: 'red',
 				cycle: 'monthly',
-				amount: 1280
+				amount: 1280,
+				currency: 'JPY'
 			},
 			{
 				id: 2,
 				serviceName: 'YouTube',
 				color: 'blue',
 				cycle: 'monthly',
-				amount: 500
+				amount: 500,
+				currency: 'JPY'
 			},
 			{
 				id: 3,
 				serviceName: 'Dropbox',
 				color: null,
 				cycle: 'monthly',
-				amount: 1500
+				amount: 1500,
+				currency: 'JPY'
 			}
 		]);
+		const monthly = analytics.monthly.summaries[0];
 
-		expect(analytics.monthly.items.find((item) => item.serviceName === 'YouTube')?.color).toBe(
-			'red'
-		);
-		expect(
-			analytics.monthly.items.find((item) => item.serviceName === 'Dropbox')?.color
-		).toBeNull();
+		expect(monthly.items.find((item) => item.serviceName === 'YouTube')?.color).toBe('red');
+		expect(monthly.items.find((item) => item.serviceName === 'Dropbox')?.color).toBeNull();
 	});
 });

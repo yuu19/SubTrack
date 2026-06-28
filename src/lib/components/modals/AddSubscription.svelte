@@ -11,14 +11,19 @@
 	import TagsInput from '$lib/components/ui/tags-input/tags-input.svelte';
 	import { payloadFromFormData } from '$lib/offline/subscriptions';
 	import {
-		formatCurrencyYen,
+		formatCurrency,
 		formatLongDate,
 		formatNotifyDays,
 		getCancellationMethodLabel,
 		getCycleLabel,
 		resolveLocale
 	} from '$lib/locale';
-	import { CANCELLATION_METHODS } from '$lib/constant';
+	import {
+		CANCELLATION_METHODS,
+		DEFAULT_SUBSCRIPTION_CURRENCY,
+		SUPPORTED_CURRENCIES,
+		type SubscriptionCurrency
+	} from '$lib/constant';
 	import { m } from '$lib/paraglide/messages.js';
 	import { getLocale } from '$lib/paraglide/runtime';
 	import {
@@ -80,6 +85,9 @@
 			)
 		)
 	);
+	const lastCurrencyStorageKey = 'subtrack:last-subscription-currency';
+	const currencyFieldLabel = $derived(currentLocale === 'en' ? 'Currency' : '通貨');
+	const currencyOptions = $derived(SUPPORTED_CURRENCIES.map((currency) => ({ value: currency })));
 
 	const defaultNotifyDaysBefore = $derived(userConfig.current.defaultNotifyDaysBefore ?? 3);
 	const now = new Date();
@@ -110,6 +118,7 @@
 	const selectField = fieldProxy(form, 'select');
 	const notifyDaysBeforeField = fieldProxy(form, 'notifyDaysBefore');
 	const numberField = fieldProxy(form, 'number');
+	const currencyField = fieldProxy(form, 'currency');
 	const datepickerField = fieldProxy(form, 'datepicker');
 	const cancellationUrlField = fieldProxy(form, 'cancellationUrl');
 	const cancellationMethodField = fieldProxy(form, 'cancellationMethod');
@@ -119,6 +128,13 @@
 
 	const localizedTemplateTags = (template: ServiceTemplate) => template.tags[currentLocale];
 	const localizedPlanName = (plan: ServiceTemplatePlan) => plan.name[currentLocale];
+	const resolveStoredCurrency = (): SubscriptionCurrency => {
+		if (typeof window === 'undefined') return DEFAULT_SUBSCRIPTION_CURRENCY;
+		const value = window.localStorage.getItem(lastCurrencyStorageKey);
+		return SUPPORTED_CURRENCIES.includes(value as SubscriptionCurrency)
+			? (value as SubscriptionCurrency)
+			: DEFAULT_SUBSCRIPTION_CURRENCY;
+	};
 	const templateQuery = $derived(templateSearch.trim().toLocaleLowerCase());
 	const selectedTemplate = $derived.by(() =>
 		serviceTemplates.find((template) => template.id === $serviceTemplateIdField)
@@ -175,6 +191,9 @@
 		}
 		$selectField = plan.cycle;
 		$numberField = plan.price ?? 0;
+		if (plan.price !== null) {
+			$currencyField = DEFAULT_SUBSCRIPTION_CURRENCY;
+		}
 		$cancellationUrlField = template.cancellation.url ?? '';
 		$cancellationMethodField = template.cancellation.method;
 		$cancellationMemoField = template.cancellation.memo[currentLocale];
@@ -243,6 +262,7 @@
 			$planNameField = '';
 			$serviceUrlField = '';
 			$priceEditedByUserField = false;
+			$currencyField = resolveStoredCurrency();
 			$cancellationUrlField = '';
 			$cancellationMethodField = '';
 			$cancellationMemoField = '';
@@ -254,6 +274,13 @@
 			selectedPlanId = '';
 		}
 		wasOpen = isOpen;
+	});
+
+	$effect(() => {
+		const currency = $currencyField;
+		if (typeof window === 'undefined') return;
+		if (!SUPPORTED_CURRENCIES.includes(currency as SubscriptionCurrency)) return;
+		window.localStorage.setItem(lastCurrencyStorageKey, currency);
 	});
 
 	$effect(() => {
@@ -352,7 +379,7 @@
 							<option value={plan.id}>
 								{localizedPlanName(plan)}
 								{#if plan.price !== null}
-									- {formatCurrencyYen(plan.price, currentLocale)}
+									- {formatCurrency(plan.price, DEFAULT_SUBSCRIPTION_CURRENCY, currentLocale)}
 								{/if}
 							</option>
 						{/each}
@@ -526,52 +553,72 @@
 			<FieldErrors class="text-destructive text-sm" />
 		</Field>
 
-		<Field {form} name="number">
-			<Control>
-				{#snippet children({ props })}
-					<Label class="font-medium">{m.subscription_form_amount_label()}</Label>
-					<Input
-						{...props}
-						type="number"
-						min="0"
-						step="1"
-						placeholder="1000"
-						oninput={markPriceEdited}
-						bind:value={$numberField}
-					/>
-					<Description class="text-muted-foreground text-xs">
-						{#if selectedTemplate && selectedPlan && selectedPlan.price !== null}
-							{m.subscription_template_reference_price_note({
-								date: selectedTemplateVerifiedAt
-							})}
-							<a
-								href={selectedTemplate.sourceUrl}
-								target="_blank"
-								rel="noopener noreferrer"
-								class="underline underline-offset-2"
-							>
-								{m.subscription_template_source_link()}
-							</a>
-						{:else if selectedTemplate}
-							{m.subscription_template_reference_price_missing({
-								date: selectedTemplateVerifiedAt
-							})}
-							<a
-								href={selectedTemplate.sourceUrl}
-								target="_blank"
-								rel="noopener noreferrer"
-								class="underline underline-offset-2"
-							>
-								{m.subscription_template_source_link()}
-							</a>
-						{:else}
-							{m.subscription_form_amount_description()}
-						{/if}
-					</Description>
-				{/snippet}
-			</Control>
-			<FieldErrors class="text-destructive text-sm" />
-		</Field>
+		<div class="grid gap-3 sm:grid-cols-[minmax(0,1fr)_8rem]">
+			<Field {form} name="number">
+				<Control>
+					{#snippet children({ props })}
+						<Label class="font-medium">{m.subscription_form_amount_label()}</Label>
+						<Input
+							{...props}
+							type="number"
+							min="0"
+							step="1"
+							placeholder="1000"
+							oninput={markPriceEdited}
+							bind:value={$numberField}
+						/>
+						<Description class="text-muted-foreground text-xs">
+							{#if selectedTemplate && selectedPlan && selectedPlan.price !== null}
+								{m.subscription_template_reference_price_note({
+									date: selectedTemplateVerifiedAt
+								})}
+								<a
+									href={selectedTemplate.sourceUrl}
+									target="_blank"
+									rel="noopener noreferrer"
+									class="underline underline-offset-2"
+								>
+									{m.subscription_template_source_link()}
+								</a>
+							{:else if selectedTemplate}
+								{m.subscription_template_reference_price_missing({
+									date: selectedTemplateVerifiedAt
+								})}
+								<a
+									href={selectedTemplate.sourceUrl}
+									target="_blank"
+									rel="noopener noreferrer"
+									class="underline underline-offset-2"
+								>
+									{m.subscription_template_source_link()}
+								</a>
+							{:else}
+								{m.subscription_form_amount_description()}
+							{/if}
+						</Description>
+					{/snippet}
+				</Control>
+				<FieldErrors class="text-destructive text-sm" />
+			</Field>
+
+			<Field {form} name="currency">
+				<Control>
+					{#snippet children({ props })}
+						<Label class="font-medium">{currencyFieldLabel}</Label>
+						<select
+							{...props}
+							class="border-input focus-visible:ring-ring focus-visible:border-ring bg-background flex h-10 w-full rounded-md border px-3 text-sm shadow-sm transition"
+							bind:value={$currencyField}
+						>
+							{#each currencyOptions as option (option.value)}
+								<option value={option.value}>{option.value}</option>
+							{/each}
+						</select>
+					{/snippet}
+				</Control>
+				<FieldErrors class="text-destructive text-sm" />
+			</Field>
+		</div>
 
 		<Field {form} name="datepicker">
 			<Control>

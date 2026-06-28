@@ -4,13 +4,14 @@
 	import SubscriptionIcon from '$lib/components/subscriptions/SubscriptionIcon.svelte';
 	import Button from '$lib/components/ui/button/button.svelte';
 	import * as Tabs from '$lib/components/ui/tabs';
-	import { formatCurrencyYen, resolveLocale } from '$lib/locale';
+	import { formatCurrency, resolveLocale } from '$lib/locale';
 	import { localizeInternalHref } from '$lib/locale-routing';
 	import { m } from '$lib/paraglide/messages.js';
 	import { getLocale } from '$lib/paraglide/runtime';
 	import type {
 		AnalyticsPeriod,
 		SubscriptionAnalyticsItem,
+		SubscriptionAnalyticsSummary,
 		SubscriptionAnalyticsSnapshot
 	} from '$lib/server/subscription-analytics';
 	import {
@@ -29,19 +30,20 @@
 
 	const locale = $derived(resolveLocale(getLocale()));
 	const subscriptionsHref = $derived(localizeInternalHref(resolve('/subscriptions'), locale));
-	const summary = $derived(data.analytics[period]);
+	const periodSnapshot = $derived(data.analytics[period]);
+	const summaries: SubscriptionAnalyticsSummary[] = $derived(periodSnapshot.summaries);
 	const summaryHint = $derived(
 		period === 'monthly' ? m.analysis_period_hint_monthly() : m.analysis_period_hint_yearly()
 	);
-	const totalDisplay = $derived(formatCurrencyYen(summary.total, locale));
-	const chartSegments = $derived.by(() =>
+	const getChartSegments = (summary: { items: SubscriptionAnalyticsItem[] }) =>
 		summary.items.map((item: SubscriptionAnalyticsItem, index: number) => ({
 			label: item.serviceName,
 			value: item.amount,
 			color: getSubscriptionColorStyle(item.color ?? getFallbackSubscriptionColor(index))
-		}))
-	);
-	const topItem = $derived(summary.items[0] ?? null);
+		}));
+	const topSummary = $derived(summaries.find((summary) => summary.items.length > 0) ?? null);
+	const topItem = $derived(topSummary?.items[0] ?? null);
+	const hasAnalytics = $derived(summaries.some((summary) => summary.items.length > 0));
 </script>
 
 <div
@@ -80,7 +82,7 @@
 					<div class="min-w-0">
 						<p class="text-foreground truncate text-lg font-semibold">{topItem.serviceName}</p>
 						<p class="text-primary mt-1 text-sm font-medium">
-							{formatCurrencyYen(topItem.amount, locale)}
+							{formatCurrency(topItem.amount, topSummary?.currency, locale)}
 						</p>
 					</div>
 				</div>
@@ -99,7 +101,7 @@
 		</Tabs.List>
 	</Tabs.Root>
 
-	{#if summary.items.length === 0}
+	{#if !hasAnalytics}
 		<section class="bg-muted/20 rounded-[2rem] border border-dashed px-6 py-12 text-center">
 			<div class="mx-auto flex max-w-md flex-col items-center gap-4">
 				<div
@@ -115,73 +117,84 @@
 			</div>
 		</section>
 	{:else}
-		<div class="grid gap-6 lg:grid-cols-[minmax(320px,380px)_minmax(0,1fr)]">
-			<section class="bg-background rounded-[2rem] border p-5 shadow-sm sm:p-6">
-				<DonutChart
-					segments={chartSegments}
-					total={summary.total}
-					totalLabel={m.analysis_total_label()}
-					{totalDisplay}
-					hint={summaryHint}
-				/>
+		<div class="space-y-8">
+			{#each summaries as summary (summary.currency)}
+				<div class="space-y-3">
+					<h2 class="text-muted-foreground text-sm font-semibold tracking-[0.18em] uppercase">
+						{summary.currency}
+					</h2>
+					<div class="grid gap-6 lg:grid-cols-[minmax(320px,380px)_minmax(0,1fr)]">
+						<section class="bg-background rounded-[2rem] border p-5 shadow-sm sm:p-6">
+							<DonutChart
+								segments={getChartSegments(summary)}
+								total={summary.total}
+								totalLabel={m.analysis_total_label()}
+								totalDisplay={formatCurrency(summary.total, summary.currency, locale)}
+								hint={summaryHint}
+							/>
 
-				<div class="mt-6 grid gap-3 sm:grid-cols-2">
-					<div class="bg-muted/40 rounded-2xl border p-4">
-						<p class="text-muted-foreground text-xs font-medium tracking-[0.2em] uppercase">
-							{m.analysis_subscription_count_label()}
-						</p>
-						<p class="mt-2 text-2xl font-semibold">{summary.subscriptionCount}</p>
-					</div>
-					<div class="bg-muted/40 rounded-2xl border p-4">
-						<p class="text-muted-foreground text-xs font-medium tracking-[0.2em] uppercase">
-							{m.analysis_breakdown_count_label()}
-						</p>
-						<p class="mt-2 text-2xl font-semibold">{summary.items.length}</p>
-					</div>
-				</div>
-			</section>
+							<div class="mt-6 grid gap-3 sm:grid-cols-2">
+								<div class="bg-muted/40 rounded-2xl border p-4">
+									<p class="text-muted-foreground text-xs font-medium tracking-[0.2em] uppercase">
+										{m.analysis_subscription_count_label()}
+									</p>
+									<p class="mt-2 text-2xl font-semibold">{summary.subscriptionCount}</p>
+								</div>
+								<div class="bg-muted/40 rounded-2xl border p-4">
+									<p class="text-muted-foreground text-xs font-medium tracking-[0.2em] uppercase">
+										{m.analysis_breakdown_count_label()}
+									</p>
+									<p class="mt-2 text-2xl font-semibold">{summary.items.length}</p>
+								</div>
+							</div>
+						</section>
 
-			<section class="bg-background rounded-[2rem] border p-5 shadow-sm sm:p-6">
-				<div class="flex items-center justify-between gap-3 border-b pb-4">
-					<div>
-						<h2 class="text-xl font-semibold">{m.analysis_breakdown_title()}</h2>
-						<p class="text-muted-foreground mt-1 text-sm">
-							{m.analysis_breakdown_description()}
-						</p>
-					</div>
-					<p class="text-muted-foreground text-xs font-medium tracking-[0.2em] uppercase">
-						{m.analysis_share_label()}
-					</p>
-				</div>
-
-				<div class="divide-y">
-					{#each summary.items as item (item.serviceName)}
-						<div class="flex items-center gap-3 py-4">
-							<span
-								class="bg-muted flex size-10 shrink-0 items-center justify-center rounded-xl border"
-							>
-								<SubscriptionIcon
-									iconType={item.iconType}
-									iconValue={item.iconValue}
-									subscriptionId={item.subscriptionId}
-									class="size-6"
-								/>
-							</span>
-							<div class="min-w-0 flex-1">
-								<p class="truncate font-medium">{item.serviceName}</p>
-								<p class="text-muted-foreground text-sm">
-									{item.subscriptionCount}
-									{m.analysis_entry_count_suffix()}
+						<section class="bg-background rounded-[2rem] border p-5 shadow-sm sm:p-6">
+							<div class="flex items-center justify-between gap-3 border-b pb-4">
+								<div>
+									<h3 class="text-xl font-semibold">{m.analysis_breakdown_title()}</h3>
+									<p class="text-muted-foreground mt-1 text-sm">
+										{m.analysis_breakdown_description()}
+									</p>
+								</div>
+								<p class="text-muted-foreground text-xs font-medium tracking-[0.2em] uppercase">
+									{m.analysis_share_label()}
 								</p>
 							</div>
-							<div class="text-right">
-								<p class="font-semibold">{formatCurrencyYen(item.amount, locale)}</p>
-								<p class="text-muted-foreground text-sm">{Math.round(item.share * 100)}%</p>
+
+							<div class="divide-y">
+								{#each summary.items as item (item.serviceName)}
+									<div class="flex items-center gap-3 py-4">
+										<span
+											class="bg-muted flex size-10 shrink-0 items-center justify-center rounded-xl border"
+										>
+											<SubscriptionIcon
+												iconType={item.iconType}
+												iconValue={item.iconValue}
+												subscriptionId={item.subscriptionId}
+												class="size-6"
+											/>
+										</span>
+										<div class="min-w-0 flex-1">
+											<p class="truncate font-medium">{item.serviceName}</p>
+											<p class="text-muted-foreground text-sm">
+												{item.subscriptionCount}
+												{m.analysis_entry_count_suffix()}
+											</p>
+										</div>
+										<div class="text-right">
+											<p class="font-semibold">
+												{formatCurrency(item.amount, summary.currency, locale)}
+											</p>
+											<p class="text-muted-foreground text-sm">{Math.round(item.share * 100)}%</p>
+										</div>
+									</div>
+								{/each}
 							</div>
-						</div>
-					{/each}
+						</section>
+					</div>
 				</div>
-			</section>
+			{/each}
 		</div>
 	{/if}
 </div>

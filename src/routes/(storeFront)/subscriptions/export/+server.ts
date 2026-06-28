@@ -30,6 +30,7 @@ export const GET: RequestHandler = async ({ request, locals: { db } }) => {
 			serviceName: true,
 			cycle: true,
 			amount: true,
+			currency: true,
 			firstPaymentDate: true,
 			nextBillingAt: true,
 			daysUntilNextBilling: true,

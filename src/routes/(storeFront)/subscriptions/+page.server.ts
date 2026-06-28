@@ -9,7 +9,11 @@ import { listActiveEntitlementsForUser } from '$lib/server/entitlements';
 import { computeNextBilling } from '$lib/server/subscriptions';
 import { getCurrentPlan } from '$lib/server/plan';
 import { defaultSubscriptionColor, getFallbackSubscriptionColor } from '$lib/subscription-colors';
-import { CANCELLATION_METHODS, type CancellationMethod } from '$lib/constant';
+import {
+	CANCELLATION_METHODS,
+	DEFAULT_SUBSCRIPTION_CURRENCY,
+	type CancellationMethod
+} from '$lib/constant';
 import { resolveTimeZone } from '$lib/time-zone';
 import { deleteSubscriptionIconImage } from '$lib/server/subscription-icon-images';
 import { serviceTemplates } from '$lib/service-templates';
@@ -139,6 +143,7 @@ export const load: PageServerLoad = async ({ locals, request }) => {
 	}
 	form.data.color = defaultSubscriptionColor;
 	form.data.notifyDaysBefore = 3;
+	form.data.currency = DEFAULT_SUBSCRIPTION_CURRENCY;
 
 	const vapidPublicKey = process.env.VAPID_PUBLIC_KEY ?? '';
 	const { currentPlan: freePlan } = getCurrentPlan([]);
@@ -275,6 +280,7 @@ export const actions: Actions = {
 				iconValue: form.data.iconValue,
 				cycle: form.data.select,
 				amount: form.data.number,
+				currency: form.data.currency,
 				firstPaymentDate: form.data.datepicker,
 				nextBillingAt,
 				daysUntilNextBilling,
@@ -353,6 +359,7 @@ export const actions: Actions = {
 					iconValue: form.data.iconValue,
 					cycle: form.data.select,
 					amount: form.data.number,
+					currency: form.data.currency,
 					firstPaymentDate: form.data.datepicker,
 					nextBillingAt,
 					daysUntilNextBilling,

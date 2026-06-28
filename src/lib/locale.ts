@@ -1,4 +1,10 @@
-import { DEFAULT_LOCALE, type AppLocale } from '$lib/constant';
+import {
+	DEFAULT_LOCALE,
+	DEFAULT_SUBSCRIPTION_CURRENCY,
+	SUPPORTED_CURRENCIES,
+	type AppLocale,
+	type SubscriptionCurrency
+} from '$lib/constant';
 import type { CancellationMethod, TrackedSubscriptionStatus } from '$lib/constant';
 
 export const resolveLocale = (value?: string | null): AppLocale =>
@@ -6,12 +12,26 @@ export const resolveLocale = (value?: string | null): AppLocale =>
 
 export const getIntlLocale = (locale: AppLocale): string => (locale === 'en' ? 'en-US' : 'ja-JP');
 
-export const formatCurrencyYen = (amount: number, locale: AppLocale): string =>
+export const resolveSubscriptionCurrency = (value?: string | null): SubscriptionCurrency =>
+	SUPPORTED_CURRENCIES.includes(value as SubscriptionCurrency)
+		? (value as SubscriptionCurrency)
+		: DEFAULT_SUBSCRIPTION_CURRENCY;
+
+export const getCurrencyLabel = (currency: SubscriptionCurrency): string => currency;
+
+export const formatCurrency = (
+	amount: number,
+	currency: string | null | undefined,
+	locale: AppLocale
+): string =>
 	new Intl.NumberFormat(getIntlLocale(locale), {
 		style: 'currency',
-		currency: 'JPY',
-		maximumFractionDigits: 0
+		currency: resolveSubscriptionCurrency(currency),
+		maximumFractionDigits: resolveSubscriptionCurrency(currency) === 'JPY' ? 0 : 2
 	}).format(amount);
+
+export const formatCurrencyYen = (amount: number, locale: AppLocale): string =>
+	formatCurrency(amount, 'JPY', locale);
 
 export const formatLongDate = (
 	value: string | number | Date | null | undefined,

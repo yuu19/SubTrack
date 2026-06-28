@@ -12,6 +12,7 @@ describe('subscription export', () => {
 				serviceName: 'Netflix',
 				cycle: 'monthly',
 				amount: 1490,
+				currency: 'JPY',
 				firstPaymentDate: '2026-03-01',
 				nextBillingAt: '2026-04-01T00:00:00.000Z',
 				daysUntilNextBilling: 8,
@@ -24,7 +25,7 @@ describe('subscription export', () => {
 		]);
 
 		expect(csv).toBe(
-			`${SUBSCRIPTION_EXPORT_HEADERS.join(',')}\r\nNetflix,monthly,1490,2026-03-01,2026-04-01T00:00:00.000Z,8,3,active,,web,"動画, エンタメ"`
+			`${SUBSCRIPTION_EXPORT_HEADERS.join(',')}\r\nNetflix,monthly,1490,JPY,2026-03-01,2026-04-01T00:00:00.000Z,8,3,active,,web,"動画, エンタメ"`
 		);
 	});
 
@@ -34,6 +35,7 @@ describe('subscription export', () => {
 				serviceName: 'Plan "A", Plus',
 				cycle: 'yearly',
 				amount: 12000,
+				currency: 'USD',
 				firstPaymentDate: '2026-01-15',
 				nextBillingAt: '2027-01-15T00:00:00.000Z',
 				daysUntilNextBilling: 297,

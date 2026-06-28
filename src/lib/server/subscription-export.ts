@@ -5,6 +5,7 @@ export type ExportableTrackedSubscription = Pick<
 	| 'serviceName'
 	| 'cycle'
 	| 'amount'
+	| 'currency'
 	| 'firstPaymentDate'
 	| 'nextBillingAt'
 	| 'daysUntilNextBilling'
@@ -18,7 +19,8 @@ export type ExportableTrackedSubscription = Pick<
 export const SUBSCRIPTION_EXPORT_HEADERS = [
 	'service_name',
 	'billing_cycle',
-	'amount_jpy',
+	'amount',
+	'currency',
 	'first_payment_date',
 	'next_billing_at',
 	'days_until_next_billing',
@@ -49,6 +51,7 @@ export const buildSubscriptionExportCsv = (subscriptions: ExportableTrackedSubsc
 			subscription.serviceName,
 			subscription.cycle,
 			subscription.amount,
+			subscription.currency,
 			subscription.firstPaymentDate,
 			subscription.nextBillingAt,
 			subscription.daysUntilNextBilling,
