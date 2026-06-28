@@ -4,7 +4,6 @@
 	import { UserConfig, UserConfigContext } from '$lib/states/userConfig.svelte';
 	import { ModeWatcher, setTheme } from 'mode-watcher';
 	import Header from '$lib/components/Header.svelte';
-	import OnboardingDialog from '$lib/components/onboarding/OnboardingDialog.svelte';
 	import MobileBottomNav from '$lib/components/MobileBottomNav.svelte';
 	import PublicFooter from '$lib/components/PublicFooter.svelte';
 	import { DEFAULT_TIME_ZONE } from '$lib/constant';
@@ -51,13 +50,6 @@
 />
 
 <Header />
-{#if props.data.user}
-	<OnboardingDialog
-		userId={props.data.user.id}
-		onboardingCompleted={props.data.user.onboardingCompleted ?? true}
-		alwaysShow={props.data.isAdmin}
-	/>
-{/if}
 {#if props.data.user}
 	<div class="pb-[calc(env(safe-area-inset-bottom)+6rem)] md:pb-0">
 		{@render props.children()}
