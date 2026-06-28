@@ -98,25 +98,40 @@ CSV エクスポートでは保存額そのものを出力する。
 外貨価格は、公式ページでプラン名と通常価格が明確に確認できたものだけを `prices` に追加する。
 公式ページが地域やログイン状態で価格を動的に出し分け、安定した価格テキストを確認できない場合は追加しない。
 調査対象は、Netflix、YouTube Premium、Spotify、Apple Music、Disney+、iCloud+、Google One、ChatGPT とする。
+仕事系SaaSの席単位プランは、1ユーザーまたは1席あたりの参考価格として扱う。
+その場合はプラン名に単位を入れる。
+実際の請求額は、席数、契約条件、税の扱いで変わる。
 
 `0` は「自分で入力」の意味として扱う。保存前にユーザーが実際の請求額へ編集する前提。
 
 ## 初期テンプレート
 
-初期テンプレートは10件に限定する。
+初期テンプレートは20件とする。
+仕事系、制作系、開発系のサービスは、カテゴリを細分化せず既存カテゴリへ暫定的に収める。
+検索や分析でカテゴリを使う段階で、カテゴリ再設計を別途検討する。
 
-| サービス        | カテゴリタグ                   | 価格候補                            | 解約URL方針                   |
-| --------------- | ------------------------------ | ----------------------------------- | ----------------------------- |
-| Netflix         | 動画 / Video                   | 公式ページで確認できる範囲のみ      | Netflixアカウント管理         |
-| YouTube Premium | 動画, 音楽 / Video, Music      | 現時点では価格なし                  | YouTube有料メンバーシップ管理 |
-| Amazon Prime    | 買い物, 動画 / Shopping, Video | 現時点では価格なし                  | Amazon Prime会員情報管理      |
-| Spotify         | 音楽 / Music                   | 公式ページで確認できるプラン        | Spotifyアカウント管理         |
-| Apple Music     | 音楽 / Music                   | 公式ページで確認できるプラン        | Appleサブスクリプション管理   |
-| Disney+         | 動画 / Video                   | 公式ページで確認できるプラン        | Disney+アカウント管理         |
-| U-NEXT          | 動画 / Video                   | 現時点では価格なし                  | U-NEXTアカウント管理          |
-| iCloud+         | クラウド / Cloud               | Apple公式サポートで確認できるプラン | Appleサブスクリプション管理   |
-| Google One      | クラウド / Cloud               | 現時点では価格なし                  | Google One設定                |
-| ChatGPT         | AI, 仕事 / AI, Work            | 現時点では価格なし                  | ChatGPTサブスクリプション設定 |
+| サービス             | カテゴリタグ                                   | 価格候補                            | 解約URL方針                   |
+| -------------------- | ---------------------------------------------- | ----------------------------------- | ----------------------------- |
+| Netflix              | 動画 / Video                                   | 公式ページで確認できる範囲のみ      | Netflixアカウント管理         |
+| YouTube Premium      | 動画, 音楽 / Video, Music                      | 現時点では価格なし                  | YouTube有料メンバーシップ管理 |
+| Amazon Prime         | 買い物, 動画 / Shopping, Video                 | 現時点では価格なし                  | Amazon Prime会員情報管理      |
+| Spotify              | 音楽 / Music                                   | 公式ページで確認できるプラン        | Spotifyアカウント管理         |
+| Apple Music          | 音楽 / Music                                   | 公式ページで確認できるプラン        | Appleサブスクリプション管理   |
+| Disney+              | 動画 / Video                                   | 公式ページで確認できるプラン        | Disney+アカウント管理         |
+| U-NEXT               | 動画 / Video                                   | 現時点では価格なし                  | U-NEXTアカウント管理          |
+| iCloud+              | クラウド / Cloud                               | Apple公式サポートで確認できるプラン | Appleサブスクリプション管理   |
+| Google One           | クラウド / Cloud                               | 現時点では価格なし                  | Google One設定                |
+| Notion               | 仕事, ツール / Work, Tools                     | 公式ページで確認できるプラン        | Notionワークスペース設定      |
+| Figma                | デザイン, 仕事 / Design, Work                  | 公式ページで確認できる範囲のみ      | Figma管理画面                 |
+| Adobe Creative Cloud | 制作, デザイン / Creative, Design              | 現時点では価格なし                  | Adobeアカウント管理           |
+| Canva                | デザイン, 制作 / Design, Creative              | 現時点では価格なし                  | Canva請求設定                 |
+| Dropbox              | クラウド, 仕事 / Cloud, Work                   | 公式ページで確認できるプラン        | Dropbox請求設定               |
+| Microsoft 365        | 仕事, ツール / Work, Tools                     | 公式ページで確認できるプラン        | Microsoftアカウント管理       |
+| Google Workspace     | 仕事, ツール / Work, Tools                     | 公式ページで確認できるプラン        | Google管理コンソール請求      |
+| Slack                | 仕事, コミュニケーション / Work, Communication | 公式ページで確認できるプラン        | Slackワークスペース請求       |
+| Zoom                 | 仕事, 会議 / Work, Meetings                    | 現時点では価格なし                  | Zoom請求設定                  |
+| GitHub               | 開発, 仕事 / Development, Work                 | 公式ページで確認できるプラン        | GitHub請求設定                |
+| ChatGPT              | AI, 仕事 / AI, Work                            | 現時点では価格なし                  | ChatGPTサブスクリプション設定 |
 
 ## テンプレートアイコン運用
 
@@ -139,6 +154,16 @@ CSV エクスポートでは保存額そのものを出力する。
 - U-NEXT: `https://video.unext.jp/`
 - iCloud+価格: `https://support.apple.com/ja-jp/108047`, `https://support.apple.com/en-us/108047`, `https://support.apple.com/de-de/108047`, `https://support.apple.com/en-gb/108047`
 - Google One: `https://one.google.com/about/plans`
+- Notion: `https://www.notion.com/pricing`
+- Figma: `https://www.figma.com/pricing/`
+- Adobe Creative Cloud: `https://www.adobe.com/creativecloud/plans.html`, `https://www.adobe.com/jp/creativecloud/plans.html`
+- Canva: `https://www.canva.com/pricing/`
+- Dropbox: `https://www.dropbox.com/plans`
+- Microsoft 365: `https://www.microsoft.com/ja-jp/microsoft-365/buy/compare-all-microsoft-365-products`, `https://www.microsoft.com/en-us/microsoft-365/buy/compare-all-microsoft-365-products`, `https://www.microsoft.com/ja-jp/microsoft-365/business/compare-all-microsoft-365-business-products`, `https://www.microsoft.com/en-us/microsoft-365/business/compare-all-microsoft-365-business-products`
+- Google Workspace: `https://workspace.google.com/intl/ja/pricing.html`
+- Slack: `https://slack.com/intl/ja-jp/pricing`
+- Zoom: `https://www.zoom.com/pricing`
+- GitHub: `https://github.com/pricing`
 - ChatGPT料金: `https://openai.com/chatgpt/pricing/`
 
 ## 2026年6月28日の外貨価格調査結果
@@ -156,6 +181,25 @@ CSV エクスポートでは保存額そのものを出力する。
 | iCloud+         | JP/US/DE/GB の 50GB、200GB、2TB、6TB、12TB 月額。                                                                                                               | なし。                                                                                                               |
 | Google One      | なし。                                                                                                                                                          | 地域別価格が動的に出し分けられ、今回の取得結果では対象地域の価格を安定して確認できなかった。                         |
 | ChatGPT         | なし。                                                                                                                                                          | 公式料金ページの取得結果から、テンプレートへ入れる地域別価格を安定して確認できなかった。                             |
+
+## 2026年6月29日の仕事系テンプレート追加調査結果
+
+採用した価格は、公式ページで通常の継続課金額として確認できたものに限る。
+月払い価格を優先する。
+年払いの月額表示だけが確認できた場合は、月額料金として自動入力しない。
+
+| サービス             | 採用した価格                                                                                                                         | 未採用理由                                                                                         |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------- |
+| Notion               | JP: Plus 1,650 JPY/月/メンバー、Business 3,150 JPY/月/メンバー。                                                                     | USD/EUR/GBP は今回の取得結果で安定した地域別価格を確認できなかった。                               |
+| Figma                | US: Professional Full seat 16 USD/月。                                                                                               | Organization は年払いの月額表示として確認したため、自動入力価格には入れない。JP/EUR/GBP は未確認。 |
+| Adobe Creative Cloud | なし。                                                                                                                               | 公式ページの取得結果から、地域別の通常価格を安定して確認できなかった。                             |
+| Canva                | なし。                                                                                                                               | 公式ページが取得時に価格本文を返さず、通常価格を確認できなかった。                                 |
+| Dropbox              | JP: Plus 1,200 JPY/月、Standard 1,500 JPY/月/ユーザー。                                                                              | USD/EUR/GBP は今回の取得結果で安定した地域別価格を確認できなかった。                               |
+| Microsoft 365        | JP: Personal 2,130 JPY/月、Business Standard 2,249 JPY/月/ユーザー。US: Personal 9.99 USD/月、Business Standard 15 USD/月/ユーザー。 | EUR/GBP は月払い価格として明確に確認できなかった。                                                 |
+| Google Workspace     | JP: Business Starter 800 JPY/月/ユーザー、Business Standard 1,600 JPY/月/ユーザー。                                                  | USD/EUR/GBP は取得時にJPY表示へ寄ったため採用しない。                                              |
+| Slack                | JP: プロ 1,050 JPY/月/ユーザー、ビジネスプラス 2,160 JPY/月/ユーザー。                                                               | USD/EUR/GBP は今回の取得結果で安定した地域別価格を確認できなかった。                               |
+| Zoom                 | なし。                                                                                                                               | 公式ページの取得結果から、地域別の通常価格を安定して確認できなかった。                             |
+| GitHub               | US: Team 4 USD/月/ユーザー、Enterprise 21 USD/月/ユーザー。                                                                          | JP/EUR/GBP は今回の取得結果で確認できなかった。                                                    |
 
 ## MVP範囲外
 

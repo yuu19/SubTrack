@@ -8,7 +8,7 @@ const supportedTemplatePriceRegions = ['JP', 'US', 'DE', 'GB'];
 
 describe('serviceTemplates', () => {
 	it('contains the initial MVP templates with unique ids', () => {
-		expect(serviceTemplates).toHaveLength(10);
+		expect(serviceTemplates).toHaveLength(20);
 		expect(new Set(serviceTemplates.map((template) => template.id)).size).toBe(
 			serviceTemplates.length
 		);
@@ -64,6 +64,18 @@ describe('serviceTemplates', () => {
 				.find((plan) => plan.id === 'standard')
 				?.prices.find((price) => price.currency === 'USD')?.amount
 		).toBe(12.99);
+		expect(
+			serviceTemplates
+				.find((template) => template.id === 'notion')
+				?.plans.find((plan) => plan.id === 'plus-1-member-monthly')
+				?.prices.find((price) => price.currency === 'JPY')?.amount
+		).toBe(1650);
+		expect(
+			serviceTemplates
+				.find((template) => template.id === 'github')
+				?.plans.find((plan) => plan.id === 'team-1-user-monthly')
+				?.prices.find((price) => price.currency === 'USD')?.amount
+		).toBe(4);
 		expect(serviceTemplates.find((template) => template.id === 'chatgpt')?.plans[0].prices).toEqual(
 			[]
 		);

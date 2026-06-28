@@ -43,6 +43,7 @@ export type ServiceTemplate = {
 
 const verifiedAt = '2026-06-23';
 const foreignPriceVerifiedAt = '2026-06-28';
+const serviceExpansionVerifiedAt = '2026-06-29';
 
 const templatePrice = (
 	amount: number,
@@ -60,6 +61,27 @@ const templatePrice = (
 
 const jpyPrice = (amount: number, sourceUrl: string): ServiceTemplatePlanPrice =>
 	templatePrice(amount, 'JPY', 'JP', sourceUrl, verifiedAt);
+
+const expandedPrice = (
+	amount: number,
+	currency: SubscriptionCurrency,
+	region: ServiceTemplatePriceRegion,
+	sourceUrl: string
+): ServiceTemplatePlanPrice =>
+	templatePrice(amount, currency, region, sourceUrl, serviceExpansionVerifiedAt);
+
+const expandedJpyPrice = (amount: number, sourceUrl: string): ServiceTemplatePlanPrice =>
+	expandedPrice(amount, 'JPY', 'JP', sourceUrl);
+
+const perUserPriceNote: LocalizedText = {
+	ja: '1ユーザーまたは1席あたりの参考価格です。実際の請求額は席数、契約条件、税の扱いで変わる場合があります。',
+	en: 'Reference price per user or seat. The actual charge can vary by seat count, contract terms, and tax treatment.'
+};
+
+const dynamicPriceNote: LocalizedText = {
+	ja: '公式ページで地域別の通常価格を安定して確認できなかったため、実際の請求額を入力してください。',
+	en: 'Enter the actual charge because the official regional recurring price was not stable in the source checked.'
+};
 
 export const serviceTemplates: ServiceTemplate[] = [
 	{
@@ -495,6 +517,471 @@ export const serviceTemplates: ServiceTemplate[] = [
 			memo: {
 				ja: 'Google Oneの設定ページからメンバーシップや請求を確認します。',
 				en: 'Open Google One settings and review your membership and billing.'
+			}
+		}
+	},
+	{
+		id: 'notion',
+		name: 'Notion',
+		category: 'cloud',
+		color: 'purple',
+		tags: {
+			ja: ['仕事', 'ツール'],
+			en: ['Work', 'Tools']
+		},
+		sourceUrl: 'https://www.notion.com/pricing',
+		lastVerifiedAt: serviceExpansionVerifiedAt,
+		plans: [
+			{
+				id: 'plus-1-member-monthly',
+				name: { ja: 'Plus（1メンバー/月額）', en: 'Plus (1 member monthly)' },
+				prices: [expandedJpyPrice(1650, 'https://www.notion.com/pricing')],
+				cycle: 'monthly',
+				note: perUserPriceNote
+			},
+			{
+				id: 'business-1-member-monthly',
+				name: { ja: 'Business（1メンバー/月額）', en: 'Business (1 member monthly)' },
+				prices: [expandedJpyPrice(3150, 'https://www.notion.com/pricing')],
+				cycle: 'monthly',
+				note: perUserPriceNote
+			},
+			{
+				id: 'custom',
+				name: { ja: '自分で入力', en: 'Enter manually' },
+				prices: [],
+				cycle: 'monthly'
+			}
+		],
+		cancellation: {
+			method: 'web',
+			url: 'https://www.notion.com/settings/billing',
+			memo: {
+				ja: 'Notionの設定から対象ワークスペースの請求設定を確認します。ワークスペースや権限によって表示される設定が異なる場合があります。',
+				en: 'Open Notion settings and review billing for the target workspace. Available settings can vary by workspace and permissions.'
+			}
+		}
+	},
+	{
+		id: 'figma',
+		name: 'Figma',
+		category: 'cloud',
+		color: 'yellow',
+		tags: {
+			ja: ['デザイン', '仕事'],
+			en: ['Design', 'Work']
+		},
+		sourceUrl: 'https://www.figma.com/pricing/',
+		lastVerifiedAt: serviceExpansionVerifiedAt,
+		plans: [
+			{
+				id: 'professional-full-seat-monthly',
+				name: {
+					ja: 'Professional Full seat（1席/月額）',
+					en: 'Professional Full seat (1 seat monthly)'
+				},
+				prices: [expandedPrice(16, 'USD', 'US', 'https://www.figma.com/pricing/')],
+				cycle: 'monthly',
+				note: perUserPriceNote
+			},
+			{
+				id: 'organization-full-seat',
+				name: {
+					ja: 'Organization Full seat（1席）',
+					en: 'Organization Full seat (1 seat)'
+				},
+				prices: [],
+				cycle: 'monthly',
+				note: {
+					ja: '公式ページでは年払いの月額表示として確認したため、実際の請求額を入力してください。',
+					en: 'Enter the actual charge because the official page showed this as a monthly display for annual billing.'
+				}
+			},
+			{
+				id: 'custom',
+				name: { ja: '自分で入力', en: 'Enter manually' },
+				prices: [],
+				cycle: 'monthly'
+			}
+		],
+		cancellation: {
+			method: 'web',
+			url: 'https://www.figma.com/settings',
+			memo: {
+				ja: 'Figmaの管理画面から対象チームまたは組織の請求設定を確認します。プランや権限によっては管理者操作が必要です。',
+				en: 'Open the Figma admin area and review billing for the target team or organization. Some plans require admin permissions.'
+			}
+		}
+	},
+	{
+		id: 'adobe-creative-cloud',
+		name: 'Adobe Creative Cloud',
+		category: 'cloud',
+		color: 'orange',
+		tags: {
+			ja: ['制作', 'デザイン'],
+			en: ['Creative', 'Design']
+		},
+		sourceUrl: 'https://www.adobe.com/creativecloud/plans.html',
+		lastVerifiedAt: serviceExpansionVerifiedAt,
+		plans: [
+			{
+				id: 'all-apps-individual',
+				name: { ja: 'コンプリートプラン（個人）', en: 'All Apps (Individual)' },
+				prices: [],
+				cycle: 'monthly',
+				note: dynamicPriceNote
+			},
+			{
+				id: 'all-apps-teams-1-license',
+				name: {
+					ja: 'コンプリートプラン法人版（1ライセンス）',
+					en: 'All Apps for teams (1 license)'
+				},
+				prices: [],
+				cycle: 'monthly',
+				note: dynamicPriceNote
+			},
+			{
+				id: 'custom',
+				name: { ja: '自分で入力', en: 'Enter manually' },
+				prices: [],
+				cycle: 'monthly'
+			}
+		],
+		cancellation: {
+			method: 'web',
+			url: 'https://account.adobe.com/plans',
+			memo: {
+				ja: 'Adobeアカウントのプラン管理から契約内容を確認します。法人契約は管理者または契約元で確認してください。',
+				en: 'Open Adobe account plan management and review your subscription. For team contracts, check with the admin or billing owner.'
+			}
+		}
+	},
+	{
+		id: 'canva',
+		name: 'Canva',
+		category: 'cloud',
+		color: 'purple',
+		tags: {
+			ja: ['デザイン', '制作'],
+			en: ['Design', 'Creative']
+		},
+		sourceUrl: 'https://www.canva.com/pricing/',
+		lastVerifiedAt: serviceExpansionVerifiedAt,
+		plans: [
+			{
+				id: 'pro-monthly',
+				name: { ja: 'Pro（月額）', en: 'Pro (Monthly)' },
+				prices: [],
+				cycle: 'monthly',
+				note: dynamicPriceNote
+			},
+			{
+				id: 'teams-1-user-monthly',
+				name: { ja: 'Teams（1ユーザー/月額）', en: 'Teams (1 user monthly)' },
+				prices: [],
+				cycle: 'monthly',
+				note: perUserPriceNote
+			},
+			{
+				id: 'custom',
+				name: { ja: '自分で入力', en: 'Enter manually' },
+				prices: [],
+				cycle: 'monthly'
+			}
+		],
+		cancellation: {
+			method: 'web',
+			url: 'https://www.canva.com/settings/billing',
+			memo: {
+				ja: 'Canvaの設定から請求とプランを確認します。チーム契約はチームの管理者権限が必要な場合があります。',
+				en: 'Open Canva billing settings and review your plan. Team subscriptions may require team admin permissions.'
+			}
+		}
+	},
+	{
+		id: 'dropbox',
+		name: 'Dropbox',
+		category: 'cloud',
+		color: 'blue',
+		tags: {
+			ja: ['クラウド', '仕事'],
+			en: ['Cloud', 'Work']
+		},
+		sourceUrl: 'https://www.dropbox.com/plans',
+		lastVerifiedAt: serviceExpansionVerifiedAt,
+		plans: [
+			{
+				id: 'plus-monthly',
+				name: { ja: 'Plus（月額）', en: 'Plus (Monthly)' },
+				prices: [expandedJpyPrice(1200, 'https://www.dropbox.com/plans')],
+				cycle: 'monthly'
+			},
+			{
+				id: 'standard-1-user-monthly',
+				name: { ja: 'Standard（1ユーザー/月額）', en: 'Standard (1 user monthly)' },
+				prices: [expandedJpyPrice(1500, 'https://www.dropbox.com/plans')],
+				cycle: 'monthly',
+				note: perUserPriceNote
+			},
+			{
+				id: 'custom',
+				name: { ja: '自分で入力', en: 'Enter manually' },
+				prices: [],
+				cycle: 'monthly'
+			}
+		],
+		cancellation: {
+			method: 'web',
+			url: 'https://www.dropbox.com/account/billing',
+			memo: {
+				ja: 'Dropboxのアカウント請求ページからプランと請求状況を確認します。チーム契約は管理者ページで確認してください。',
+				en: 'Open Dropbox account billing and review your plan. Team subscriptions should be checked in the admin area.'
+			}
+		}
+	},
+	{
+		id: 'microsoft-365',
+		name: 'Microsoft 365',
+		category: 'cloud',
+		color: 'blue',
+		tags: {
+			ja: ['仕事', 'ツール'],
+			en: ['Work', 'Tools']
+		},
+		sourceUrl:
+			'https://www.microsoft.com/ja-jp/microsoft-365/buy/compare-all-microsoft-365-products',
+		lastVerifiedAt: serviceExpansionVerifiedAt,
+		plans: [
+			{
+				id: 'personal-monthly',
+				name: { ja: 'Personal（月額）', en: 'Personal (Monthly)' },
+				prices: [
+					expandedJpyPrice(
+						2130,
+						'https://www.microsoft.com/ja-jp/microsoft-365/buy/compare-all-microsoft-365-products'
+					),
+					expandedPrice(
+						9.99,
+						'USD',
+						'US',
+						'https://www.microsoft.com/en-us/microsoft-365/buy/compare-all-microsoft-365-products'
+					)
+				],
+				cycle: 'monthly'
+			},
+			{
+				id: 'business-standard-1-user-monthly',
+				name: {
+					ja: 'Business Standard（1ユーザー/月額）',
+					en: 'Business Standard (1 user monthly)'
+				},
+				prices: [
+					expandedJpyPrice(
+						2249,
+						'https://www.microsoft.com/ja-jp/microsoft-365/business/compare-all-microsoft-365-business-products'
+					),
+					expandedPrice(
+						15,
+						'USD',
+						'US',
+						'https://www.microsoft.com/en-us/microsoft-365/business/compare-all-microsoft-365-business-products'
+					)
+				],
+				cycle: 'monthly',
+				note: perUserPriceNote
+			},
+			{
+				id: 'custom',
+				name: { ja: '自分で入力', en: 'Enter manually' },
+				prices: [],
+				cycle: 'monthly'
+			}
+		],
+		cancellation: {
+			method: 'web',
+			url: 'https://account.microsoft.com/services',
+			memo: {
+				ja: 'Microsoftアカウントのサービスとサブスクリプションから契約を確認します。法人契約はMicrosoft 365管理センターで確認してください。',
+				en: 'Open Microsoft account services and subscriptions. Business subscriptions should be reviewed in the Microsoft 365 admin center.'
+			}
+		}
+	},
+	{
+		id: 'google-workspace',
+		name: 'Google Workspace',
+		category: 'cloud',
+		color: 'green',
+		tags: {
+			ja: ['仕事', 'ツール'],
+			en: ['Work', 'Tools']
+		},
+		sourceUrl: 'https://workspace.google.com/intl/ja/pricing.html',
+		lastVerifiedAt: serviceExpansionVerifiedAt,
+		plans: [
+			{
+				id: 'business-starter-1-user-monthly',
+				name: {
+					ja: 'Business Starter（1ユーザー/月額）',
+					en: 'Business Starter (1 user monthly)'
+				},
+				prices: [expandedJpyPrice(800, 'https://workspace.google.com/intl/ja/pricing.html')],
+				cycle: 'monthly',
+				note: perUserPriceNote
+			},
+			{
+				id: 'business-standard-1-user-monthly',
+				name: {
+					ja: 'Business Standard（1ユーザー/月額）',
+					en: 'Business Standard (1 user monthly)'
+				},
+				prices: [expandedJpyPrice(1600, 'https://workspace.google.com/intl/ja/pricing.html')],
+				cycle: 'monthly',
+				note: perUserPriceNote
+			},
+			{
+				id: 'custom',
+				name: { ja: '自分で入力', en: 'Enter manually' },
+				prices: [],
+				cycle: 'monthly'
+			}
+		],
+		cancellation: {
+			method: 'web',
+			url: 'https://admin.google.com/ac/billing',
+			memo: {
+				ja: 'Google管理コンソールの請求ページから契約を確認します。管理者権限が必要です。',
+				en: 'Open billing in the Google Admin console. Admin permissions are required.'
+			}
+		}
+	},
+	{
+		id: 'slack',
+		name: 'Slack',
+		category: 'cloud',
+		color: 'green',
+		tags: {
+			ja: ['仕事', 'コミュニケーション'],
+			en: ['Work', 'Communication']
+		},
+		sourceUrl: 'https://slack.com/intl/ja-jp/pricing',
+		lastVerifiedAt: serviceExpansionVerifiedAt,
+		plans: [
+			{
+				id: 'pro-1-user-monthly',
+				name: { ja: 'プロ（1ユーザー/月額）', en: 'Pro (1 user monthly)' },
+				prices: [expandedJpyPrice(1050, 'https://slack.com/intl/ja-jp/pricing')],
+				cycle: 'monthly',
+				note: perUserPriceNote
+			},
+			{
+				id: 'business-plus-1-user-monthly',
+				name: {
+					ja: 'ビジネスプラス（1ユーザー/月額）',
+					en: 'Business+ (1 user monthly)'
+				},
+				prices: [expandedJpyPrice(2160, 'https://slack.com/intl/ja-jp/pricing')],
+				cycle: 'monthly',
+				note: perUserPriceNote
+			},
+			{
+				id: 'custom',
+				name: { ja: '自分で入力', en: 'Enter manually' },
+				prices: [],
+				cycle: 'monthly'
+			}
+		],
+		cancellation: {
+			method: 'web',
+			url: 'https://slack.com/account/billing',
+			memo: {
+				ja: 'Slackのワークスペース請求設定からプランを確認します。ワークスペース管理者またはオーナー権限が必要な場合があります。',
+				en: 'Open Slack workspace billing settings and review the plan. Workspace admin or owner permissions may be required.'
+			}
+		}
+	},
+	{
+		id: 'zoom',
+		name: 'Zoom',
+		category: 'cloud',
+		color: 'blue',
+		tags: {
+			ja: ['仕事', '会議'],
+			en: ['Work', 'Meetings']
+		},
+		sourceUrl: 'https://www.zoom.com/pricing',
+		lastVerifiedAt: serviceExpansionVerifiedAt,
+		plans: [
+			{
+				id: 'pro-monthly',
+				name: { ja: 'Pro（月額）', en: 'Pro (Monthly)' },
+				prices: [],
+				cycle: 'monthly',
+				note: dynamicPriceNote
+			},
+			{
+				id: 'business-1-user-monthly',
+				name: { ja: 'Business（1ユーザー/月額）', en: 'Business (1 user monthly)' },
+				prices: [],
+				cycle: 'monthly',
+				note: dynamicPriceNote
+			},
+			{
+				id: 'custom',
+				name: { ja: '自分で入力', en: 'Enter manually' },
+				prices: [],
+				cycle: 'monthly'
+			}
+		],
+		cancellation: {
+			method: 'web',
+			url: 'https://zoom.us/billing',
+			memo: {
+				ja: 'Zoomの請求ページから現在のプランを確認します。組織契約は管理者権限が必要な場合があります。',
+				en: 'Open Zoom billing and review the current plan. Organization subscriptions may require admin permissions.'
+			}
+		}
+	},
+	{
+		id: 'github',
+		name: 'GitHub',
+		category: 'cloud',
+		color: 'purple',
+		tags: {
+			ja: ['開発', '仕事'],
+			en: ['Development', 'Work']
+		},
+		sourceUrl: 'https://github.com/pricing',
+		lastVerifiedAt: serviceExpansionVerifiedAt,
+		plans: [
+			{
+				id: 'team-1-user-monthly',
+				name: { ja: 'Team（1ユーザー/月額）', en: 'Team (1 user monthly)' },
+				prices: [expandedPrice(4, 'USD', 'US', 'https://github.com/pricing')],
+				cycle: 'monthly',
+				note: perUserPriceNote
+			},
+			{
+				id: 'enterprise-1-user-monthly',
+				name: { ja: 'Enterprise（1ユーザー/月額）', en: 'Enterprise (1 user monthly)' },
+				prices: [expandedPrice(21, 'USD', 'US', 'https://github.com/pricing')],
+				cycle: 'monthly',
+				note: perUserPriceNote
+			},
+			{
+				id: 'custom',
+				name: { ja: '自分で入力', en: 'Enter manually' },
+				prices: [],
+				cycle: 'monthly'
+			}
+		],
+		cancellation: {
+			method: 'web',
+			url: 'https://github.com/settings/billing/summary',
+			memo: {
+				ja: 'GitHubの請求設定から個人または組織のプランを確認します。組織契約は対象Organizationの管理権限が必要です。',
+				en: 'Open GitHub billing settings and review the personal or organization plan. Organization subscriptions require admin permissions for the target organization.'
 			}
 		}
 	},
