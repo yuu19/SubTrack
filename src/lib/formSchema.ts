@@ -54,6 +54,9 @@ const isHttpsUrl = (value: string): boolean => {
 	}
 };
 
+const hasAtMostTwoDecimalPlaces = (value: number): boolean =>
+	Math.abs(Math.round(value * 100) - value * 100) < 1e-8;
+
 export const subscriptionSchema = z
 	.object({
 		select: z
@@ -61,9 +64,11 @@ export const subscriptionSchema = z
 			.min(1, { error: 'Please select an option.' }),
 		number: z
 			.number({ error: 'Please enter a valid number.' })
-			.int({ error: 'Please enter a whole number.' })
 			.min(0, { error: 'Value must be at least 0.' })
-			.max(1000000, { error: 'Value must not exceed 1000000.' }),
+			.max(1000000, { error: 'Value must not exceed 1000000.' })
+			.refine(hasAtMostTwoDecimalPlaces, {
+				error: 'Please enter up to two decimal places.'
+			}),
 		currency: z.enum(SUPPORTED_CURRENCIES).default(DEFAULT_SUBSCRIPTION_CURRENCY),
 		datepicker: z
 			.string({ error: 'Please select a date.' })

@@ -17,7 +17,7 @@ import {
 	defaultSubscriptionIconType,
 	defaultSubscriptionIconValue
 } from '../../subscription-icons';
-import { sqliteTable, text, integer, index, uniqueIndex } from 'drizzle-orm/sqlite-core';
+import { sqliteTable, text, integer, real, index, uniqueIndex } from 'drizzle-orm/sqlite-core';
 export const timestamps = {
 	updatedAt: integer('updated_at', {
 		mode: 'timestamp_ms'
@@ -232,7 +232,7 @@ export const trackedSubscriptionTable = sqliteTable('tracked_subscription', {
 	iconType: text('icon_type').notNull().default(defaultSubscriptionIconType),
 	iconValue: text('icon_value').notNull().default(defaultSubscriptionIconValue),
 	cycle: text('cycle').notNull(),
-	amount: integer('amount').notNull(),
+	amount: real('amount').notNull(),
 	currency: text('currency', { enum: SUPPORTED_CURRENCIES })
 		.notNull()
 		.default(DEFAULT_SUBSCRIPTION_CURRENCY),

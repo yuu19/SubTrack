@@ -575,7 +575,8 @@
 							{...props}
 							type="number"
 							min="0"
-							step="1"
+							step="0.01"
+							inputmode="decimal"
 							placeholder="1000"
 							oninput={markPriceEdited}
 							bind:value={$numberField}

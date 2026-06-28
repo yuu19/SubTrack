@@ -42,14 +42,24 @@ export type ServiceTemplate = {
 };
 
 const verifiedAt = '2026-06-23';
+const foreignPriceVerifiedAt = '2026-06-28';
 
-const jpyPrice = (amount: number, sourceUrl: string): ServiceTemplatePlanPrice => ({
+const templatePrice = (
+	amount: number,
+	currency: SubscriptionCurrency,
+	region: ServiceTemplatePriceRegion,
+	sourceUrl: string,
+	priceVerifiedAt = foreignPriceVerifiedAt
+): ServiceTemplatePlanPrice => ({
 	amount,
-	currency: 'JPY',
-	region: 'JP',
+	currency,
+	region,
 	sourceUrl,
-	verifiedAt
+	verifiedAt: priceVerifiedAt
 });
+
+const jpyPrice = (amount: number, sourceUrl: string): ServiceTemplatePlanPrice =>
+	templatePrice(amount, 'JPY', 'JP', sourceUrl, verifiedAt);
 
 export const serviceTemplates: ServiceTemplate[] = [
 	{
@@ -67,7 +77,11 @@ export const serviceTemplates: ServiceTemplate[] = [
 			{
 				id: 'standard-with-ads',
 				name: { ja: '広告つきプラン', en: 'Ad-supported plan' },
-				prices: [jpyPrice(890, 'https://www.netflix.com/jp/')],
+				prices: [
+					jpyPrice(890, 'https://www.netflix.com/jp/'),
+					templatePrice(4.99, 'EUR', 'DE', 'https://www.netflix.com/de-en/'),
+					templatePrice(5.99, 'GBP', 'GB', 'https://www.netflix.com/gb/')
+				],
 				cycle: 'monthly',
 				note: {
 					ja: '公式ページで確認できる最低価格です。',
@@ -165,25 +179,45 @@ export const serviceTemplates: ServiceTemplate[] = [
 			{
 				id: 'standard',
 				name: { ja: 'Premium Standard', en: 'Premium Standard' },
-				prices: [jpyPrice(1080, 'https://www.spotify.com/jp/premium/')],
+				prices: [
+					jpyPrice(1080, 'https://www.spotify.com/jp/premium/'),
+					templatePrice(12.99, 'USD', 'US', 'https://www.spotify.com/us/premium/'),
+					templatePrice(12.99, 'EUR', 'DE', 'https://www.spotify.com/de-en/premium/'),
+					templatePrice(12.99, 'GBP', 'GB', 'https://www.spotify.com/uk/premium/')
+				],
 				cycle: 'monthly'
 			},
 			{
 				id: 'student',
 				name: { ja: 'Premium Student', en: 'Premium Student' },
-				prices: [jpyPrice(580, 'https://www.spotify.com/jp/premium/')],
+				prices: [
+					jpyPrice(580, 'https://www.spotify.com/jp/premium/'),
+					templatePrice(6.99, 'USD', 'US', 'https://www.spotify.com/us/premium/'),
+					templatePrice(6.99, 'EUR', 'DE', 'https://www.spotify.com/de-en/premium/'),
+					templatePrice(5.99, 'GBP', 'GB', 'https://www.spotify.com/uk/premium/')
+				],
 				cycle: 'monthly'
 			},
 			{
 				id: 'duo',
 				name: { ja: 'Premium Duo', en: 'Premium Duo' },
-				prices: [jpyPrice(1480, 'https://www.spotify.com/jp/premium/')],
+				prices: [
+					jpyPrice(1480, 'https://www.spotify.com/jp/premium/'),
+					templatePrice(18.99, 'USD', 'US', 'https://www.spotify.com/us/premium/'),
+					templatePrice(17.99, 'EUR', 'DE', 'https://www.spotify.com/de-en/premium/'),
+					templatePrice(17.99, 'GBP', 'GB', 'https://www.spotify.com/uk/premium/')
+				],
 				cycle: 'monthly'
 			},
 			{
 				id: 'family',
 				name: { ja: 'Premium Family', en: 'Premium Family' },
-				prices: [jpyPrice(1880, 'https://www.spotify.com/jp/premium/')],
+				prices: [
+					jpyPrice(1880, 'https://www.spotify.com/jp/premium/'),
+					templatePrice(21.99, 'USD', 'US', 'https://www.spotify.com/us/premium/'),
+					templatePrice(21.99, 'EUR', 'DE', 'https://www.spotify.com/de-en/premium/'),
+					templatePrice(21.99, 'GBP', 'GB', 'https://www.spotify.com/uk/premium/')
+				],
 				cycle: 'monthly'
 			}
 		],
@@ -211,19 +245,34 @@ export const serviceTemplates: ServiceTemplate[] = [
 			{
 				id: 'individual',
 				name: { ja: '個人', en: 'Individual' },
-				prices: [jpyPrice(1080, 'https://www.apple.com/jp/apple-music/')],
+				prices: [
+					jpyPrice(1080, 'https://www.apple.com/jp/apple-music/'),
+					templatePrice(10.99, 'USD', 'US', 'https://www.apple.com/apple-music/'),
+					templatePrice(10.99, 'EUR', 'DE', 'https://www.apple.com/de/apple-music/'),
+					templatePrice(10.99, 'GBP', 'GB', 'https://www.apple.com/uk/apple-music/')
+				],
 				cycle: 'monthly'
 			},
 			{
 				id: 'family',
 				name: { ja: 'ファミリー', en: 'Family' },
-				prices: [jpyPrice(1680, 'https://www.apple.com/jp/apple-music/')],
+				prices: [
+					jpyPrice(1680, 'https://www.apple.com/jp/apple-music/'),
+					templatePrice(16.99, 'USD', 'US', 'https://www.apple.com/apple-music/'),
+					templatePrice(16.99, 'EUR', 'DE', 'https://www.apple.com/de/apple-music/'),
+					templatePrice(16.99, 'GBP', 'GB', 'https://www.apple.com/uk/apple-music/')
+				],
 				cycle: 'monthly'
 			},
 			{
 				id: 'student',
 				name: { ja: '学生', en: 'Student' },
-				prices: [jpyPrice(580, 'https://www.apple.com/jp/apple-music/')],
+				prices: [
+					jpyPrice(580, 'https://www.apple.com/jp/apple-music/'),
+					templatePrice(5.99, 'USD', 'US', 'https://www.apple.com/apple-music/'),
+					templatePrice(5.99, 'EUR', 'DE', 'https://www.apple.com/de/apple-music/'),
+					templatePrice(5.99, 'GBP', 'GB', 'https://www.apple.com/uk/apple-music/')
+				],
 				cycle: 'monthly'
 			}
 		],
@@ -248,6 +297,58 @@ export const serviceTemplates: ServiceTemplate[] = [
 		sourceUrl: 'https://www.disneyplus.com/ja-jp',
 		lastVerifiedAt: verifiedAt,
 		plans: [
+			{
+				id: 'standard-with-ads-monthly',
+				name: { ja: 'Standard 広告つき（月額）', en: 'Standard with Ads (Monthly)' },
+				prices: [
+					templatePrice(11.99, 'USD', 'US', 'https://www.disneyplus.com/en-us'),
+					templatePrice(6.99, 'EUR', 'DE', 'https://www.disneyplus.com/de-de'),
+					templatePrice(5.99, 'GBP', 'GB', 'https://www.disneyplus.com/en-gb')
+				],
+				cycle: 'monthly'
+			},
+			{
+				id: 'standard-monthly',
+				name: { ja: 'Standard（月額）', en: 'Standard (Monthly)' },
+				prices: [
+					jpyPrice(1250, 'https://www.disneyplus.com/ja-jp'),
+					templatePrice(10.99, 'EUR', 'DE', 'https://www.disneyplus.com/de-de'),
+					templatePrice(9.99, 'GBP', 'GB', 'https://www.disneyplus.com/en-gb')
+				],
+				cycle: 'monthly'
+			},
+			{
+				id: 'standard-yearly',
+				name: { ja: 'Standard（年額）', en: 'Standard (Yearly)' },
+				prices: [
+					jpyPrice(12500, 'https://www.disneyplus.com/ja-jp'),
+					templatePrice(109.9, 'EUR', 'DE', 'https://www.disneyplus.com/de-de'),
+					templatePrice(99.9, 'GBP', 'GB', 'https://www.disneyplus.com/en-gb')
+				],
+				cycle: 'yearly'
+			},
+			{
+				id: 'premium-monthly',
+				name: { ja: 'Premium（月額）', en: 'Premium (Monthly)' },
+				prices: [
+					jpyPrice(1670, 'https://www.disneyplus.com/ja-jp'),
+					templatePrice(18.99, 'USD', 'US', 'https://www.disneyplus.com/en-us'),
+					templatePrice(15.99, 'EUR', 'DE', 'https://www.disneyplus.com/de-de'),
+					templatePrice(14.99, 'GBP', 'GB', 'https://www.disneyplus.com/en-gb')
+				],
+				cycle: 'monthly'
+			},
+			{
+				id: 'premium-yearly',
+				name: { ja: 'Premium（年額）', en: 'Premium (Yearly)' },
+				prices: [
+					jpyPrice(16700, 'https://www.disneyplus.com/ja-jp'),
+					templatePrice(189.99, 'USD', 'US', 'https://www.disneyplus.com/en-us'),
+					templatePrice(159.9, 'EUR', 'DE', 'https://www.disneyplus.com/de-de'),
+					templatePrice(149.9, 'GBP', 'GB', 'https://www.disneyplus.com/en-gb')
+				],
+				cycle: 'yearly'
+			},
 			{
 				id: 'custom',
 				name: { ja: '自分で入力', en: 'Enter manually' },
@@ -307,31 +408,56 @@ export const serviceTemplates: ServiceTemplate[] = [
 			{
 				id: '50gb',
 				name: { ja: '50GB', en: '50GB' },
-				prices: [jpyPrice(150, 'https://support.apple.com/ja-jp/108047')],
+				prices: [
+					jpyPrice(150, 'https://support.apple.com/ja-jp/108047'),
+					templatePrice(0.99, 'USD', 'US', 'https://support.apple.com/en-us/108047'),
+					templatePrice(0.99, 'EUR', 'DE', 'https://support.apple.com/de-de/108047'),
+					templatePrice(0.99, 'GBP', 'GB', 'https://support.apple.com/en-gb/108047')
+				],
 				cycle: 'monthly'
 			},
 			{
 				id: '200gb',
 				name: { ja: '200GB', en: '200GB' },
-				prices: [jpyPrice(450, 'https://support.apple.com/ja-jp/108047')],
+				prices: [
+					jpyPrice(450, 'https://support.apple.com/ja-jp/108047'),
+					templatePrice(2.99, 'USD', 'US', 'https://support.apple.com/en-us/108047'),
+					templatePrice(2.99, 'EUR', 'DE', 'https://support.apple.com/de-de/108047'),
+					templatePrice(2.99, 'GBP', 'GB', 'https://support.apple.com/en-gb/108047')
+				],
 				cycle: 'monthly'
 			},
 			{
 				id: '2tb',
 				name: { ja: '2TB', en: '2TB' },
-				prices: [jpyPrice(1500, 'https://support.apple.com/ja-jp/108047')],
+				prices: [
+					jpyPrice(1500, 'https://support.apple.com/ja-jp/108047'),
+					templatePrice(9.99, 'USD', 'US', 'https://support.apple.com/en-us/108047'),
+					templatePrice(9.99, 'EUR', 'DE', 'https://support.apple.com/de-de/108047'),
+					templatePrice(8.99, 'GBP', 'GB', 'https://support.apple.com/en-gb/108047')
+				],
 				cycle: 'monthly'
 			},
 			{
 				id: '6tb',
 				name: { ja: '6TB', en: '6TB' },
-				prices: [jpyPrice(4500, 'https://support.apple.com/ja-jp/108047')],
+				prices: [
+					jpyPrice(4500, 'https://support.apple.com/ja-jp/108047'),
+					templatePrice(29.99, 'USD', 'US', 'https://support.apple.com/en-us/108047'),
+					templatePrice(29.99, 'EUR', 'DE', 'https://support.apple.com/de-de/108047'),
+					templatePrice(26.99, 'GBP', 'GB', 'https://support.apple.com/en-gb/108047')
+				],
 				cycle: 'monthly'
 			},
 			{
 				id: '12tb',
 				name: { ja: '12TB', en: '12TB' },
-				prices: [jpyPrice(9000, 'https://support.apple.com/ja-jp/108047')],
+				prices: [
+					jpyPrice(9000, 'https://support.apple.com/ja-jp/108047'),
+					templatePrice(59.99, 'USD', 'US', 'https://support.apple.com/en-us/108047'),
+					templatePrice(59.99, 'EUR', 'DE', 'https://support.apple.com/de-de/108047'),
+					templatePrice(54.99, 'GBP', 'GB', 'https://support.apple.com/en-gb/108047')
+				],
 				cycle: 'monthly'
 			}
 		],

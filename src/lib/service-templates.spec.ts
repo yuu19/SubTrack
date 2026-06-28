@@ -38,6 +38,9 @@ describe('serviceTemplates', () => {
 					expect(new URL(price.sourceUrl).protocol).toBe('https:');
 					expect(price.verifiedAt).toMatch(/^\d{4}-\d{2}-\d{2}$/);
 				}
+
+				const priceKeys = plan.prices.map((price) => `${price.currency}:${price.region}`);
+				expect(new Set(priceKeys).size).toBe(priceKeys.length);
 			}
 		}
 	});
@@ -56,6 +59,11 @@ describe('serviceTemplates', () => {
 				.find((plan) => plan.id === '50gb')
 				?.prices.find((price) => price.currency === 'JPY')?.amount
 		).toBe(150);
+		expect(
+			spotify?.plans
+				.find((plan) => plan.id === 'standard')
+				?.prices.find((price) => price.currency === 'USD')?.amount
+		).toBe(12.99);
 		expect(serviceTemplates.find((template) => template.id === 'chatgpt')?.plans[0].prices).toEqual(
 			[]
 		);

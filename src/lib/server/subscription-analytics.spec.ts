@@ -116,6 +116,36 @@ describe('subscription analytics', () => {
 		).toEqual([1, 1]);
 	});
 
+	it('keeps decimal amounts and rounds cycle conversions to two decimal places', () => {
+		const analytics = buildSubscriptionAnalytics([
+			{
+				id: 1,
+				serviceName: 'Disney+',
+				color: 'blue',
+				cycle: 'yearly',
+				amount: 189.99,
+				currency: 'USD'
+			},
+			{
+				id: 2,
+				serviceName: 'Spotify',
+				color: 'green',
+				cycle: 'monthly',
+				amount: 12.99,
+				currency: 'USD'
+			}
+		]);
+		const monthly = analytics.monthly.summaries.find((summary) => summary.currency === 'USD');
+		const yearly = analytics.yearly.summaries.find((summary) => summary.currency === 'USD');
+
+		expect(monthly?.total).toBe(28.82);
+		expect(monthly?.items.map((item) => [item.serviceName, item.amount])).toEqual([
+			['Disney+', 15.83],
+			['Spotify', 12.99]
+		]);
+		expect(yearly?.total).toBe(345.87);
+	});
+
 	it('keeps the first available color for grouped services', () => {
 		const analytics = buildSubscriptionAnalytics([
 			{

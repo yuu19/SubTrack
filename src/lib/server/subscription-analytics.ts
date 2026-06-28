@@ -47,6 +47,7 @@ export type SubscriptionAnalyticsSnapshot = Record<
 >;
 
 const PERIODS: AnalyticsPeriod[] = ['monthly', 'yearly'];
+const AMOUNT_DECIMAL_PLACES = 2;
 
 type GroupedAnalyticsRow = {
 	subscriptionId: number | null;
@@ -65,16 +66,23 @@ type GroupedAnalytics = Record<
 const normalizeAmount = (amount: number, cycle: string, period: AnalyticsPeriod) => {
 	if (!Number.isFinite(amount) || amount <= 0) return 0;
 
+	const roundAmount = (value: number) =>
+		Math.round((value + Number.EPSILON) * 10 ** AMOUNT_DECIMAL_PLACES) /
+		10 ** AMOUNT_DECIMAL_PLACES;
+
 	if (period === 'monthly') {
-		if (cycle === 'yearly') return Math.round(amount / 12);
-		if (cycle === 'quarterly') return Math.round(amount / 3);
-		return Math.round(amount);
+		if (cycle === 'yearly') return roundAmount(amount / 12);
+		if (cycle === 'quarterly') return roundAmount(amount / 3);
+		return roundAmount(amount);
 	}
 
-	if (cycle === 'yearly') return Math.round(amount);
-	if (cycle === 'quarterly') return Math.round(amount * 4);
-	return Math.round(amount * 12);
+	if (cycle === 'yearly') return roundAmount(amount);
+	if (cycle === 'quarterly') return roundAmount(amount * 4);
+	return roundAmount(amount * 12);
 };
+
+const roundAmountSum = (amount: number) =>
+	Math.round((amount + Number.EPSILON) * 10 ** AMOUNT_DECIMAL_PLACES) / 10 ** AMOUNT_DECIMAL_PLACES;
 
 const resolveCurrency = (currency: string | null | undefined): SubscriptionCurrency =>
 	SUPPORTED_CURRENCIES.includes(currency as SubscriptionCurrency)
@@ -120,7 +128,7 @@ export const buildSubscriptionAnalytics = (
 			const existing = currencyGroup.get(serviceName);
 			currencyGroup.set(serviceName, {
 				subscriptionId: existing?.subscriptionId ?? subscription.id ?? null,
-				amount: (existing?.amount ?? 0) + normalizedAmount,
+				amount: roundAmountSum((existing?.amount ?? 0) + normalizedAmount),
 				color: existing?.color ?? subscription.color ?? null,
 				iconType: existing?.iconType ?? subscription.iconType ?? null,
 				iconValue: existing?.iconValue ?? subscription.iconValue ?? null,
@@ -152,7 +160,7 @@ export const buildSubscriptionAnalytics = (
 						right.amount - left.amount || left.serviceName.localeCompare(right.serviceName)
 				);
 
-			const total = items.reduce((sum, item) => sum + item.amount, 0);
+			const total = roundAmountSum(items.reduce((sum, item) => sum + item.amount, 0));
 			return [
 				{
 					...createEmptySummary(currency),

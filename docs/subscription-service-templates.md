@@ -67,6 +67,16 @@
 価格候補はプランごとに複数持てる。
 実装上は `prices` に、金額、通貨、地域、参照元URL、確認日を入れる。
 価格がないプランは `prices: []` とする。
+公式ページに表示された通常の継続課金額だけを入れる。
+無料トライアル、初回割引、期間限定価格、為替レートで換算した価格は入れない。
+税やVATの扱いが地域で異なる場合でも、テンプレートでは公式ページに表示された価格をそのまま参考価格として扱う。
+実際の請求額は保存前にユーザーが編集できる。
+
+`amount` は表示通貨の通常単位で保存する。
+JPY は `1080`、USD は `12.99` のように扱う。
+DB 上の `tracked_subscription.amount` は小数を保持できる型にする。
+分析では保存額を小数のまま扱い、月額・年額への周期換算後に小数第2位へ丸める。
+CSV エクスポートでは保存額そのものを出力する。
 
 標準の地域は次の通り。
 
@@ -85,8 +95,8 @@
 該当通貨価格がない場合は `0` に戻す。
 ユーザーが料金欄を編集済みの場合は、通貨を変更しても金額を自動変更しない。
 
-今回は既存の日本円価格を `prices` に移行する。
-外貨価格は後続の価格調査で追加する。
+外貨価格は、公式ページでプラン名と通常価格が明確に確認できたものだけを `prices` に追加する。
+公式ページが地域やログイン状態で価格を動的に出し分け、安定した価格テキストを確認できない場合は追加しない。
 調査対象は、Netflix、YouTube Premium、Spotify、Apple Music、Disney+、iCloud+、Google One、ChatGPT とする。
 
 `0` は「自分で入力」の意味として扱う。保存前にユーザーが実際の請求額へ編集する前提。
@@ -102,7 +112,7 @@
 | Amazon Prime    | 買い物, 動画 / Shopping, Video | 現時点では価格なし                  | Amazon Prime会員情報管理      |
 | Spotify         | 音楽 / Music                   | 公式ページで確認できるプラン        | Spotifyアカウント管理         |
 | Apple Music     | 音楽 / Music                   | 公式ページで確認できるプラン        | Appleサブスクリプション管理   |
-| Disney+         | 動画 / Video                   | 現時点では価格なし                  | Disney+アカウント管理         |
+| Disney+         | 動画 / Video                   | 公式ページで確認できるプラン        | Disney+アカウント管理         |
 | U-NEXT          | 動画 / Video                   | 現時点では価格なし                  | U-NEXTアカウント管理          |
 | iCloud+         | クラウド / Cloud               | Apple公式サポートで確認できるプラン | Appleサブスクリプション管理   |
 | Google One      | クラウド / Cloud               | 現時点では価格なし                  | Google One設定                |
@@ -117,19 +127,35 @@
 
 ## 今回確認した公式情報
 
-- Netflix: `https://www.netflix.com/jp/`
+- Netflix: `https://www.netflix.com/jp/`, `https://www.netflix.com/de-en/`, `https://www.netflix.com/gb/`
 - Netflix解約ヘルプ: `https://help.netflix.com/ja/node/407`
 - YouTube Premium: `https://www.youtube.com/premium?gl=JP&hl=ja`
 - YouTube有料メンバーシップ管理ヘルプ: `https://support.google.com/youtube/answer/6305537?hl=ja`
 - Amazon Prime: `https://www.amazon.co.jp/amazonprime`
-- Spotify Premium: `https://www.spotify.com/jp/premium/`
-- Apple Music: `https://www.apple.com/jp/apple-music/`
+- Spotify Premium: `https://www.spotify.com/jp/premium/`, `https://www.spotify.com/us/premium/`, `https://www.spotify.com/de-en/premium/`, `https://www.spotify.com/uk/premium/`
+- Apple Music: `https://www.apple.com/jp/apple-music/`, `https://www.apple.com/apple-music/`, `https://www.apple.com/de/apple-music/`, `https://www.apple.com/uk/apple-music/`
 - Appleサブスクリプション解約: `https://support.apple.com/ja-jp/118428`
-- Disney+: `https://www.disneyplus.com/ja-jp`
+- Disney+: `https://www.disneyplus.com/ja-jp`, `https://www.disneyplus.com/en-us`, `https://www.disneyplus.com/de-de`, `https://www.disneyplus.com/en-gb`
 - U-NEXT: `https://video.unext.jp/`
-- iCloud+価格: `https://support.apple.com/ja-jp/108047`
+- iCloud+価格: `https://support.apple.com/ja-jp/108047`, `https://support.apple.com/en-us/108047`, `https://support.apple.com/de-de/108047`, `https://support.apple.com/en-gb/108047`
 - Google One: `https://one.google.com/about/plans`
 - ChatGPT料金: `https://openai.com/chatgpt/pricing/`
+
+## 2026年6月28日の外貨価格調査結果
+
+採用した価格は、公式ページで通常の継続課金額として確認できたものに限る。
+年額プランは月額換算せず、公式表示の年額をそのまま保存する。
+
+| サービス        | 採用した価格                                                                                                                                                    | 未採用理由                                                                                                           |
+| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| Netflix         | JP: 広告つき 890 JPY/月。DE: 最低価格 4.99 EUR/月。GB: 最低価格 5.99 GBP/月。                                                                                   | US は取得時に地域固定できず、公式価格として扱わない。                                                                |
+| YouTube Premium | なし。                                                                                                                                                          | 公式ページの取得結果から、地域別の通常価格を安定して確認できなかった。                                               |
+| Spotify         | JP/US/DE/GB の Individual、Student、Duo、Family 月額。                                                                                                          | なし。                                                                                                               |
+| Apple Music     | JP/US/DE/GB の Individual、Family、Student 月額。                                                                                                               | なし。                                                                                                               |
+| Disney+         | JP の Standard/Premium 月額・年額。US の Standard with Ads 月額、Premium 月額・年額。DE/GB の Standard with Ads 月額、Standard 月額・年額、Premium 月額・年額。 | US の広告なし Standard は今回の公式取得結果で明確に確認できなかったため入れない。6カ月割引などの一時価格は入れない。 |
+| iCloud+         | JP/US/DE/GB の 50GB、200GB、2TB、6TB、12TB 月額。                                                                                                               | なし。                                                                                                               |
+| Google One      | なし。                                                                                                                                                          | 地域別価格が動的に出し分けられ、今回の取得結果では対象地域の価格を安定して確認できなかった。                         |
+| ChatGPT         | なし。                                                                                                                                                          | 公式料金ページの取得結果から、テンプレートへ入れる地域別価格を安定して確認できなかった。                             |
 
 ## MVP範囲外
 
