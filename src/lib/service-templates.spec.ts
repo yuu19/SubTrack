@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { CANCELLATION_METHODS } from '$lib/constant';
+import { CANCELLATION_METHODS, SUPPORTED_CURRENCIES } from '$lib/constant';
 import { serviceTemplates } from './service-templates';
+
+const supportedTemplatePriceRegions = ['JP', 'US', 'DE', 'GB'];
 
 describe('serviceTemplates', () => {
 	it('contains the initial MVP templates with unique ids', () => {
@@ -27,20 +29,36 @@ describe('serviceTemplates', () => {
 			for (const plan of template.plans) {
 				expect(plan.name.ja.trim()).not.toBe('');
 				expect(plan.name.en.trim()).not.toBe('');
-				expect(plan.price === null || plan.price >= 0).toBe(true);
+				expect(Array.isArray(plan.prices)).toBe(true);
+
+				for (const price of plan.prices) {
+					expect(price.amount).toBeGreaterThanOrEqual(0);
+					expect(SUPPORTED_CURRENCIES).toContain(price.currency);
+					expect(supportedTemplatePriceRegions).toContain(price.region);
+					expect(new URL(price.sourceUrl).protocol).toBe('https:');
+					expect(price.verifiedAt).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+				}
 			}
 		}
 	});
 
-	it('includes verified JPY prices only where the template stores a price', () => {
+	it('includes verified JPY prices where existing templates stored a price', () => {
 		const spotify = serviceTemplates.find((template) => template.id === 'spotify');
 		const icloud = serviceTemplates.find((template) => template.id === 'icloud-plus');
 
-		expect(spotify?.plans.find((plan) => plan.id === 'standard')?.price).toBe(1080);
-		expect(icloud?.plans.find((plan) => plan.id === '50gb')?.price).toBe(150);
 		expect(
-			serviceTemplates.find((template) => template.id === 'chatgpt')?.plans[0].price
-		).toBeNull();
+			spotify?.plans
+				.find((plan) => plan.id === 'standard')
+				?.prices.find((price) => price.currency === 'JPY')?.amount
+		).toBe(1080);
+		expect(
+			icloud?.plans
+				.find((plan) => plan.id === '50gb')
+				?.prices.find((price) => price.currency === 'JPY')?.amount
+		).toBe(150);
+		expect(serviceTemplates.find((template) => template.id === 'chatgpt')?.plans[0].prices).toEqual(
+			[]
+		);
 	});
 
 	it('has a checked-in template icon asset for each service template', () => {

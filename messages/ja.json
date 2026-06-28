@@ -335,7 +335,7 @@
 	"subscription_template_selected": "選択中",
 	"subscription_template_plan_label": "プラン候補",
 	"subscription_template_reference_price_note": "参考価格です。実際の請求額に合わせて編集してください。確認日: {date}。",
-	"subscription_template_reference_price_missing": "確認済みの日本円価格がないため、料金は0円で入力しています。実際の請求額に合わせて編集してください。確認日: {date}。",
+	"subscription_template_reference_price_missing": "選択中の通貨で確認済みの公式価格がないため、料金は0で入力しています。実際の請求額に合わせて編集してください。確認日: {date}。",
 	"subscription_template_source_link": "公式情報を開く",
 	"subscription_template_cancellation_notice": "公式管理ページを保存します。解約操作は各サービス上で行ってください。",
 	"subscription_cancellation_section_title": "解約リンク・メモ",

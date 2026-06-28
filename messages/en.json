@@ -335,7 +335,7 @@
 	"subscription_template_selected": "Selected",
 	"subscription_template_plan_label": "Plan suggestion",
 	"subscription_template_reference_price_note": "This is a reference price. Edit it to match your actual charge. Verified: {date}.",
-	"subscription_template_reference_price_missing": "No verified JPY price is saved for this suggestion, so the amount is set to 0. Edit it to match your actual charge. Verified: {date}.",
+	"subscription_template_reference_price_missing": "No verified official price is saved for the selected currency, so the amount is set to 0. Edit it to match your actual charge. Verified: {date}.",
 	"subscription_template_source_link": "Open official source",
 	"subscription_template_cancellation_notice": "The official management page will be saved. Complete cancellation on the service website or app.",
 	"subscription_cancellation_section_title": "Cancellation link and notes",

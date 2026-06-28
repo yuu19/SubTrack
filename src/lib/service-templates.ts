@@ -1,4 +1,4 @@
-import type { AppLocale, CancellationMethod } from '$lib/constant';
+import type { AppLocale, CancellationMethod, SubscriptionCurrency } from '$lib/constant';
 import type { SubscriptionColor } from '$lib/subscription-colors';
 
 export type ServiceTemplateCategory = 'video' | 'music' | 'shopping' | 'cloud' | 'ai';
@@ -6,10 +6,20 @@ export type TemplateBillingCycle = 'monthly' | 'quarterly' | 'yearly';
 
 type LocalizedText = Record<AppLocale, string>;
 
+export type ServiceTemplatePriceRegion = 'JP' | 'US' | 'DE' | 'GB';
+
+export type ServiceTemplatePlanPrice = {
+	amount: number;
+	currency: SubscriptionCurrency;
+	region: ServiceTemplatePriceRegion;
+	sourceUrl: string;
+	verifiedAt: string;
+};
+
 export type ServiceTemplatePlan = {
 	id: string;
 	name: LocalizedText;
-	price: number | null;
+	prices: ServiceTemplatePlanPrice[];
 	cycle: TemplateBillingCycle;
 	note?: LocalizedText;
 };
@@ -33,6 +43,14 @@ export type ServiceTemplate = {
 
 const verifiedAt = '2026-06-23';
 
+const jpyPrice = (amount: number, sourceUrl: string): ServiceTemplatePlanPrice => ({
+	amount,
+	currency: 'JPY',
+	region: 'JP',
+	sourceUrl,
+	verifiedAt
+});
+
 export const serviceTemplates: ServiceTemplate[] = [
 	{
 		id: 'netflix',
@@ -49,7 +67,7 @@ export const serviceTemplates: ServiceTemplate[] = [
 			{
 				id: 'standard-with-ads',
 				name: { ja: '広告つきプラン', en: 'Ad-supported plan' },
-				price: 890,
+				prices: [jpyPrice(890, 'https://www.netflix.com/jp/')],
 				cycle: 'monthly',
 				note: {
 					ja: '公式ページで確認できる最低価格です。',
@@ -59,7 +77,7 @@ export const serviceTemplates: ServiceTemplate[] = [
 			{
 				id: 'custom',
 				name: { ja: '自分で入力', en: 'Enter manually' },
-				price: null,
+				prices: [],
 				cycle: 'monthly'
 			}
 		],
@@ -87,7 +105,7 @@ export const serviceTemplates: ServiceTemplate[] = [
 			{
 				id: 'custom',
 				name: { ja: '自分で入力', en: 'Enter manually' },
-				price: null,
+				prices: [],
 				cycle: 'monthly',
 				note: {
 					ja: '請求元やプランで料金が変わるため、実際の請求額を入力してください。',
@@ -119,7 +137,7 @@ export const serviceTemplates: ServiceTemplate[] = [
 			{
 				id: 'custom',
 				name: { ja: '自分で入力', en: 'Enter manually' },
-				price: null,
+				prices: [],
 				cycle: 'monthly'
 			}
 		],
@@ -147,25 +165,25 @@ export const serviceTemplates: ServiceTemplate[] = [
 			{
 				id: 'standard',
 				name: { ja: 'Premium Standard', en: 'Premium Standard' },
-				price: 1080,
+				prices: [jpyPrice(1080, 'https://www.spotify.com/jp/premium/')],
 				cycle: 'monthly'
 			},
 			{
 				id: 'student',
 				name: { ja: 'Premium Student', en: 'Premium Student' },
-				price: 580,
+				prices: [jpyPrice(580, 'https://www.spotify.com/jp/premium/')],
 				cycle: 'monthly'
 			},
 			{
 				id: 'duo',
 				name: { ja: 'Premium Duo', en: 'Premium Duo' },
-				price: 1480,
+				prices: [jpyPrice(1480, 'https://www.spotify.com/jp/premium/')],
 				cycle: 'monthly'
 			},
 			{
 				id: 'family',
 				name: { ja: 'Premium Family', en: 'Premium Family' },
-				price: 1880,
+				prices: [jpyPrice(1880, 'https://www.spotify.com/jp/premium/')],
 				cycle: 'monthly'
 			}
 		],
@@ -193,19 +211,19 @@ export const serviceTemplates: ServiceTemplate[] = [
 			{
 				id: 'individual',
 				name: { ja: '個人', en: 'Individual' },
-				price: 1080,
+				prices: [jpyPrice(1080, 'https://www.apple.com/jp/apple-music/')],
 				cycle: 'monthly'
 			},
 			{
 				id: 'family',
 				name: { ja: 'ファミリー', en: 'Family' },
-				price: 1680,
+				prices: [jpyPrice(1680, 'https://www.apple.com/jp/apple-music/')],
 				cycle: 'monthly'
 			},
 			{
 				id: 'student',
 				name: { ja: '学生', en: 'Student' },
-				price: 580,
+				prices: [jpyPrice(580, 'https://www.apple.com/jp/apple-music/')],
 				cycle: 'monthly'
 			}
 		],
@@ -233,7 +251,7 @@ export const serviceTemplates: ServiceTemplate[] = [
 			{
 				id: 'custom',
 				name: { ja: '自分で入力', en: 'Enter manually' },
-				price: null,
+				prices: [],
 				cycle: 'monthly'
 			}
 		],
@@ -261,7 +279,7 @@ export const serviceTemplates: ServiceTemplate[] = [
 			{
 				id: 'custom',
 				name: { ja: '自分で入力', en: 'Enter manually' },
-				price: null,
+				prices: [],
 				cycle: 'monthly'
 			}
 		],
@@ -289,31 +307,31 @@ export const serviceTemplates: ServiceTemplate[] = [
 			{
 				id: '50gb',
 				name: { ja: '50GB', en: '50GB' },
-				price: 150,
+				prices: [jpyPrice(150, 'https://support.apple.com/ja-jp/108047')],
 				cycle: 'monthly'
 			},
 			{
 				id: '200gb',
 				name: { ja: '200GB', en: '200GB' },
-				price: 450,
+				prices: [jpyPrice(450, 'https://support.apple.com/ja-jp/108047')],
 				cycle: 'monthly'
 			},
 			{
 				id: '2tb',
 				name: { ja: '2TB', en: '2TB' },
-				price: 1500,
+				prices: [jpyPrice(1500, 'https://support.apple.com/ja-jp/108047')],
 				cycle: 'monthly'
 			},
 			{
 				id: '6tb',
 				name: { ja: '6TB', en: '6TB' },
-				price: 4500,
+				prices: [jpyPrice(4500, 'https://support.apple.com/ja-jp/108047')],
 				cycle: 'monthly'
 			},
 			{
 				id: '12tb',
 				name: { ja: '12TB', en: '12TB' },
-				price: 9000,
+				prices: [jpyPrice(9000, 'https://support.apple.com/ja-jp/108047')],
 				cycle: 'monthly'
 			}
 		],
@@ -341,7 +359,7 @@ export const serviceTemplates: ServiceTemplate[] = [
 			{
 				id: 'custom',
 				name: { ja: '自分で入力', en: 'Enter manually' },
-				price: null,
+				prices: [],
 				cycle: 'monthly'
 			}
 		],
@@ -369,7 +387,7 @@ export const serviceTemplates: ServiceTemplate[] = [
 			{
 				id: 'plus',
 				name: { ja: 'Plus', en: 'Plus' },
-				price: null,
+				prices: [],
 				cycle: 'monthly',
 				note: {
 					ja: '請求額と通貨はアカウントの表示に合わせて入力してください。',
@@ -379,7 +397,7 @@ export const serviceTemplates: ServiceTemplate[] = [
 			{
 				id: 'pro',
 				name: { ja: 'Pro', en: 'Pro' },
-				price: null,
+				prices: [],
 				cycle: 'monthly',
 				note: {
 					ja: '請求額と通貨はアカウントの表示に合わせて入力してください。',

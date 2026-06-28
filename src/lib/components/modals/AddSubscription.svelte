@@ -29,7 +29,8 @@
 	import {
 		serviceTemplates,
 		type ServiceTemplate,
-		type ServiceTemplatePlan
+		type ServiceTemplatePlan,
+		type ServiceTemplatePlanPrice
 	} from '$lib/service-templates';
 	import { UserConfigContext } from '$lib/states/userConfig.svelte';
 	import { defaultSubscriptionColor } from '$lib/subscription-colors';
@@ -128,6 +129,15 @@
 
 	const localizedTemplateTags = (template: ServiceTemplate) => template.tags[currentLocale];
 	const localizedPlanName = (plan: ServiceTemplatePlan) => plan.name[currentLocale];
+	const resolvePlanPrice = (
+		plan: ServiceTemplatePlan | null | undefined,
+		currency: string | null | undefined
+	): ServiceTemplatePlanPrice | null =>
+		plan?.prices.find((price) => price.currency === currency) ?? null;
+	const formatSelectedCurrencyPlanPrice = (plan: ServiceTemplatePlan) => {
+		const price = resolvePlanPrice(plan, $currencyField);
+		return price ? ` - ${formatCurrency(price.amount, price.currency, currentLocale)}` : '';
+	};
 	const resolveStoredCurrency = (): SubscriptionCurrency => {
 		if (typeof window === 'undefined') return DEFAULT_SUBSCRIPTION_CURRENCY;
 		const value = window.localStorage.getItem(lastCurrencyStorageKey);
@@ -142,6 +152,7 @@
 	const selectedPlan = $derived.by(() =>
 		selectedTemplate?.plans.find((plan) => plan.id === selectedPlanId)
 	);
+	const selectedPlanPrice = $derived(resolvePlanPrice(selectedPlan, $currencyField));
 	const matchingTemplates = $derived.by(() => {
 		if (!templateQuery) return serviceTemplates.slice(0, 5);
 
@@ -161,6 +172,9 @@
 	});
 	const selectedTemplateVerifiedAt = $derived(
 		selectedTemplate ? formatLongDate(selectedTemplate.lastVerifiedAt, currentLocale) : ''
+	);
+	const selectedPlanPriceVerifiedAt = $derived(
+		selectedPlanPrice ? formatLongDate(selectedPlanPrice.verifiedAt, currentLocale) : ''
 	);
 	const mergeTemplateTags = (template: ServiceTemplate) => {
 		const tags = localizedTemplateTags(template);
@@ -190,10 +204,7 @@
 			$iconValueField = template.id;
 		}
 		$selectField = plan.cycle;
-		$numberField = plan.price ?? 0;
-		if (plan.price !== null) {
-			$currencyField = DEFAULT_SUBSCRIPTION_CURRENCY;
-		}
+		$numberField = resolvePlanPrice(plan, $currencyField)?.amount ?? 0;
 		$cancellationUrlField = template.cancellation.url ?? '';
 		$cancellationMethodField = template.cancellation.method;
 		$cancellationMemoField = template.cancellation.memo[currentLocale];
@@ -281,6 +292,11 @@
 		if (typeof window === 'undefined') return;
 		if (!SUPPORTED_CURRENCIES.includes(currency as SubscriptionCurrency)) return;
 		window.localStorage.setItem(lastCurrencyStorageKey, currency);
+	});
+
+	$effect(() => {
+		if (!selectedPlan || $priceEditedByUserField) return;
+		$numberField = selectedPlanPrice?.amount ?? 0;
 	});
 
 	$effect(() => {
@@ -377,10 +393,7 @@
 					>
 						{#each selectedTemplate.plans as plan (plan.id)}
 							<option value={plan.id}>
-								{localizedPlanName(plan)}
-								{#if plan.price !== null}
-									- {formatCurrency(plan.price, DEFAULT_SUBSCRIPTION_CURRENCY, currentLocale)}
-								{/if}
+								{localizedPlanName(plan)}{formatSelectedCurrencyPlanPrice(plan)}
 							</option>
 						{/each}
 					</select>
@@ -568,12 +581,12 @@
 							bind:value={$numberField}
 						/>
 						<Description class="text-muted-foreground text-xs">
-							{#if selectedTemplate && selectedPlan && selectedPlan.price !== null}
+							{#if selectedTemplate && selectedPlan && selectedPlanPrice}
 								{m.subscription_template_reference_price_note({
-									date: selectedTemplateVerifiedAt
+									date: selectedPlanPriceVerifiedAt
 								})}
 								<a
-									href={selectedTemplate.sourceUrl}
+									href={selectedPlanPrice.sourceUrl}
 									target="_blank"
 									rel="noopener noreferrer"
 									class="underline underline-offset-2"
