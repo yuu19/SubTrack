@@ -1,10 +1,27 @@
-import { defineConfig } from '@playwright/test';
+import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
-	webServer: {
-		command: 'pnpm run build && XDG_CONFIG_HOME=/tmp pnpm exec wrangler dev --ip 127.0.0.1 --port 4173',
-		port: 4173,
-		timeout: 180_000
+	testDir: './e2e',
+	fullyParallel: true,
+	forbidOnly: !!process.env.CI,
+	retries: process.env.CI ? 2 : 0,
+	reporter: process.env.CI ? [['list'], ['html', { open: 'never' }]] : [['list'], ['html']],
+	use: {
+		baseURL: 'http://127.0.0.1:4173',
+		trace: 'on-first-retry',
+		screenshot: 'only-on-failure',
+		video: 'retain-on-failure'
 	},
-	testDir: 'e2e'
+	projects: [
+		{
+			name: 'chromium',
+			use: { ...devices['Desktop Chrome'] }
+		}
+	],
+	webServer: {
+		command: 'pnpm exec vite dev --host 127.0.0.1 --port 4173',
+		url: 'http://127.0.0.1:4173',
+		reuseExistingServer: !process.env.CI,
+		timeout: 120_000
+	}
 });

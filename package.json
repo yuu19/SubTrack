@@ -23,7 +23,11 @@
 		"sync:template-icons": "node scripts/sync-template-icons.mjs",
 		"test:unit": "vitest",
 		"test": "npm run test:unit -- --run && npm run test:e2e",
-		"test:e2e": "playwright test"
+		"test:e2e": "playwright test",
+		"test:e2e:list": "playwright test --list",
+		"test:e2e:headed": "playwright test --headed",
+		"test:e2e:ui": "playwright test --ui",
+		"test:e2e:debug": "playwright test --debug"
 	},
 	"devDependencies": {
 		"@cloudflare/workers-types": "^4.20251202.0",
