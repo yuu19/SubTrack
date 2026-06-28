@@ -55,10 +55,13 @@ const resolveAuthRedirectURI = (requestOrigin?: string, providerId = 'google') =
 	return new URL(`${authBasePath}/callback/${providerId}`, origin).toString();
 };
 const adminUserIds = parseAdminUserIds(process.env.ADMIN_USER_IDS);
+const disableStripePlugin = process.env.E2E_AUTH_DISABLE_STRIPE === 'true';
 
-const stripeClient = new Stripe(stripeSecretKey!, {
-	apiVersion: '2025-11-17.clover'
-});
+const stripeClient = disableStripePlugin
+	? null
+	: new Stripe(stripeSecretKey!, {
+			apiVersion: '2025-11-17.clover'
+		});
 
 export function createAuth(
 	db: DrizzleD1Database<Schema> | BetterSQLite3Database<Schema>,
@@ -86,43 +89,47 @@ export function createAuth(
 			admin({
 				adminUserIds: adminUserIds.length ? adminUserIds : undefined
 			}),
-			stripe({
-				stripeClient,
-				stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET!,
-				createCustomerOnSignUp: true,
-				onEvent: async (event) => {
-					await handleStripeLifetimeCheckoutEvent(db, event);
-				},
-				subscription: {
-					enabled: true,
-					allowReTrialsForDifferentPlans: true,
-					plans: [
-						{
-							name: 'Free',
-							// priceId を設定しない = 無料プラン
-							limits: {
-								projects: 1,
-								storage: 1
+			...(stripeClient
+				? [
+						stripe({
+							stripeClient,
+							stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET!,
+							createCustomerOnSignUp: true,
+							onEvent: async (event) => {
+								await handleStripeLifetimeCheckoutEvent(db, event);
+							},
+							subscription: {
+								enabled: true,
+								allowReTrialsForDifferentPlans: true,
+								plans: [
+									{
+										name: 'Free',
+										// priceId を設定しない = 無料プラン
+										limits: {
+											projects: 1,
+											storage: 1
+										}
+									},
+									{
+										name: 'Premium',
+										lookupKey: PREMIUM_MONTHLY_LOOKUP_KEY,
+										annualDiscountLookupKey: PREMIUM_ANNUAL_LOOKUP_KEY,
+										freeTrial: {
+											days: 7
+										}
+									},
+									{
+										name: 'Test 1 Day',
+										lookupKey: TEST_DAILY_LOOKUP_KEY,
+										freeTrial: {
+											days: 1
+										}
+									}
+								]
 							}
-						},
-						{
-							name: 'Premium',
-							lookupKey: PREMIUM_MONTHLY_LOOKUP_KEY,
-							annualDiscountLookupKey: PREMIUM_ANNUAL_LOOKUP_KEY,
-							freeTrial: {
-								days: 7
-							}
-						},
-						{
-							name: 'Test 1 Day',
-							lookupKey: TEST_DAILY_LOOKUP_KEY,
-							freeTrial: {
-								days: 1
-							}
-						}
+						})
 					]
-				}
-			}),
+				: []),
 			sveltekitCookies(getRequestEvent)
 		],
 

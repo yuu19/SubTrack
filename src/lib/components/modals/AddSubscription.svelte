@@ -26,7 +26,6 @@
 		type ServiceTemplate,
 		type ServiceTemplatePlan
 	} from '$lib/service-templates';
-	import { addSubscriptionModalState } from '$lib/states/modalState.svelte';
 	import { UserConfigContext } from '$lib/states/userConfig.svelte';
 	import { defaultSubscriptionColor } from '$lib/subscription-colors';
 	import {
@@ -38,7 +37,7 @@
 		type SubscriptionIconType
 	} from '$lib/subscription-icons';
 
-	let { data, onOfflineSubmit, onServerResult } = $props();
+	let { data, open = false, onClose = () => {}, onOfflineSubmit, onServerResult } = $props();
 	const userConfig = UserConfigContext.get();
 	const currentLocale = $derived(resolveLocale(getLocale()));
 	const cycleOptions = $derived([
@@ -220,7 +219,7 @@
 			if (onOfflineSubmit) {
 				await onOfflineSubmit(payload);
 				form.reset();
-				addSubscriptionModalState.setFalse();
+				onClose();
 			}
 		},
 		onResult: async (event: any) => {
@@ -228,13 +227,13 @@
 			const subscriptions = result?.data?.subscriptions;
 			if (subscriptions && Array.isArray(subscriptions)) {
 				await onServerResult?.(subscriptions);
-				addSubscriptionModalState.setFalse();
+				onClose();
 			}
 		}
 	};
 
 	$effect(() => {
-		const isOpen = addSubscriptionModalState.value;
+		const isOpen = open;
 		if (isOpen && !wasOpen) {
 			$colorField = defaultSubscriptionColor;
 			$iconTypeField = defaultSubscriptionIconType;

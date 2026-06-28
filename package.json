@@ -25,6 +25,8 @@
 		"test": "npm run test:unit -- --run && npm run test:e2e",
 		"test:e2e": "playwright test",
 		"test:e2e:list": "playwright test --list",
+		"test:e2e:public": "playwright test --project=public",
+		"test:e2e:auth": "playwright test --project=auth",
 		"test:e2e:headed": "playwright test --headed",
 		"test:e2e:ui": "playwright test --ui",
 		"test:e2e:debug": "playwright test --debug"
@@ -106,5 +108,10 @@
 		"sveltekit-search-params": "^3.0.0",
 		"tailwind-animate": "^0.2.10",
 		"web-push": "^3.6.7"
+	},
+	"pnpm": {
+		"onlyBuiltDependencies": [
+			"better-sqlite3"
+		]
 	}
 }

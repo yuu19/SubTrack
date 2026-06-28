@@ -58,8 +58,14 @@ const handleAuth: Handle = async ({ event, resolve }) => {
 
 export const handleDb: Handle = async ({ event, resolve }) => {
 	const platform = event.platform;
+	const e2eDbPath = process.env.E2E_DB_PATH;
 
-	if (platform) {
+	if (e2eDbPath) {
+		const sqlite = new Database(e2eDbPath);
+		const db = drizzleSqlite(sqlite, { schema });
+
+		event.locals.db = db as any;
+	} else if (platform) {
 		const db = createDb(platform.env.DB);
 
 		event.locals.db = db;

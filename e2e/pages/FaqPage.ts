@@ -11,8 +11,15 @@ export class FaqPage extends BasePage {
 	}
 
 	async switchToEnglish() {
-		await this.languageButton().click();
-		await this.page.getByRole('menuitemradio', { name: 'en' }).click();
+		const languageButton = this.languageButton();
+		const englishOption = this.page.getByRole('menuitemradio', { name: 'en' });
+
+		await expect(async () => {
+			await languageButton.click();
+			await languageButton.press('ArrowDown');
+			await expect(englishOption).toBeVisible({ timeout: 1_000 });
+		}).toPass();
+		await englishOption.click();
 	}
 
 	async expectJapaneseLoaded() {

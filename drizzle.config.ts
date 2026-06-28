@@ -3,6 +3,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 function getLocalD1DB() {
+	if (process.env.E2E_DB_PATH) {
+		return path.resolve(process.env.E2E_DB_PATH);
+	}
+
 	try {
 		const basePath = path.resolve('.wrangler/state/v3/d1/miniflare-D1DatabaseObject');
 		const dbFile = fs

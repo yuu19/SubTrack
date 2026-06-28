@@ -35,7 +35,6 @@
 	import { localizeInternalHref } from '$lib/locale-routing';
 	import { m } from '$lib/paraglide/messages.js';
 	import { getLocale } from '$lib/paraglide/runtime';
-	import { addSubscriptionModalState } from '$lib/states/modalState.svelte';
 	import { browser } from '$app/environment';
 	import { enhance as kitEnhance } from '$app/forms';
 	import { goto } from '$app/navigation';
@@ -78,6 +77,7 @@
 	let pushPromptKey = $state(0);
 	let isCreatingLifetimeCheckout = $state(false);
 	let detailOpen = $state(false);
+	let addSubscriptionOpen = $state(false);
 	let editOpen = $state(false);
 	let cancelOpen = $state(false);
 	let reactivateOpen = $state(false);
@@ -393,7 +393,7 @@
 					{m.subscription_export_upgrade_button()}
 				</Button>
 			{/if}
-			<Button onclick={() => addSubscriptionModalState.setTrue()}
+			<Button onclick={() => (addSubscriptionOpen = true)}
 				>{m.subscription_page_add_button()}</Button
 			>
 		</div>
@@ -794,10 +794,12 @@
 	</AlertDialog.Content>
 </AlertDialog.Root>
 
-<Dialog.Root bind:open={addSubscriptionModalState.value}>
+<Dialog.Root bind:open={addSubscriptionOpen}>
 	<Dialog.Content class="max-h-[90vh] w-full max-w-3xl overflow-y-auto p-0">
 		<AddSubscription
 			{data}
+			open={addSubscriptionOpen}
+			onClose={() => (addSubscriptionOpen = false)}
 			onOfflineSubmit={handleOfflineSubmit}
 			onServerResult={handleCreateResult}
 		/>
