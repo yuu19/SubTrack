@@ -537,43 +537,47 @@
 			</Field>
 
 			<div class="grid min-w-0 gap-3 sm:grid-cols-2">
-				<Field {form} name="categoryId">
-					<Control>
-						{#snippet children({ props })}
-							<Label class="font-medium">{categoryFieldLabel}</Label>
-							<select
-								{...props}
-								class="border-input focus-visible:ring-ring focus-visible:border-ring bg-background flex h-10 w-full rounded-md border px-3 text-sm shadow-sm transition"
-								bind:value={$categoryIdField}
-							>
-								<option value="">{notSetLabel}</option>
-								{#each categories as category (category.id)}
-									<option value={category.id}>{category.name}</option>
-								{/each}
-							</select>
-						{/snippet}
-					</Control>
-					<FieldErrors class="text-destructive text-sm" />
-				</Field>
+				<div class="min-w-0 space-y-2">
+					<Field {form} name="categoryId">
+						<Control>
+							{#snippet children({ props })}
+								<Label class="font-medium">{categoryFieldLabel}</Label>
+								<select
+									{...props}
+									class="border-input focus-visible:ring-ring focus-visible:border-ring bg-background flex h-10 w-full rounded-md border px-3 text-sm shadow-sm transition"
+									bind:value={$categoryIdField}
+								>
+									<option value="">{notSetLabel}</option>
+									{#each categories as category (category.id)}
+										<option value={category.id}>{category.name}</option>
+									{/each}
+								</select>
+							{/snippet}
+						</Control>
+						<FieldErrors class="text-destructive text-sm" />
+					</Field>
+				</div>
 
-				<Field {form} name="paymentMethodId">
-					<Control>
-						{#snippet children({ props })}
-							<Label class="font-medium">{paymentMethodFieldLabel}</Label>
-							<select
-								{...props}
-								class="border-input focus-visible:ring-ring focus-visible:border-ring bg-background flex h-10 w-full rounded-md border px-3 text-sm shadow-sm transition"
-								bind:value={$paymentMethodIdField}
-							>
-								<option value="">{notSetLabel}</option>
-								{#each paymentMethods as paymentMethod (paymentMethod.id)}
-									<option value={paymentMethod.id}>{paymentMethod.name}</option>
-								{/each}
-							</select>
-						{/snippet}
-					</Control>
-					<FieldErrors class="text-destructive text-sm" />
-				</Field>
+				<div class="min-w-0 space-y-2">
+					<Field {form} name="paymentMethodId">
+						<Control>
+							{#snippet children({ props })}
+								<Label class="font-medium">{paymentMethodFieldLabel}</Label>
+								<select
+									{...props}
+									class="border-input focus-visible:ring-ring focus-visible:border-ring bg-background flex h-10 w-full rounded-md border px-3 text-sm shadow-sm transition"
+									bind:value={$paymentMethodIdField}
+								>
+									<option value="">{notSetLabel}</option>
+									{#each paymentMethods as paymentMethod (paymentMethod.id)}
+										<option value={paymentMethod.id}>{paymentMethod.name}</option>
+									{/each}
+								</select>
+							{/snippet}
+						</Control>
+						<FieldErrors class="text-destructive text-sm" />
+					</Field>
+				</div>
 			</div>
 
 			<details class="rounded-lg border p-4">
