@@ -535,42 +535,46 @@
 		</Field>
 
 		<div class="grid min-w-0 gap-3 sm:grid-cols-[minmax(0,1fr)_8rem]">
-			<Field {form} name="number">
-				<Control>
-					{#snippet children({ props })}
-						<Label class="font-medium">{m.subscription_form_amount_label()}</Label>
-						<Input
-							{...props}
-							type="number"
-							min="0"
-							step="0.01"
-							inputmode="decimal"
-							placeholder="1000"
-							oninput={markPriceEdited}
-							bind:value={$numberField}
-						/>
-					{/snippet}
-				</Control>
-				<FieldErrors class="text-destructive text-sm" />
-			</Field>
+			<div class="min-w-0 space-y-2">
+				<Field {form} name="number">
+					<Control>
+						{#snippet children({ props })}
+							<Label class="font-medium">{m.subscription_form_amount_label()}</Label>
+							<Input
+								{...props}
+								type="number"
+								min="0"
+								step="0.01"
+								inputmode="decimal"
+								placeholder="1000"
+								oninput={markPriceEdited}
+								bind:value={$numberField}
+							/>
+						{/snippet}
+					</Control>
+					<FieldErrors class="text-destructive text-sm" />
+				</Field>
+			</div>
 
-			<Field {form} name="currency">
-				<Control>
-					{#snippet children({ props })}
-						<Label class="font-medium">{currencyFieldLabel}</Label>
-						<select
-							{...props}
-							class="border-input focus-visible:ring-ring focus-visible:border-ring bg-background flex h-10 w-full rounded-md border px-3 text-sm shadow-sm transition"
-							bind:value={$currencyField}
-						>
-							{#each currencyOptions as option (option.value)}
-								<option value={option.value}>{option.value}</option>
-							{/each}
-						</select>
-					{/snippet}
-				</Control>
-				<FieldErrors class="text-destructive text-sm" />
-			</Field>
+			<div class="min-w-0 space-y-2">
+				<Field {form} name="currency">
+					<Control>
+						{#snippet children({ props })}
+							<Label class="font-medium">{currencyFieldLabel}</Label>
+							<select
+								{...props}
+								class="border-input focus-visible:ring-ring focus-visible:border-ring bg-background flex h-10 w-full rounded-md border px-3 text-sm shadow-sm transition"
+								bind:value={$currencyField}
+							>
+								{#each currencyOptions as option (option.value)}
+									<option value={option.value}>{option.value}</option>
+								{/each}
+							</select>
+						{/snippet}
+					</Control>
+					<FieldErrors class="text-destructive text-sm" />
+				</Field>
+			</div>
 		</div>
 
 		<Field {form} name="datepicker">
