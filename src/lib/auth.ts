@@ -9,11 +9,7 @@ import { sveltekitCookies } from 'better-auth/svelte-kit';
 import { getRequestEvent } from '$app/server';
 import { parseAdminUserIds } from '$lib/server/admin';
 import { handleStripeLifetimeCheckoutEvent } from '$lib/server/stripe-lifetime';
-import {
-	PREMIUM_ANNUAL_LOOKUP_KEY,
-	PREMIUM_MONTHLY_LOOKUP_KEY,
-	TEST_DAILY_LOOKUP_KEY
-} from '$lib/server/stripe-products';
+import { PREMIUM_MONTHLY_LOOKUP_KEY, TEST_DAILY_LOOKUP_KEY } from '$lib/server/stripe-products';
 import * as schema from './server/db/schema';
 type Schema = typeof import('./server/db/schema');
 
@@ -113,7 +109,6 @@ export function createAuth(
 									{
 										name: 'Premium',
 										lookupKey: PREMIUM_MONTHLY_LOOKUP_KEY,
-										annualDiscountLookupKey: PREMIUM_ANNUAL_LOOKUP_KEY,
 										freeTrial: {
 											days: 7
 										}

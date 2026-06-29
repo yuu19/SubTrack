@@ -8,7 +8,7 @@ const price = (overrides: Partial<Stripe.Price> = {}): Stripe.Price =>
 		object: 'price',
 		active: true,
 		currency: 'jpy',
-		unit_amount: 6000,
+		unit_amount: 3000,
 		recurring: null,
 		...overrides
 	}) as Stripe.Price;
@@ -17,7 +17,7 @@ describe('getStripePriceMismatch', () => {
 	it('accepts a matching one-time fixed price', () => {
 		expect(
 			getStripePriceMismatch(price(), {
-				unitAmount: 6000,
+				unitAmount: 3000,
 				currency: 'jpy',
 				recurring: false
 			})
@@ -33,7 +33,7 @@ describe('getStripePriceMismatch', () => {
 					recurring: { interval: 'month' } as Stripe.Price.Recurring
 				}),
 				{
-					unitAmount: 6000,
+					unitAmount: 3000,
 					currency: 'jpy',
 					recurring: false
 				}

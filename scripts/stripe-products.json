@@ -18,17 +18,6 @@
 						"plan": "premium",
 						"interval": "month"
 					}
-				},
-				{
-					"nickname": "Premium Annual",
-					"lookup_key": "premium_annual",
-					"unit_amount": 3000,
-					"currency": "jpy",
-					"recurring": { "interval": "year" },
-					"metadata": {
-						"plan": "premium",
-						"interval": "year"
-					}
 				}
 			]
 		},
@@ -64,9 +53,9 @@
 			},
 			"prices": [
 				{
-					"nickname": "Premium Lifetime",
-					"lookup_key": "premium_lifetime",
-					"unit_amount": 6000,
+					"nickname": "Premium Lifetime 3000",
+					"lookup_key": "premium_lifetime_3000",
+					"unit_amount": 3000,
 					"currency": "jpy",
 					"metadata": {
 						"plan": "premium",

@@ -511,7 +511,7 @@ export const landingPageCopy: Record<AppLocale, LandingPageCopy> = {
 			metrics: [
 				{ value: '5件', label: '無料で登録' },
 				{ value: '300円', label: 'Premium 月額' },
-				{ value: '6,000円', label: '買い切り' }
+				{ value: '3,000円', label: '買い切り' }
 			],
 			image: {
 				src: '/images/landing/hero-subscriptions-real-ja.png',
@@ -704,7 +704,7 @@ export const landingPageCopy: Record<AppLocale, LandingPageCopy> = {
 				},
 				{
 					name: 'Premium',
-					price: '月額300円 / 年額3,000円',
+					price: '月額300円',
 					cycle: '継続的に管理したい方向け',
 					description: '登録件数の上限解除や CSV エクスポートを利用できます。',
 					bullets: [
@@ -716,7 +716,7 @@ export const landingPageCopy: Record<AppLocale, LandingPageCopy> = {
 				},
 				{
 					name: 'Premium 買い切り',
-					price: '6,000円',
+					price: '3,000円',
 					cycle: '月額を増やしたくない方向け',
 					description: '一度の支払いで Premium 相当の機能を使い続けられます。',
 					bullets: ['買い切りで利用', 'CSV エクスポート', '登録件数制限の解除'],
@@ -780,7 +780,7 @@ export const landingPageCopy: Record<AppLocale, LandingPageCopy> = {
 			metrics: [
 				{ value: '5', label: 'Free entries' },
 				{ value: 'JPY 300', label: 'Premium monthly' },
-				{ value: 'JPY 6,000', label: 'Lifetime' }
+				{ value: 'JPY 3,000', label: 'Lifetime' }
 			],
 			image: {
 				src: '/images/landing/hero-subscriptions-real-en.png',
@@ -978,7 +978,7 @@ export const landingPageCopy: Record<AppLocale, LandingPageCopy> = {
 				},
 				{
 					name: 'Premium',
-					price: 'JPY 300 / month or JPY 3,000 / year',
+					price: 'JPY 300 / month',
 					cycle: 'For ongoing management',
 					description: 'Remove entry limits and use CSV export.',
 					bullets: [
@@ -990,7 +990,7 @@ export const landingPageCopy: Record<AppLocale, LandingPageCopy> = {
 				},
 				{
 					name: 'Premium Lifetime',
-					price: 'JPY 6,000',
+					price: 'JPY 3,000',
 					cycle: 'For avoiding another monthly bill',
 					description: 'Use Premium-level features with a one-time purchase.',
 					bullets: ['One-time purchase', 'CSV export', 'Remove entry limits'],
@@ -1624,7 +1624,7 @@ export const commercePageCopy: Record<'ja' | 'en', CommercePageCopy> = {
 			{
 				label: '販売価格',
 				value:
-					'Premium 月額300円（税込）、年額3,000円（税込）、Premium 買い切り6,000円（税込）。購入画面に異なる表示がある場合は、購入画面の表示を優先します。'
+					'Premium 月額300円（税込）、Premium 買い切り3,000円（税込）。購入画面に異なる表示がある場合は、購入画面の表示を優先します。'
 			},
 			{
 				label: '商品代金以外の必要料金',
@@ -1643,7 +1643,7 @@ export const commercePageCopy: Record<'ja' | 'en', CommercePageCopy> = {
 			{
 				label: '契約期間・自動更新',
 				value:
-					'サブスクリプションは月単位または年単位で自動更新されます。無料お試しは初回アップグレード時に7日間適用される場合があります。'
+					'サブスクリプションは月単位で自動更新されます。無料お試しは初回アップグレード時に7日間適用される場合があります。'
 			},
 			{
 				label: '返品・キャンセルについて',
@@ -1688,7 +1688,7 @@ export const commercePageCopy: Record<'ja' | 'en', CommercePageCopy> = {
 			{
 				label: 'Sales price',
 				value:
-					'Premium is JPY 300 per month including tax or JPY 3,000 per year including tax. Premium Lifetime is JPY 6,000 including tax. If the purchase screen shows different details, the purchase screen prevails.'
+					'Premium is JPY 300 per month including tax. Premium Lifetime is JPY 3,000 including tax. If the purchase screen shows different details, the purchase screen prevails.'
 			},
 			{
 				label: 'Additional fees',

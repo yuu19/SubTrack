@@ -39,8 +39,8 @@ The Service is a web application that lets Users record contract information, fe
 ## Article 6 (Plans, Fees, and Payment Terms)
 
 1. The Service offers a Free Plan, Premium subscriptions, and a Premium Lifetime Purchase.
-2. Premium subscription fees are JPY 300 per month, including tax, or JPY 3,000 per year, including tax.
-3. The Premium Lifetime Purchase fee is JPY 6,000, including tax.
+2. Premium subscription fees are JPY 300 per month, including tax.
+3. The Premium Lifetime Purchase fee is JPY 3,000, including tax.
 4. A 7-day free trial may apply to the first upgrade to a subscription. Unless canceled, billing automatically begins after the free trial ends.
 5. Subscriptions automatically renew for each billing period. To stop the next renewal, the User must complete cancellation from the billing management page at least 24 hours before the next renewal date.
 6. Lifetime Purchase is charged once at the time of application. No recurring billing occurs for the Lifetime Purchase.
