@@ -367,7 +367,7 @@
 	});
 </script>
 
-<div class="space-y-6 p-6">
+<div class="min-w-0 space-y-6 overflow-x-hidden p-4 sm:p-6">
 	{#if entryMode === 'templates'}
 		<div class="space-y-4">
 			<h2 class="text-2xl font-bold">{m.add_subscription_title()}</h2>
@@ -389,14 +389,11 @@
 				<Pencil class="size-4" aria-hidden="true" />
 				{currentLocale === 'en' ? 'Enter manually' : '手動で入力する'}
 			</Button>
-			<div
-				class="flex gap-2 overflow-x-auto pb-1"
-				aria-label={m.subscription_template_search_label()}
-			>
+			<div class="flex flex-wrap gap-2" aria-label={m.subscription_template_search_label()}>
 				{#each templateCategoryOptions as category (category.value)}
 					<button
 						type="button"
-						class="shrink-0 rounded-full border px-4 py-2 text-sm font-medium transition {selectedCategory ===
+						class="rounded-full border px-3 py-2 text-sm font-medium whitespace-nowrap transition sm:px-4 {selectedCategory ===
 						category.value
 							? 'bg-foreground text-background border-foreground'
 							: 'bg-background hover:bg-muted/60 text-muted-foreground'}"
@@ -407,11 +404,11 @@
 				{/each}
 			</div>
 			{#if matchingTemplates.length > 0}
-				<div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+				<div class="grid min-w-0 grid-cols-[repeat(auto-fit,minmax(min(100%,10.5rem),1fr))] gap-3">
 					{#each matchingTemplates as template (template.id)}
 						<button
 							type="button"
-							class="hover:bg-muted/60 flex min-h-36 flex-col items-center justify-center gap-3 rounded-lg border px-4 py-5 text-center text-sm transition"
+							class="hover:bg-muted/60 flex min-h-32 min-w-0 flex-col items-center justify-center gap-3 rounded-lg border px-3 py-4 text-center text-sm transition sm:min-h-36 sm:px-4 sm:py-5"
 							onclick={() => selectTemplate(template)}
 						>
 							<span
@@ -420,7 +417,7 @@
 							>
 								<SubscriptionIcon iconType="templateImage" iconValue={template.id} class="size-8" />
 							</span>
-							<span class="min-w-0 space-y-1">
+							<span class="w-full min-w-0 space-y-1">
 								<span class="block truncate font-medium">{template.name}</span>
 								<span class="text-muted-foreground block text-xs">
 									{getTemplateCategoryLabel(template.category)}

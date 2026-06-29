@@ -795,7 +795,9 @@
 </AlertDialog.Root>
 
 <Dialog.Root bind:open={addSubscriptionOpen}>
-	<Dialog.Content class="max-h-[90vh] w-full max-w-3xl overflow-y-auto p-0">
+	<Dialog.Content
+		class="max-h-[90vh] w-full max-w-[calc(100vw-1rem)] overflow-x-hidden overflow-y-auto p-0 sm:max-w-2xl lg:max-w-3xl"
+	>
 		<AddSubscription
 			{data}
 			open={addSubscriptionOpen}
