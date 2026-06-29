@@ -5,6 +5,19 @@ import { CANCELLATION_METHODS, SUPPORTED_CURRENCIES } from '$lib/constant';
 import { serviceTemplates } from './service-templates';
 
 const supportedTemplatePriceRegions = ['JP', 'US', 'DE', 'GB'];
+const supportedTemplateCategories = [
+	'video',
+	'music',
+	'ai',
+	'tools',
+	'storage',
+	'development',
+	'design',
+	'business',
+	'card',
+	'shopping',
+	'other'
+];
 
 describe('serviceTemplates', () => {
 	it('contains the initial MVP templates with unique ids', () => {
@@ -17,6 +30,7 @@ describe('serviceTemplates', () => {
 	it('keeps template data safe for form autofill', () => {
 		for (const template of serviceTemplates) {
 			expect(template.name.trim()).not.toBe('');
+			expect(supportedTemplateCategories).toContain(template.category);
 			expect(new URL(template.sourceUrl).protocol).toBe('https:');
 			expect(template.tags.ja.length).toBeGreaterThan(0);
 			expect(template.tags.en.length).toBeGreaterThan(0);

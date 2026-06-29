@@ -1,7 +1,18 @@
 import type { AppLocale, CancellationMethod, SubscriptionCurrency } from '$lib/constant';
 import type { SubscriptionColor } from '$lib/subscription-colors';
 
-export type ServiceTemplateCategory = 'video' | 'music' | 'shopping' | 'cloud' | 'ai';
+export type ServiceTemplateCategory =
+	| 'video'
+	| 'music'
+	| 'ai'
+	| 'tools'
+	| 'storage'
+	| 'development'
+	| 'design'
+	| 'business'
+	| 'card'
+	| 'shopping'
+	| 'other';
 export type TemplateBillingCycle = 'monthly' | 'quarterly' | 'yearly';
 
 type LocalizedText = Record<AppLocale, string>;
@@ -418,7 +429,7 @@ export const serviceTemplates: ServiceTemplate[] = [
 	{
 		id: 'icloud-plus',
 		name: 'iCloud+',
-		category: 'cloud',
+		category: 'storage',
 		color: 'blue',
 		tags: {
 			ja: ['クラウド'],
@@ -495,7 +506,7 @@ export const serviceTemplates: ServiceTemplate[] = [
 	{
 		id: 'google-one',
 		name: 'Google One',
-		category: 'cloud',
+		category: 'storage',
 		color: 'green',
 		tags: {
 			ja: ['クラウド'],
@@ -523,7 +534,7 @@ export const serviceTemplates: ServiceTemplate[] = [
 	{
 		id: 'notion',
 		name: 'Notion',
-		category: 'cloud',
+		category: 'tools',
 		color: 'purple',
 		tags: {
 			ja: ['仕事', 'ツール'],
@@ -565,7 +576,7 @@ export const serviceTemplates: ServiceTemplate[] = [
 	{
 		id: 'figma',
 		name: 'Figma',
-		category: 'cloud',
+		category: 'design',
 		color: 'yellow',
 		tags: {
 			ja: ['デザイン', '仕事'],
@@ -616,7 +627,7 @@ export const serviceTemplates: ServiceTemplate[] = [
 	{
 		id: 'adobe-creative-cloud',
 		name: 'Adobe Creative Cloud',
-		category: 'cloud',
+		category: 'design',
 		color: 'orange',
 		tags: {
 			ja: ['制作', 'デザイン'],
@@ -661,7 +672,7 @@ export const serviceTemplates: ServiceTemplate[] = [
 	{
 		id: 'canva',
 		name: 'Canva',
-		category: 'cloud',
+		category: 'design',
 		color: 'purple',
 		tags: {
 			ja: ['デザイン', '制作'],
@@ -703,7 +714,7 @@ export const serviceTemplates: ServiceTemplate[] = [
 	{
 		id: 'dropbox',
 		name: 'Dropbox',
-		category: 'cloud',
+		category: 'storage',
 		color: 'blue',
 		tags: {
 			ja: ['クラウド', '仕事'],
@@ -744,7 +755,7 @@ export const serviceTemplates: ServiceTemplate[] = [
 	{
 		id: 'microsoft-365',
 		name: 'Microsoft 365',
-		category: 'cloud',
+		category: 'tools',
 		color: 'blue',
 		tags: {
 			ja: ['仕事', 'ツール'],
@@ -811,7 +822,7 @@ export const serviceTemplates: ServiceTemplate[] = [
 	{
 		id: 'google-workspace',
 		name: 'Google Workspace',
-		category: 'cloud',
+		category: 'business',
 		color: 'green',
 		tags: {
 			ja: ['仕事', 'ツール'],
@@ -859,7 +870,7 @@ export const serviceTemplates: ServiceTemplate[] = [
 	{
 		id: 'slack',
 		name: 'Slack',
-		category: 'cloud',
+		category: 'business',
 		color: 'green',
 		tags: {
 			ja: ['仕事', 'コミュニケーション'],
@@ -904,7 +915,7 @@ export const serviceTemplates: ServiceTemplate[] = [
 	{
 		id: 'zoom',
 		name: 'Zoom',
-		category: 'cloud',
+		category: 'business',
 		color: 'blue',
 		tags: {
 			ja: ['仕事', '会議'],
@@ -946,7 +957,7 @@ export const serviceTemplates: ServiceTemplate[] = [
 	{
 		id: 'github',
 		name: 'GitHub',
-		category: 'cloud',
+		category: 'development',
 		color: 'purple',
 		tags: {
 			ja: ['開発', '仕事'],
