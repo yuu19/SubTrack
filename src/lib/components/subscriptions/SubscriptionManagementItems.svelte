@@ -61,16 +61,16 @@
 	const paymentLimitReached = $derived(!isPremium && localPaymentMethods.length >= 3);
 	const rootClass = $derived(compact ? 'space-y-4' : 'grid gap-8 lg:grid-cols-2');
 	const sectionClass = $derived(
-		compact ? 'space-y-3 rounded-lg border p-3 sm:p-4' : 'min-w-0 space-y-4'
+		compact ? 'min-w-0 space-y-3 rounded-md bg-muted/20 p-3' : 'min-w-0 space-y-4'
 	);
 	const listItemClass = $derived(
 		compact
-			? 'flex items-center gap-2 rounded-md border px-3 py-2 text-sm'
+			? 'bg-background flex min-w-0 flex-wrap items-center gap-2 rounded-md px-2.5 py-2 text-sm ring-1 ring-border/60'
 			: 'flex items-center gap-2 rounded-md bg-muted/30 px-3 py-2 text-sm'
 	);
 	const addRowClass = $derived(
 		compact
-			? 'grid gap-2 sm:grid-cols-[minmax(0,1fr)_9rem_auto]'
+			? 'grid min-w-0 gap-2 sm:grid-cols-[minmax(0,1fr)_8.5rem_auto]'
 			: 'grid gap-2 sm:grid-cols-[minmax(0,1fr)_10rem] xl:grid-cols-[minmax(0,1fr)_10rem_auto]'
 	);
 	const addButtonClass = $derived(compact ? '' : 'sm:col-span-2 xl:col-span-1');

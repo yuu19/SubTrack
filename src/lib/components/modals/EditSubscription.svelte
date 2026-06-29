@@ -126,6 +126,9 @@
 			? 'Manage categories and payment methods'
 			: 'カテゴリー・支払い方法を管理'
 	);
+	const managementSectionTitle = $derived(
+		currentLocale === 'en' ? 'Category and payment' : 'カテゴリー・支払い方法'
+	);
 	const currencyOptions = $derived(SUPPORTED_CURRENCIES.map((currency) => ({ value: currency })));
 
 	const defaultNotifyDaysBefore = $derived(userConfig.current.defaultNotifyDaysBefore ?? 3);
@@ -133,6 +136,8 @@
 	let imageInput = $state<HTMLInputElement | null>(null);
 	let isUploadingImage = $state(false);
 	let imageUploadError = $state('');
+	let isManagementOpen = $state(false);
+	let lastManagementSubscriptionId: number | null = null;
 
 	function getInitialData() {
 		if (subscription) {
@@ -327,6 +332,13 @@
 			$iconValueField = $serviceUrlField ?? '';
 		}
 	});
+
+	$effect(() => {
+		const subscriptionId = subscription?.id ?? null;
+		if (subscriptionId === lastManagementSubscriptionId) return;
+		isManagementOpen = categories.length === 0 || paymentMethods.length === 0;
+		lastManagementSubscriptionId = subscriptionId;
+	});
 </script>
 
 {#if subscription}
@@ -357,63 +369,74 @@
 			<FieldErrors class="text-destructive text-sm" />
 		</Field>
 
-		<div class="grid min-w-0 gap-3 sm:grid-cols-2">
-			<div class="min-w-0 space-y-2">
-				<Field {form} name="categoryId">
-					<Control>
-						{#snippet children({ props })}
-							<Label class="font-medium">{categoryFieldLabel}</Label>
-							<select
-								{...props}
-								class="border-input focus-visible:ring-ring focus-visible:border-ring bg-background flex h-10 w-full rounded-md border px-3 text-sm shadow-sm transition"
-								bind:value={$categoryIdField}
-							>
-								<option value="">{notSetLabel}</option>
-								{#each categories as category (category.id)}
-									<option value={category.id}>{category.name}</option>
-								{/each}
-							</select>
-						{/snippet}
-					</Control>
-					<FieldErrors class="text-destructive text-sm" />
-				</Field>
+		<section class="min-w-0 space-y-4 rounded-lg border p-3 sm:p-4">
+			<div>
+				<h3 class="text-sm font-semibold">{managementSectionTitle}</h3>
 			</div>
 
-			<div class="min-w-0 space-y-2">
-				<Field {form} name="paymentMethodId">
-					<Control>
-						{#snippet children({ props })}
-							<Label class="font-medium">{paymentMethodFieldLabel}</Label>
-							<select
-								{...props}
-								class="border-input focus-visible:ring-ring focus-visible:border-ring bg-background flex h-10 w-full rounded-md border px-3 text-sm shadow-sm transition"
-								bind:value={$paymentMethodIdField}
-							>
-								<option value="">{notSetLabel}</option>
-								{#each paymentMethods as paymentMethod (paymentMethod.id)}
-									<option value={paymentMethod.id}>{paymentMethod.name}</option>
-								{/each}
-							</select>
-						{/snippet}
-					</Control>
-					<FieldErrors class="text-destructive text-sm" />
-				</Field>
-			</div>
-		</div>
+			<div class="grid min-w-0 gap-3 sm:grid-cols-2">
+				<div class="min-w-0 space-y-2">
+					<Field {form} name="categoryId">
+						<Control>
+							{#snippet children({ props })}
+								<Label class="font-medium">{categoryFieldLabel}</Label>
+								<select
+									{...props}
+									class="border-input focus-visible:ring-ring focus-visible:border-ring bg-background flex h-10 w-full rounded-md border px-3 text-sm shadow-sm transition"
+									bind:value={$categoryIdField}
+								>
+									<option value="">{notSetLabel}</option>
+									{#each categories as category (category.id)}
+										<option value={category.id}>{category.name}</option>
+									{/each}
+								</select>
+							{/snippet}
+						</Control>
+						<FieldErrors class="text-destructive text-sm" />
+					</Field>
+				</div>
 
-		<details class="min-w-0 rounded-lg border p-3 sm:p-4">
-			<summary class="cursor-pointer text-sm font-semibold">{managementSummaryLabel}</summary>
-			<div class="mt-4">
-				<SubscriptionManagementItems
-					{categories}
-					{paymentMethods}
-					{isPremium}
-					{isOnline}
-					compact
-					onItemsChange={onManagementItemsChange}
-				/>
+				<div class="min-w-0 space-y-2">
+					<Field {form} name="paymentMethodId">
+						<Control>
+							{#snippet children({ props })}
+								<Label class="font-medium">{paymentMethodFieldLabel}</Label>
+								<select
+									{...props}
+									class="border-input focus-visible:ring-ring focus-visible:border-ring bg-background flex h-10 w-full rounded-md border px-3 text-sm shadow-sm transition"
+									bind:value={$paymentMethodIdField}
+								>
+									<option value="">{notSetLabel}</option>
+									{#each paymentMethods as paymentMethod (paymentMethod.id)}
+										<option value={paymentMethod.id}>{paymentMethod.name}</option>
+									{/each}
+								</select>
+							{/snippet}
+						</Control>
+						<FieldErrors class="text-destructive text-sm" />
+					</Field>
+				</div>
 			</div>
-		</details>
+
+			<details bind:open={isManagementOpen} class="min-w-0 border-t pt-3">
+				<summary
+					class="text-primary flex min-w-0 cursor-pointer list-none items-center justify-between gap-3 text-sm font-semibold"
+				>
+					<span class="min-w-0">{managementSummaryLabel}</span>
+					<span class="text-xs font-medium">{isManagementOpen ? '-' : '+'}</span>
+				</summary>
+				<div class="mt-3">
+					<SubscriptionManagementItems
+						{categories}
+						{paymentMethods}
+						{isPremium}
+						{isOnline}
+						compact
+						onItemsChange={onManagementItemsChange}
+					/>
+				</div>
+			</details>
+		</section>
 
 		<details class="min-w-0 rounded-lg border p-3 sm:p-4">
 			<summary
