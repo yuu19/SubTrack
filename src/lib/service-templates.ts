@@ -513,8 +513,44 @@ export const serviceTemplates: ServiceTemplate[] = [
 			en: ['Cloud']
 		},
 		sourceUrl: 'https://one.google.com/about/plans',
-		lastVerifiedAt: verifiedAt,
+		lastVerifiedAt: serviceExpansionVerifiedAt,
 		plans: [
+			{
+				id: 'basic-100gb-monthly',
+				name: { ja: 'Basic 100GB（月額）', en: 'Basic 100GB (Monthly)' },
+				prices: [expandedJpyPrice(290, 'https://one.google.com/about/plans')],
+				cycle: 'monthly'
+			},
+			{
+				id: 'basic-100gb-yearly',
+				name: { ja: 'Basic 100GB（年額）', en: 'Basic 100GB (Yearly)' },
+				prices: [expandedJpyPrice(2900, 'https://one.google.com/about/plans')],
+				cycle: 'yearly'
+			},
+			{
+				id: 'google-ai-plus-2tb-monthly',
+				name: { ja: 'Google AI Plus 2TB（月額）', en: 'Google AI Plus 2TB (Monthly)' },
+				prices: [expandedJpyPrice(1450, 'https://one.google.com/about/plans')],
+				cycle: 'monthly'
+			},
+			{
+				id: 'google-ai-plus-2tb-yearly',
+				name: { ja: 'Google AI Plus 2TB（年額）', en: 'Google AI Plus 2TB (Yearly)' },
+				prices: [expandedJpyPrice(14500, 'https://one.google.com/about/plans')],
+				cycle: 'yearly'
+			},
+			{
+				id: 'google-ai-pro-5tb-monthly',
+				name: { ja: 'Google AI Pro 5TB（月額）', en: 'Google AI Pro 5TB (Monthly)' },
+				prices: [expandedJpyPrice(2900, 'https://one.google.com/about/plans')],
+				cycle: 'monthly'
+			},
+			{
+				id: 'google-ai-pro-5tb-yearly',
+				name: { ja: 'Google AI Pro 5TB（年額）', en: 'Google AI Pro 5TB (Yearly)' },
+				prices: [expandedJpyPrice(29000, 'https://one.google.com/about/plans')],
+				cycle: 'yearly'
+			},
 			{
 				id: 'custom',
 				name: { ja: '自分で入力', en: 'Enter manually' },
@@ -546,15 +582,41 @@ export const serviceTemplates: ServiceTemplate[] = [
 			{
 				id: 'plus-1-member-monthly',
 				name: { ja: 'Plus（1メンバー/月額）', en: 'Plus (1 member monthly)' },
-				prices: [expandedJpyPrice(1650, 'https://www.notion.com/pricing')],
+				prices: [
+					expandedJpyPrice(2000, 'https://www.notion.com/pricing'),
+					expandedPrice(12, 'USD', 'US', 'https://www.notion.com/pricing')
+				],
 				cycle: 'monthly',
+				note: perUserPriceNote
+			},
+			{
+				id: 'plus-1-member-yearly',
+				name: { ja: 'Plus（1メンバー/年額）', en: 'Plus (1 member yearly)' },
+				prices: [
+					expandedJpyPrice(19800, 'https://www.notion.com/pricing'),
+					expandedPrice(120, 'USD', 'US', 'https://www.notion.com/pricing')
+				],
+				cycle: 'yearly',
 				note: perUserPriceNote
 			},
 			{
 				id: 'business-1-member-monthly',
 				name: { ja: 'Business（1メンバー/月額）', en: 'Business (1 member monthly)' },
-				prices: [expandedJpyPrice(3150, 'https://www.notion.com/pricing')],
+				prices: [
+					expandedJpyPrice(3800, 'https://www.notion.com/pricing'),
+					expandedPrice(24, 'USD', 'US', 'https://www.notion.com/pricing')
+				],
 				cycle: 'monthly',
+				note: perUserPriceNote
+			},
+			{
+				id: 'business-1-member-yearly',
+				name: { ja: 'Business（1メンバー/年額）', en: 'Business (1 member yearly)' },
+				prices: [
+					expandedJpyPrice(37800, 'https://www.notion.com/pricing'),
+					expandedPrice(240, 'USD', 'US', 'https://www.notion.com/pricing')
+				],
+				cycle: 'yearly',
 				note: perUserPriceNote
 			},
 			{
@@ -783,6 +845,19 @@ export const serviceTemplates: ServiceTemplate[] = [
 				cycle: 'monthly'
 			},
 			{
+				id: 'personal-yearly',
+				name: { ja: 'Personal（年額）', en: 'Personal (Yearly)' },
+				prices: [
+					expandedPrice(
+						99.99,
+						'USD',
+						'US',
+						'https://www.microsoft.com/en-us/microsoft-365/buy/compare-all-microsoft-365-products'
+					)
+				],
+				cycle: 'yearly'
+			},
+			{
 				id: 'business-standard-1-user-monthly',
 				name: {
 					ja: 'Business Standard（1ユーザー/月額）',
@@ -842,6 +917,16 @@ export const serviceTemplates: ServiceTemplate[] = [
 				note: perUserPriceNote
 			},
 			{
+				id: 'business-starter-1-user-yearly',
+				name: {
+					ja: 'Business Starter（1ユーザー/年額）',
+					en: 'Business Starter (1 user yearly)'
+				},
+				prices: [expandedJpyPrice(9600, 'https://workspace.google.com/pricing.html')],
+				cycle: 'yearly',
+				note: perUserPriceNote
+			},
+			{
 				id: 'business-standard-1-user-monthly',
 				name: {
 					ja: 'Business Standard（1ユーザー/月額）',
@@ -849,6 +934,36 @@ export const serviceTemplates: ServiceTemplate[] = [
 				},
 				prices: [expandedJpyPrice(1600, 'https://workspace.google.com/intl/ja/pricing.html')],
 				cycle: 'monthly',
+				note: perUserPriceNote
+			},
+			{
+				id: 'business-standard-1-user-yearly',
+				name: {
+					ja: 'Business Standard（1ユーザー/年額）',
+					en: 'Business Standard (1 user yearly)'
+				},
+				prices: [expandedJpyPrice(19200, 'https://workspace.google.com/pricing.html')],
+				cycle: 'yearly',
+				note: perUserPriceNote
+			},
+			{
+				id: 'business-plus-1-user-monthly',
+				name: {
+					ja: 'Business Plus（1ユーザー/月額）',
+					en: 'Business Plus (1 user monthly)'
+				},
+				prices: [expandedJpyPrice(2500, 'https://workspace.google.com/pricing.html')],
+				cycle: 'monthly',
+				note: perUserPriceNote
+			},
+			{
+				id: 'business-plus-1-user-yearly',
+				name: {
+					ja: 'Business Plus（1ユーザー/年額）',
+					en: 'Business Plus (1 user yearly)'
+				},
+				prices: [expandedJpyPrice(30000, 'https://workspace.google.com/pricing.html')],
+				cycle: 'yearly',
 				note: perUserPriceNote
 			},
 			{

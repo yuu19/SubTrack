@@ -167,7 +167,7 @@ CSV エクスポートでは保存額そのものを出力する。
 - Canva: `https://www.canva.com/pricing/`
 - Dropbox: `https://www.dropbox.com/plans`
 - Microsoft 365: `https://www.microsoft.com/ja-jp/microsoft-365/buy/compare-all-microsoft-365-products`, `https://www.microsoft.com/en-us/microsoft-365/buy/compare-all-microsoft-365-products`, `https://www.microsoft.com/ja-jp/microsoft-365/business/compare-all-microsoft-365-business-products`, `https://www.microsoft.com/en-us/microsoft-365/business/compare-all-microsoft-365-business-products`
-- Google Workspace: `https://workspace.google.com/intl/ja/pricing.html`
+- Google Workspace: `https://workspace.google.com/intl/ja/pricing.html`, `https://workspace.google.com/pricing.html`
 - Slack: `https://slack.com/intl/ja-jp/pricing`
 - Zoom: `https://www.zoom.com/pricing`
 - GitHub: `https://github.com/pricing`
@@ -195,18 +195,34 @@ CSV エクスポートでは保存額そのものを出力する。
 月払い価格を優先する。
 年払いの月額表示だけが確認できた場合は、月額料金として自動入力しない。
 
-| サービス             | 採用した価格                                                                                                                         | 未採用理由                                                                                         |
-| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------- |
-| Notion               | JP: Plus 1,650 JPY/月/メンバー、Business 3,150 JPY/月/メンバー。                                                                     | USD/EUR/GBP は今回の取得結果で安定した地域別価格を確認できなかった。                               |
-| Figma                | US: Professional Full seat 16 USD/月。                                                                                               | Organization は年払いの月額表示として確認したため、自動入力価格には入れない。JP/EUR/GBP は未確認。 |
-| Adobe Creative Cloud | なし。                                                                                                                               | 公式ページの取得結果から、地域別の通常価格を安定して確認できなかった。                             |
-| Canva                | なし。                                                                                                                               | 公式ページが取得時に価格本文を返さず、通常価格を確認できなかった。                                 |
-| Dropbox              | JP: Plus 1,200 JPY/月、Standard 1,500 JPY/月/ユーザー。                                                                              | USD/EUR/GBP は今回の取得結果で安定した地域別価格を確認できなかった。                               |
-| Microsoft 365        | JP: Personal 2,130 JPY/月、Business Standard 2,249 JPY/月/ユーザー。US: Personal 9.99 USD/月、Business Standard 15 USD/月/ユーザー。 | EUR/GBP は月払い価格として明確に確認できなかった。                                                 |
-| Google Workspace     | JP: Business Starter 800 JPY/月/ユーザー、Business Standard 1,600 JPY/月/ユーザー。                                                  | USD/EUR/GBP は取得時にJPY表示へ寄ったため採用しない。                                              |
-| Slack                | JP: プロ 1,050 JPY/月/ユーザー、ビジネスプラス 2,160 JPY/月/ユーザー。                                                               | USD/EUR/GBP は今回の取得結果で安定した地域別価格を確認できなかった。                               |
-| Zoom                 | なし。                                                                                                                               | 公式ページの取得結果から、地域別の通常価格を安定して確認できなかった。                             |
-| GitHub               | US: Team 4 USD/月/ユーザー、Enterprise 21 USD/月/ユーザー。                                                                          | JP/EUR/GBP は今回の取得結果で確認できなかった。                                                    |
+| サービス             | 採用した価格                                                                                                                                                                                                         | 未採用理由                                                                                                           |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| Notion               | JP: Plus 2,000 JPY/月/メンバー、19,800 JPY/年/メンバー。Business 3,800 JPY/月/メンバー、37,800 JPY/年/メンバー。US: Plus 12 USD/月/メンバー、120 USD/年/メンバー。Business 24 USD/月/メンバー、240 USD/年/メンバー。 | EUR/GBP は今回の取得結果で安定した地域別価格を確認できなかった。旧調査のJP月額価格は今回の公式取得結果で置き換える。 |
+| Figma                | US: Professional Full seat 16 USD/月。                                                                                                                                                                               | Organization は年払いの月額表示として確認したため、自動入力価格には入れない。JP/EUR/GBP は未確認。                   |
+| Adobe Creative Cloud | なし。                                                                                                                                                                                                               | 公式ページの取得結果から、地域別の通常価格を安定して確認できなかった。                                               |
+| Canva                | なし。                                                                                                                                                                                                               | 公式ページが取得時に価格本文を返さず、通常価格を確認できなかった。                                                   |
+| Dropbox              | JP: Plus 1,200 JPY/月、Standard 1,500 JPY/月/ユーザー。                                                                                                                                                              | USD/EUR/GBP は今回の取得結果で安定した地域別価格を確認できなかった。                                                 |
+| Microsoft 365        | JP: Personal 2,130 JPY/月、Business Standard 2,249 JPY/月/ユーザー。US: Personal 9.99 USD/月、99.99 USD/年、Business Standard 15 USD/月/ユーザー。                                                                   | EUR/GBP は月払い価格として明確に確認できなかった。JP の年額価格は今回の取得結果では確認できなかった。                |
+| Google Workspace     | JP: Business Starter 800 JPY/月/ユーザー、9,600 JPY/年/ユーザー。Business Standard 1,600 JPY/月/ユーザー、19,200 JPY/年/ユーザー。Business Plus 2,500 JPY/月/ユーザー、30,000 JPY/年/ユーザー。                      | USD/EUR/GBP は取得時にJPY表示へ寄ったため採用しない。初年度向けの割引価格は通常価格ではないため入れない。            |
+| Slack                | JP: プロ 1,050 JPY/月/ユーザー、ビジネスプラス 2,160 JPY/月/ユーザー。                                                                                                                                               | USD/EUR/GBP は今回の取得結果で安定した地域別価格を確認できなかった。                                                 |
+| Zoom                 | なし。                                                                                                                                                                                                               | 公式ページの取得結果から、地域別の通常価格を安定して確認できなかった。                                               |
+| GitHub               | US: Team 4 USD/月/ユーザー、Enterprise 21 USD/月/ユーザー。                                                                                                                                                          | JP/EUR/GBP は今回の取得結果で確認できなかった。                                                                      |
+
+## 2026年6月29日のテンプレート価格再調査結果
+
+Google One は、公式プランページの取得結果から日本向けの通常価格を確認できた。
+確認できた範囲だけをテンプレートへ入れる。
+月額と年額がどちらも確認できたプランは、請求周期を分けて保存する。
+
+| サービス        | 採用した価格                                                                                                                              | 未採用理由                                                                                                      |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| Google One      | JP: Basic 100GB 290 JPY/月、2,900 JPY/年。Google AI Plus 2TB 1,450 JPY/月、14,500 JPY/年。Google AI Pro 5TB 2,900 JPY/月、29,000 JPY/年。 | US/EUR/GBP は取得結果を対象地域に固定できなかったため採用しない。200GB は今回の取得結果で安定して確認できない。 |
+| YouTube Premium | なし。                                                                                                                                    | 公式ページの取得結果から、地域別の通常価格を安定して確認できなかった。                                          |
+| Amazon Prime    | なし。                                                                                                                                    | 公式ページとヘルプページの取得結果から、通常価格を安定して確認できなかった。                                    |
+| U-NEXT          | なし。                                                                                                                                    | 公式ページの取得結果から、通常価格を安定して確認できなかった。                                                  |
+| Canva           | なし。                                                                                                                                    | 公式ページが取得時に価格本文を返さず、通常価格を確認できなかった。                                              |
+| Adobe           | なし。                                                                                                                                    | 公式ページの取得が安定せず、地域別の通常価格を確認できなかった。                                                |
+| ChatGPT         | なし。                                                                                                                                    | 公式料金ページとヘルプページの取得結果から、テンプレートへ入れる通常価格を確認できなかった。                    |
 
 ## MVP範囲外
 

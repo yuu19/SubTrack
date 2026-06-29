@@ -83,7 +83,25 @@ describe('serviceTemplates', () => {
 				.find((template) => template.id === 'notion')
 				?.plans.find((plan) => plan.id === 'plus-1-member-monthly')
 				?.prices.find((price) => price.currency === 'JPY')?.amount
-		).toBe(1650);
+		).toBe(2000);
+		expect(
+			serviceTemplates
+				.find((template) => template.id === 'google-one')
+				?.plans.find((plan) => plan.id === 'basic-100gb-monthly')
+				?.prices.find((price) => price.currency === 'JPY')?.amount
+		).toBe(290);
+		expect(
+			serviceTemplates
+				.find((template) => template.id === 'google-one')
+				?.plans.find((plan) => plan.id === 'basic-100gb-yearly')
+				?.prices.find((price) => price.currency === 'JPY')?.amount
+		).toBe(2900);
+		expect(
+			serviceTemplates
+				.find((template) => template.id === 'google-workspace')
+				?.plans.find((plan) => plan.id === 'business-plus-1-user-monthly')
+				?.prices.find((price) => price.currency === 'JPY')?.amount
+		).toBe(2500);
 		expect(
 			serviceTemplates
 				.find((template) => template.id === 'github')
