@@ -10,6 +10,8 @@ describe('subscription export', () => {
 		const csv = buildSubscriptionExportCsv([
 			{
 				serviceName: 'Netflix',
+				categoryName: '動画',
+				paymentMethodName: 'クレジットカード',
 				cycle: 'monthly',
 				amount: 1490,
 				currency: 'JPY',
@@ -25,7 +27,7 @@ describe('subscription export', () => {
 		]);
 
 		expect(csv).toBe(
-			`${SUBSCRIPTION_EXPORT_HEADERS.join(',')}\r\nNetflix,monthly,1490,JPY,2026-03-01,2026-04-01T00:00:00.000Z,8,3,active,,web,"動画, エンタメ"`
+			`${SUBSCRIPTION_EXPORT_HEADERS.join(',')}\r\nNetflix,動画,クレジットカード,monthly,1490,JPY,2026-03-01,2026-04-01T00:00:00.000Z,8,3,active,,web,"動画, エンタメ"`
 		);
 	});
 
@@ -33,6 +35,8 @@ describe('subscription export', () => {
 		const csv = buildSubscriptionExportCsv([
 			{
 				serviceName: 'Plan "A", Plus',
+				categoryName: 'Work, Tools',
+				paymentMethodName: 'Card "A"',
 				cycle: 'yearly',
 				amount: 12000,
 				currency: 'USD',

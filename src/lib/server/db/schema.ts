@@ -7,12 +7,14 @@ import {
 	DEFAULT_SUBSCRIPTION_CURRENCY,
 	DEFAULT_TIME_ZONE,
 	NOTIFICATION_METHODS,
+	PAYMENT_METHOD_TYPES,
 	ROLE,
+	SUBSCRIPTION_CATEGORY_KEYS,
 	SUPPORTED_CURRENCIES,
 	THEMES,
 	TRACKED_SUBSCRIPTION_STATUSES
 } from '../../constant';
-import { defaultSubscriptionColor } from '../../subscription-colors';
+import { defaultSubscriptionColor, subscriptionColors } from '../../subscription-colors';
 import {
 	defaultSubscriptionIconType,
 	defaultSubscriptionIconValue
@@ -219,9 +221,57 @@ export const userEntitlement = sqliteTable(
 	})
 );
 
+export const subscriptionCategoryTable = sqliteTable(
+	'subscription_category',
+	{
+		id: integer('id').primaryKey(),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id, { onDelete: 'cascade' }),
+		key: text('key', { enum: SUBSCRIPTION_CATEGORY_KEYS }),
+		name: text('name').notNull(),
+		color: text('color', { enum: subscriptionColors }).notNull().default(defaultSubscriptionColor),
+		...timestamps
+	},
+	(table) => ({
+		userIdx: index('subscription_category_user_idx').on(table.userId),
+		userNameIdx: uniqueIndex('subscription_category_user_name_idx').on(table.userId, table.name),
+		userKeyIdx: uniqueIndex('subscription_category_user_key_idx').on(table.userId, table.key)
+	})
+);
+
+export const subscriptionPaymentMethodTable = sqliteTable(
+	'subscription_payment_method',
+	{
+		id: integer('id').primaryKey(),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id, { onDelete: 'cascade' }),
+		name: text('name').notNull(),
+		type: text('type', { enum: PAYMENT_METHOD_TYPES }).notNull().default('other'),
+		...timestamps
+	},
+	(table) => ({
+		userIdx: index('subscription_payment_method_user_idx').on(table.userId),
+		userNameIdx: uniqueIndex('subscription_payment_method_user_name_idx').on(
+			table.userId,
+			table.name
+		)
+	})
+);
+
 export const trackedSubscriptionTable = sqliteTable('tracked_subscription', {
 	id: integer('id').primaryKey(),
 	userId: text('user_id').references(() => user.id, { onDelete: 'set null' }),
+	categoryId: integer('category_id').references(() => subscriptionCategoryTable.id, {
+		onDelete: 'set null'
+	}),
+	paymentMethodId: integer('payment_method_id').references(
+		() => subscriptionPaymentMethodTable.id,
+		{
+			onDelete: 'set null'
+		}
+	),
 	serviceName: text('service_name').notNull(),
 	serviceTemplateId: text('service_template_id'),
 	planName: text('plan_name'),

@@ -28,6 +28,14 @@ export const updateNameSchema = z.object({
 
 const optionalText = (maxLength: number) => z.string().trim().max(maxLength).default('');
 
+const optionalId = z
+	.preprocess((value) => {
+		if (value === '' || value === null || value === undefined) return null;
+		const parsed = Number(value);
+		return Number.isInteger(parsed) && parsed > 0 ? parsed : value;
+	}, z.number().int().positive().nullable())
+	.default(null);
+
 const booleanFromForm = z
 	.preprocess((value) => {
 		if (value === true || value === 'true' || value === '1' || value === 'on') return true;
@@ -81,6 +89,8 @@ export const subscriptionSchema = z
 		serviceUrl: optionalText(2048).refine(isHttpsUrl, {
 			message: 'Please enter a URL that starts with https://.'
 		}),
+		categoryId: optionalId,
+		paymentMethodId: optionalId,
 		priceEditedByUser: booleanFromForm,
 		color: z.enum(subscriptionColors).default(defaultSubscriptionColor),
 		iconType: z.enum(subscriptionIconTypes).default(defaultSubscriptionIconType),

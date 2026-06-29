@@ -9,6 +9,7 @@
 	import { m } from '$lib/paraglide/messages.js';
 	import { getLocale } from '$lib/paraglide/runtime';
 	import type {
+		AnalyticsDimension,
 		AnalyticsPeriod,
 		SubscriptionAnalyticsItem,
 		SubscriptionAnalyticsSummary,
@@ -27,11 +28,17 @@
 	}>();
 
 	let period = $state<AnalyticsPeriod>('monthly');
+	let dimension = $state<AnalyticsDimension>('service');
 
 	const locale = $derived(resolveLocale(getLocale()));
 	const subscriptionsHref = $derived(localizeInternalHref(resolve('/subscriptions'), locale));
-	const periodSnapshot = $derived(data.analytics[period]);
+	const periodSnapshot = $derived(data.analytics[dimension][period]);
 	const summaries: SubscriptionAnalyticsSummary[] = $derived(periodSnapshot.summaries);
+	const dimensionOptions = $derived([
+		{ value: 'service', label: locale === 'en' ? 'Service' : 'サービス別' },
+		{ value: 'category', label: locale === 'en' ? 'Category' : 'カテゴリー別' },
+		{ value: 'paymentMethod', label: locale === 'en' ? 'Payment method' : '支払い方法別' }
+	]);
 	const summaryHint = $derived(
 		period === 'monthly' ? m.analysis_period_hint_monthly() : m.analysis_period_hint_yearly()
 	);
@@ -90,16 +97,28 @@
 		{/if}
 	</div>
 
-	<Tabs.Root bind:value={period} class="gap-4">
-		<Tabs.List class="grid h-11 w-full grid-cols-2 rounded-2xl p-1 sm:w-[18rem]">
-			<Tabs.Trigger value="monthly" class="rounded-xl">
-				{m.analysis_period_monthly()}
-			</Tabs.Trigger>
-			<Tabs.Trigger value="yearly" class="rounded-xl">
-				{m.analysis_period_yearly()}
-			</Tabs.Trigger>
-		</Tabs.List>
-	</Tabs.Root>
+	<div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+		<Tabs.Root bind:value={dimension} class="gap-4">
+			<Tabs.List class="grid h-11 w-full grid-cols-3 rounded-2xl p-1 sm:w-[26rem]">
+				{#each dimensionOptions as option (option.value)}
+					<Tabs.Trigger value={option.value} class="rounded-xl">
+						{option.label}
+					</Tabs.Trigger>
+				{/each}
+			</Tabs.List>
+		</Tabs.Root>
+
+		<Tabs.Root bind:value={period} class="gap-4">
+			<Tabs.List class="grid h-11 w-full grid-cols-2 rounded-2xl p-1 sm:w-[18rem]">
+				<Tabs.Trigger value="monthly" class="rounded-xl">
+					{m.analysis_period_monthly()}
+				</Tabs.Trigger>
+				<Tabs.Trigger value="yearly" class="rounded-xl">
+					{m.analysis_period_yearly()}
+				</Tabs.Trigger>
+			</Tabs.List>
+		</Tabs.Root>
+	</div>
 
 	{#if !hasAnalytics}
 		<section class="bg-muted/20 rounded-[2rem] border border-dashed px-6 py-12 text-center">

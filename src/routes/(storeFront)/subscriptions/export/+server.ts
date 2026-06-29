@@ -7,6 +7,7 @@ import {
 	buildSubscriptionExportFilename
 } from '$lib/server/subscription-export';
 import { getCurrentPlan } from '$lib/server/plan';
+import { listSubscriptionManagementItems } from '$lib/server/subscription-management-items';
 import { error } from '@sveltejs/kit';
 
 export const GET: RequestHandler = async ({ request, locals: { db } }) => {
@@ -35,6 +36,8 @@ export const GET: RequestHandler = async ({ request, locals: { db } }) => {
 			nextBillingAt: true,
 			daysUntilNextBilling: true,
 			notifyDaysBefore: true,
+			categoryId: true,
+			paymentMethodId: true,
 			status: true,
 			canceledAt: true,
 			cancellationMethod: true,
@@ -43,8 +46,23 @@ export const GET: RequestHandler = async ({ request, locals: { db } }) => {
 		where: (trackedSubscription, { eq }) => eq(trackedSubscription.userId, userId),
 		orderBy: (trackedSubscription, { desc }) => desc(trackedSubscription.createdAt)
 	});
+	const { categories, paymentMethods } = await listSubscriptionManagementItems(db, userId);
+	const categoryById = new Map(categories.map((category) => [category.id, category.name]));
+	const paymentMethodById = new Map(
+		paymentMethods.map((paymentMethod) => [paymentMethod.id, paymentMethod.name])
+	);
 
-	const csv = buildSubscriptionExportCsv(subscriptions);
+	const csv = buildSubscriptionExportCsv(
+		subscriptions.map((subscription) => ({
+			...subscription,
+			categoryName:
+				subscription.categoryId !== null ? categoryById.get(subscription.categoryId) : null,
+			paymentMethodName:
+				subscription.paymentMethodId !== null
+					? paymentMethodById.get(subscription.paymentMethodId)
+					: null
+		}))
+	);
 
 	return new Response(`${UTF8_BOM}${csv}`, {
 		headers: {

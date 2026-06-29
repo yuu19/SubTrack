@@ -39,6 +39,8 @@ export type SubscriptionPayload = {
 	planName?: string | null;
 	serviceUrl?: string | null;
 	priceEditedByUser?: boolean;
+	categoryId?: number | null;
+	paymentMethodId?: number | null;
 	color: SubscriptionColor;
 	iconType: SubscriptionIconType;
 	iconValue: string;
@@ -62,6 +64,8 @@ export type SubscriptionRecord = {
 	planName?: string | null;
 	serviceUrl?: string | null;
 	priceEditedByUser?: boolean;
+	categoryId?: number | null;
+	paymentMethodId?: number | null;
 	status?: TrackedSubscriptionStatus;
 	color: SubscriptionColor;
 	iconType: SubscriptionIconType;
@@ -134,6 +138,11 @@ const cycleToMonths = (cycle: string) => {
 const toNumber = (value: FormDataEntryValue | null, fallback = 0) => {
 	const parsed = Number(value);
 	return Number.isFinite(parsed) ? parsed : fallback;
+};
+
+const toOptionalId = (value: FormDataEntryValue | null) => {
+	const parsed = Number(value);
+	return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
 };
 
 const resolveCurrency = (value: FormDataEntryValue | string | null | undefined) =>
@@ -230,6 +239,8 @@ export const payloadFromFormData = (formData: FormData): SubscriptionPayload => 
 		planName: normalizeOptionalText(formData.get('planName')),
 		serviceUrl: normalizeOptionalText(formData.get('serviceUrl')),
 		priceEditedByUser: toBoolean(formData.get('priceEditedByUser')),
+		categoryId: toOptionalId(formData.get('categoryId')),
+		paymentMethodId: toOptionalId(formData.get('paymentMethodId')),
 		color: resolveSubscriptionColor(formData.get('color'), defaultSubscriptionColor),
 		iconType: resolveSubscriptionIconType(formData.get('iconType'), defaultSubscriptionIconType),
 		iconValue: resolveSubscriptionIconValue(
@@ -300,6 +311,8 @@ export const addPendingSubscription = async (
 		planName: payload.planName ?? null,
 		serviceUrl: payload.serviceUrl ?? null,
 		priceEditedByUser: Boolean(payload.priceEditedByUser),
+		categoryId: payload.categoryId ?? null,
+		paymentMethodId: payload.paymentMethodId ?? null,
 		status: 'active',
 		color: getFallbackSubscriptionColor(existing.length),
 		iconType: payload.iconType,
@@ -345,6 +358,8 @@ const buildFormData = (payload: SubscriptionPayload) => {
 	formData.set('planName', payload.planName ?? '');
 	formData.set('serviceUrl', payload.serviceUrl ?? '');
 	formData.set('priceEditedByUser', payload.priceEditedByUser ? 'true' : 'false');
+	formData.set('categoryId', payload.categoryId ? `${payload.categoryId}` : '');
+	formData.set('paymentMethodId', payload.paymentMethodId ? `${payload.paymentMethodId}` : '');
 	formData.set('color', payload.color);
 	formData.set('iconType', payload.iconType);
 	formData.set('iconValue', payload.iconValue);

@@ -9,7 +9,11 @@
 	import { resolveLocale } from '$lib/locale';
 	import { m } from '$lib/paraglide/messages.js';
 	import { getLocale } from '$lib/paraglide/runtime';
-	import type { trackedSubscriptionTable } from '$lib/server/db/schema';
+	import type {
+		subscriptionCategoryTable,
+		subscriptionPaymentMethodTable,
+		trackedSubscriptionTable
+	} from '$lib/server/db/schema';
 	import {
 		getFallbackSubscriptionColor,
 		resolveSubscriptionColor,
@@ -18,9 +22,12 @@
 	import { enhance as kitEnhance } from '$app/forms';
 	import { base } from '$app/paths';
 	import { fromAction } from 'svelte/attachments';
+	import { untrack } from 'svelte';
 	import { toast } from 'svelte-sonner';
 
 	type Subscription = typeof trackedSubscriptionTable.$inferSelect;
+	type Category = typeof subscriptionCategoryTable.$inferSelect;
+	type PaymentMethod = typeof subscriptionPaymentMethodTable.$inferSelect;
 	const cycleToMonths: Record<string, number> = {
 		monthly: 1,
 		quarterly: 3,
@@ -40,14 +47,24 @@
 		description?: string | null;
 	};
 
-	let { data } = $props<{ data: { subscriptions: Subscription[] } }>();
+	let { data } = $props<{
+		data: {
+			subscriptions: Subscription[];
+			categories: Category[];
+			paymentMethods: PaymentMethod[];
+			currentPlan: { isPremium?: boolean } | null;
+		};
+	}>();
 
 	function getInitialSubscriptions() {
 		return data.subscriptions ?? [];
 	}
 
 	let subscriptions = $state<Subscription[]>(getInitialSubscriptions());
+	let categories = $state<Category[]>(untrack(() => data.categories ?? []));
+	let paymentMethods = $state<PaymentMethod[]>(untrack(() => data.paymentMethods ?? []));
 	const locale = $derived(resolveLocale(getLocale()));
+	const isPremium = $derived(Boolean(data.currentPlan?.isPremium));
 	const subscriptionsUpdateAction = $derived(`${base}/subscriptions?/update`);
 	const subscriptionsDeleteAction = $derived(`${base}/subscriptions?/delete`);
 
@@ -196,6 +213,14 @@
 		toast.success(m.subscription_updated_toast());
 	};
 
+	const handleManagementItemsChange = (items: {
+		categories: Category[];
+		paymentMethods: PaymentMethod[];
+	}) => {
+		categories = items.categories;
+		paymentMethods = items.paymentMethods;
+	};
+
 	const deleteEnhance = () => {
 		return async ({ result }: { result: { type: string; data?: unknown } }) => {
 			if (result.type !== 'success') return;
@@ -261,9 +286,13 @@
 			{#key selectedSubscription?.id}
 				<EditSubscription
 					subscription={selectedSubscription}
+					{categories}
+					{paymentMethods}
+					{isPremium}
 					action={subscriptionsUpdateAction}
 					onServerResult={handleUpdateResult}
 					onClose={closeEdit}
+					onManagementItemsChange={handleManagementItemsChange}
 				/>
 			{/key}
 		</div>

@@ -33,8 +33,8 @@ describe('subscription analytics', () => {
 				currency: 'JPY'
 			}
 		]);
-		const monthly = analytics.monthly.summaries[0];
-		const yearly = analytics.yearly.summaries[0];
+		const monthly = analytics.service.monthly.summaries[0];
+		const yearly = analytics.service.yearly.summaries[0];
 
 		expect(monthly.total).toBe(5000);
 		expect(yearly.total).toBe(60000);
@@ -73,8 +73,8 @@ describe('subscription analytics', () => {
 				currency: 'JPY'
 			}
 		]);
-		const monthly = analytics.monthly.summaries[0];
-		const yearly = analytics.yearly.summaries[0];
+		const monthly = analytics.service.monthly.summaries[0];
+		const yearly = analytics.service.yearly.summaries[0];
 
 		expect(monthly.items).toHaveLength(1);
 		expect(monthly.items[0]).toMatchObject({
@@ -109,10 +109,15 @@ describe('subscription analytics', () => {
 			}
 		]);
 
-		expect(analytics.monthly.summaries.map((summary) => summary.currency)).toEqual(['JPY', 'USD']);
-		expect(analytics.monthly.summaries.map((summary) => summary.total)).toEqual([1000, 20]);
+		expect(analytics.service.monthly.summaries.map((summary) => summary.currency)).toEqual([
+			'JPY',
+			'USD'
+		]);
+		expect(analytics.service.monthly.summaries.map((summary) => summary.total)).toEqual([1000, 20]);
 		expect(
-			analytics.monthly.summaries.flatMap((summary) => summary.items.map((item) => item.share))
+			analytics.service.monthly.summaries.flatMap((summary) =>
+				summary.items.map((item) => item.share)
+			)
 		).toEqual([1, 1]);
 	});
 
@@ -135,8 +140,10 @@ describe('subscription analytics', () => {
 				currency: 'USD'
 			}
 		]);
-		const monthly = analytics.monthly.summaries.find((summary) => summary.currency === 'USD');
-		const yearly = analytics.yearly.summaries.find((summary) => summary.currency === 'USD');
+		const monthly = analytics.service.monthly.summaries.find(
+			(summary) => summary.currency === 'USD'
+		);
+		const yearly = analytics.service.yearly.summaries.find((summary) => summary.currency === 'USD');
 
 		expect(monthly?.total).toBe(28.82);
 		expect(monthly?.items.map((item) => [item.serviceName, item.amount])).toEqual([
@@ -173,9 +180,63 @@ describe('subscription analytics', () => {
 				currency: 'JPY'
 			}
 		]);
-		const monthly = analytics.monthly.summaries[0];
+		const monthly = analytics.service.monthly.summaries[0];
 
 		expect(monthly.items.find((item) => item.serviceName === 'YouTube')?.color).toBe('red');
 		expect(monthly.items.find((item) => item.serviceName === 'Dropbox')?.color).toBeNull();
+	});
+
+	it('builds category and payment method breakdowns', () => {
+		const analytics = buildSubscriptionAnalytics([
+			{
+				id: 1,
+				serviceName: 'Netflix',
+				color: 'red',
+				categoryName: '動画',
+				categoryColor: 'red',
+				paymentMethodName: 'クレジットカード',
+				cycle: 'monthly',
+				amount: 1490,
+				currency: 'JPY'
+			},
+			{
+				id: 2,
+				serviceName: 'Spotify',
+				color: 'green',
+				categoryName: '音楽',
+				categoryColor: 'green',
+				paymentMethodName: 'Apple / Google',
+				cycle: 'monthly',
+				amount: 980,
+				currency: 'JPY'
+			},
+			{
+				id: 3,
+				serviceName: 'YouTube',
+				color: 'red',
+				categoryName: '動画',
+				categoryColor: 'red',
+				paymentMethodName: 'クレジットカード',
+				cycle: 'monthly',
+				amount: 1280,
+				currency: 'JPY'
+			}
+		]);
+
+		expect(
+			analytics.category.monthly.summaries[0].items.map((item) => [item.serviceName, item.amount])
+		).toEqual([
+			['動画', 2770],
+			['音楽', 980]
+		]);
+		expect(
+			analytics.paymentMethod.monthly.summaries[0].items.map((item) => [
+				item.serviceName,
+				item.amount
+			])
+		).toEqual([
+			['クレジットカード', 2770],
+			['Apple / Google', 980]
+		]);
 	});
 });

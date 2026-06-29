@@ -1,4 +1,5 @@
 import {
+	APP_LOCALES,
 	DEFAULT_LOCALE,
 	DEFAULT_NOTIFY_TIME,
 	DEFAULT_TIME_ZONE,
@@ -12,6 +13,10 @@ import { isAdminUser, parseAdminUserIds } from '$lib/server/admin';
 import { listActiveEntitlementsForUser } from '$lib/server/entitlements';
 import { getCurrentPlan } from '$lib/server/plan';
 import { isPublicDemoPathname } from '$lib/server/public-routes';
+import {
+	listSubscriptionManagementItems,
+	seedDefaultSubscriptionManagementItems
+} from '$lib/server/subscription-management-items';
 import { subscriptionColors } from '$lib/subscription-colors';
 import { eq } from 'drizzle-orm';
 
@@ -48,6 +53,15 @@ export const load = async ({ request, locals, url }) => {
 	const isAdmin = isAdminUser(user, adminUserIds);
 
 	if (user && !user.sampleDataSeeded) {
+		const seedLocale = APP_LOCALES.includes(user.locale as AppLocale)
+			? (user.locale as AppLocale)
+			: DEFAULT_LOCALE;
+		await seedDefaultSubscriptionManagementItems(db, user.id, seedLocale);
+		const { categories, paymentMethods } = await listSubscriptionManagementItems(db, user.id);
+		const categoryByKey = new Map(categories.map((category) => [category.key, category.id]));
+		const paymentMethodByType = new Map(
+			paymentMethods.map((paymentMethod) => [paymentMethod.type, paymentMethod.id])
+		);
 		const existing = await db.query.trackedSubscriptionTable.findFirst({
 			columns: {
 				id: true
@@ -68,6 +82,8 @@ export const load = async ({ request, locals, url }) => {
 					amount: 1490,
 					firstPaymentDate: dateSeed,
 					notifyDaysBefore: 3,
+					categoryId: categoryByKey.get('video') ?? null,
+					paymentMethodId: paymentMethodByType.get('credit_card') ?? null,
 					tags: ['動画', 'エンタメ']
 				},
 				{
@@ -79,6 +95,8 @@ export const load = async ({ request, locals, url }) => {
 					amount: 980,
 					firstPaymentDate: dateSeed,
 					notifyDaysBefore: 3,
+					categoryId: categoryByKey.get('music') ?? null,
+					paymentMethodId: paymentMethodByType.get('app_store') ?? null,
 					tags: ['音楽']
 				},
 				{
@@ -90,6 +108,8 @@ export const load = async ({ request, locals, url }) => {
 					amount: 12000,
 					firstPaymentDate: dateSeed,
 					notifyDaysBefore: 7,
+					categoryId: categoryByKey.get('work') ?? null,
+					paymentMethodId: paymentMethodByType.get('credit_card') ?? null,
 					tags: ['仕事', 'ツール']
 				}
 			];
@@ -101,6 +121,8 @@ export const load = async ({ request, locals, url }) => {
 				await db.insert(trackedSubscriptionTable).values({
 					userId: user.id,
 					serviceName: sample.serviceName,
+					categoryId: sample.categoryId,
+					paymentMethodId: sample.paymentMethodId,
 					color: sample.color,
 					serviceUrl: sample.serviceUrl,
 					iconType: 'preset',

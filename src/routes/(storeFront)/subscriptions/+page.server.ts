@@ -8,6 +8,12 @@ import { createAuth } from '$lib/auth';
 import { listActiveEntitlementsForUser } from '$lib/server/entitlements';
 import { computeNextBilling } from '$lib/server/subscriptions';
 import { getCurrentPlan } from '$lib/server/plan';
+import {
+	getOwnedCategoryId,
+	getOwnedPaymentMethodId,
+	listSubscriptionManagementItems,
+	resolveCurrentPlanForUser
+} from '$lib/server/subscription-management-items';
 import { defaultSubscriptionColor, getFallbackSubscriptionColor } from '$lib/subscription-colors';
 import {
 	CANCELLATION_METHODS,
@@ -81,15 +87,6 @@ const resolveCreateSubscriptionColor = async (
 	return getFallbackSubscriptionColor(existingSubscriptions.length);
 };
 
-const resolveCurrentPlanForUser = async (db: NonNullable<App.Locals['db']>, userId: string) => {
-	const billingSubscriptions = await db.query.subscription.findMany({
-		where: (subscription, { eq }) => eq(subscription.referenceId, userId)
-	});
-	const entitlements = await listActiveEntitlementsForUser(db, userId);
-	const { currentPlan } = getCurrentPlan(billingSubscriptions, entitlements);
-	return currentPlan;
-};
-
 const hasReachedFreeActiveLimit = async (
 	db: NonNullable<App.Locals['db']>,
 	userId: string,
@@ -144,6 +141,8 @@ export const load: PageServerLoad = async ({ locals, request }) => {
 	form.data.color = defaultSubscriptionColor;
 	form.data.notifyDaysBefore = 3;
 	form.data.currency = DEFAULT_SUBSCRIPTION_CURRENCY;
+	form.data.categoryId = null;
+	form.data.paymentMethodId = null;
 
 	const vapidPublicKey = process.env.VAPID_PUBLIC_KEY ?? '';
 	const { currentPlan: freePlan } = getCurrentPlan([]);
@@ -153,6 +152,8 @@ export const load: PageServerLoad = async ({ locals, request }) => {
 		return {
 			form,
 			subscriptions: [],
+			categories: [],
+			paymentMethods: [],
 			vapidPublicKey,
 			hasPushSubscription: false,
 			currentPlan: freePlan
@@ -181,6 +182,10 @@ export const load: PageServerLoad = async ({ locals, request }) => {
 					.where(eq(trackedSubscriptionTable.userId, userId))
 					.orderBy(desc(trackedSubscriptionTable.createdAt))
 			: [];
+	const managementItems =
+		userId !== undefined
+			? await listSubscriptionManagementItems(db, userId)
+			: { categories: [], paymentMethods: [] };
 
 	// refresh nextBillingAt/daysUntilNextBilling each load
 	for (const sub of subscriptions) {
@@ -216,7 +221,15 @@ export const load: PageServerLoad = async ({ locals, request }) => {
 				)
 			: false;
 
-	return { form, subscriptions, vapidPublicKey, hasPushSubscription, currentPlan };
+	return {
+		form,
+		subscriptions,
+		categories: managementItems.categories,
+		paymentMethods: managementItems.paymentMethods,
+		vapidPublicKey,
+		hasPushSubscription,
+		currentPlan
+	};
 };
 
 export const actions: Actions = {
@@ -246,6 +259,8 @@ export const actions: Actions = {
 
 			const { defaultNotifyDaysBefore, timeZone } = await resolveUserNotificationConfig(db, userId);
 			const currentPlan = await resolveCurrentPlanForUser(db, userId);
+			const categoryId = await getOwnedCategoryId(db, userId, form.data.categoryId);
+			const paymentMethodId = await getOwnedPaymentMethodId(db, userId, form.data.paymentMethodId);
 
 			if (!currentPlan.isPremium && (await hasReachedFreeActiveLimit(db, userId))) {
 				return fail(403, {
@@ -272,6 +287,8 @@ export const actions: Actions = {
 
 			await db.insert(trackedSubscriptionTable).values({
 				userId,
+				categoryId,
+				paymentMethodId,
 				serviceName: form.data.text,
 				...buildTemplateValues(form.data),
 				status: 'active',
@@ -343,6 +360,8 @@ export const actions: Actions = {
 			}
 
 			const { defaultNotifyDaysBefore, timeZone } = await resolveUserNotificationConfig(db, userId);
+			const categoryId = await getOwnedCategoryId(db, userId, form.data.categoryId);
+			const paymentMethodId = await getOwnedPaymentMethodId(db, userId, form.data.paymentMethodId);
 			const { nextBillingAt, daysUntilNextBilling } = computeNextBilling(
 				form.data.datepicker,
 				form.data.select,
@@ -352,6 +371,8 @@ export const actions: Actions = {
 			await db
 				.update(trackedSubscriptionTable)
 				.set({
+					categoryId,
+					paymentMethodId,
 					serviceName: form.data.text,
 					...buildTemplateValues(form.data),
 					color: existingSubscription.color,

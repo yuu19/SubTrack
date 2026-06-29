@@ -7,6 +7,7 @@
 	import { Field, Control, Label, Description, FieldErrors } from 'formsnap';
 	import Button from '$lib/components/ui/button/button.svelte';
 	import Input from '$lib/components/ui/input/input.svelte';
+	import SubscriptionManagementItems from '$lib/components/subscriptions/SubscriptionManagementItems.svelte';
 	import SubscriptionIcon from '$lib/components/subscriptions/SubscriptionIcon.svelte';
 	import TagsInput from '$lib/components/ui/tags-input/tags-input.svelte';
 	import {
@@ -22,6 +23,10 @@
 	} from '$lib/constant';
 	import { m } from '$lib/paraglide/messages.js';
 	import { getLocale } from '$lib/paraglide/runtime';
+	import type {
+		subscriptionCategoryTable,
+		subscriptionPaymentMethodTable
+	} from '$lib/server/db/schema';
 	import { UserConfigContext } from '$lib/states/userConfig.svelte';
 	import { defaultSubscriptionColor, resolveSubscriptionColor } from '$lib/subscription-colors';
 	import {
@@ -35,7 +40,33 @@
 		type SubscriptionIconType
 	} from '$lib/subscription-icons';
 
-	let { subscription, isPremium = false, onServerResult, onClose, action = '?/update' } = $props();
+	type Category = typeof subscriptionCategoryTable.$inferSelect;
+	type PaymentMethod = typeof subscriptionPaymentMethodTable.$inferSelect;
+
+	let {
+		subscription,
+		categories = [],
+		paymentMethods = [],
+		isPremium = false,
+		isOnline = true,
+		onServerResult,
+		onClose,
+		onManagementItemsChange,
+		action = '?/update'
+	} = $props<{
+		subscription: any;
+		categories?: Category[];
+		paymentMethods?: PaymentMethod[];
+		isPremium?: boolean;
+		isOnline?: boolean;
+		onServerResult?: (subscriptions: any[]) => Promise<void>;
+		onClose?: () => void;
+		onManagementItemsChange?: (items: {
+			categories: Category[];
+			paymentMethods: PaymentMethod[];
+		}) => void;
+		action?: string;
+	}>();
 	const userConfig = UserConfigContext.get();
 	const currentLocale = $derived(resolveLocale(getLocale()));
 	const cycleOptions = $derived([
@@ -85,6 +116,16 @@
 		)
 	);
 	const currencyFieldLabel = $derived(currentLocale === 'en' ? 'Currency' : '通貨');
+	const categoryFieldLabel = $derived(currentLocale === 'en' ? 'Category' : 'カテゴリー');
+	const paymentMethodFieldLabel = $derived(
+		currentLocale === 'en' ? 'Payment method' : '支払い方法'
+	);
+	const notSetLabel = $derived(currentLocale === 'en' ? 'Not set' : '未設定');
+	const managementSummaryLabel = $derived(
+		currentLocale === 'en'
+			? 'Manage categories and payment methods'
+			: 'カテゴリー・支払い方法を管理'
+	);
 	const currencyOptions = $derived(SUPPORTED_CURRENCIES.map((currency) => ({ value: currency })));
 
 	const defaultNotifyDaysBefore = $derived(userConfig.current.defaultNotifyDaysBefore ?? 3);
@@ -101,6 +142,8 @@
 				planName: subscription.planName ?? '',
 				serviceUrl: subscription.serviceUrl ?? '',
 				priceEditedByUser: subscription.priceEditedByUser ?? false,
+				categoryId: subscription.categoryId ?? null,
+				paymentMethodId: subscription.paymentMethodId ?? null,
 				color: resolveSubscriptionColor(subscription.color, defaultSubscriptionColor),
 				iconType: resolveSubscriptionIconType(subscription.iconType, defaultSubscriptionIconType),
 				iconValue: resolveSubscriptionIconValue(
@@ -126,6 +169,8 @@
 			planName: '',
 			serviceUrl: '',
 			priceEditedByUser: false,
+			categoryId: null,
+			paymentMethodId: null,
 			color: defaultSubscriptionColor,
 			iconType: defaultSubscriptionIconType,
 			iconValue: defaultSubscriptionIconValue,
@@ -153,6 +198,8 @@
 	const planNameField = fieldProxy(form, 'planName');
 	const serviceUrlField = fieldProxy(form, 'serviceUrl');
 	const priceEditedByUserField = fieldProxy(form, 'priceEditedByUser');
+	const categoryIdField = fieldProxy(form, 'categoryId');
+	const paymentMethodIdField = fieldProxy(form, 'paymentMethodId');
 	const colorField = fieldProxy(form, 'color');
 	const iconTypeField = fieldProxy(form, 'iconType');
 	const iconValueField = fieldProxy(form, 'iconValue');
@@ -309,6 +356,60 @@
 			</Control>
 			<FieldErrors class="text-destructive text-sm" />
 		</Field>
+
+		<div class="grid min-w-0 gap-3 sm:grid-cols-2">
+			<Field {form} name="categoryId">
+				<Control>
+					{#snippet children({ props })}
+						<Label class="font-medium">{categoryFieldLabel}</Label>
+						<select
+							{...props}
+							class="border-input focus-visible:ring-ring focus-visible:border-ring bg-background flex h-10 w-full rounded-md border px-3 text-sm shadow-sm transition"
+							bind:value={$categoryIdField}
+						>
+							<option value="">{notSetLabel}</option>
+							{#each categories as category (category.id)}
+								<option value={category.id}>{category.name}</option>
+							{/each}
+						</select>
+					{/snippet}
+				</Control>
+				<FieldErrors class="text-destructive text-sm" />
+			</Field>
+
+			<Field {form} name="paymentMethodId">
+				<Control>
+					{#snippet children({ props })}
+						<Label class="font-medium">{paymentMethodFieldLabel}</Label>
+						<select
+							{...props}
+							class="border-input focus-visible:ring-ring focus-visible:border-ring bg-background flex h-10 w-full rounded-md border px-3 text-sm shadow-sm transition"
+							bind:value={$paymentMethodIdField}
+						>
+							<option value="">{notSetLabel}</option>
+							{#each paymentMethods as paymentMethod (paymentMethod.id)}
+								<option value={paymentMethod.id}>{paymentMethod.name}</option>
+							{/each}
+						</select>
+					{/snippet}
+				</Control>
+				<FieldErrors class="text-destructive text-sm" />
+			</Field>
+		</div>
+
+		<details class="min-w-0 rounded-lg border p-3 sm:p-4">
+			<summary class="cursor-pointer text-sm font-semibold">{managementSummaryLabel}</summary>
+			<div class="mt-4">
+				<SubscriptionManagementItems
+					{categories}
+					{paymentMethods}
+					{isPremium}
+					{isOnline}
+					compact
+					onItemsChange={onManagementItemsChange}
+				/>
+			</div>
+		</details>
 
 		<details class="min-w-0 rounded-lg border p-3 sm:p-4">
 			<summary

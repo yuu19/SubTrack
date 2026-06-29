@@ -42,11 +42,17 @@
 	import { page } from '$app/state';
 	import { fromAction } from 'svelte/attachments';
 	import { cn } from '$lib/utils';
-	import { onMount } from 'svelte';
+	import { onMount, untrack } from 'svelte';
 	import { toast } from 'svelte-sonner';
-	import type { trackedSubscriptionTable } from '$lib/server/db/schema';
+	import type {
+		subscriptionCategoryTable,
+		subscriptionPaymentMethodTable,
+		trackedSubscriptionTable
+	} from '$lib/server/db/schema';
 
 	type Subscription = typeof trackedSubscriptionTable.$inferSelect;
+	type Category = typeof subscriptionCategoryTable.$inferSelect;
+	type PaymentMethod = typeof subscriptionPaymentMethodTable.$inferSelect;
 	type SubscriptionView = Omit<Subscription, 'id'> & {
 		id: number | string;
 		_pending?: boolean;
@@ -55,6 +61,8 @@
 	let { data } = $props<{
 		data: {
 			subscriptions: Subscription[];
+			categories: Category[];
+			paymentMethods: PaymentMethod[];
 			form: unknown;
 			vapidPublicKey: string;
 			hasPushSubscription: boolean;
@@ -71,6 +79,8 @@
 	}
 
 	let subscriptions = $state<SubscriptionView[]>(getInitialSubscriptions());
+	let categories = $state<Category[]>(untrack(() => data.categories));
+	let paymentMethods = $state<PaymentMethod[]>(untrack(() => data.paymentMethods));
 	let isOnline = $state(true);
 	let isSyncing = $state(false);
 	let syncError = $state<string | null>(null);
@@ -99,6 +109,15 @@
 	const activeTag = $derived(page.url.searchParams.get('tag')?.trim() ?? '');
 	const activeSubscriptionParam = $derived(page.url.searchParams.get('subscription')?.trim() ?? '');
 	const normalizedActiveTag = $derived(activeTag.toLocaleLowerCase());
+	const categoryById = $derived(new Map(categories.map((category) => [category.id, category])));
+	const paymentMethodById = $derived(
+		new Map(paymentMethods.map((paymentMethod) => [paymentMethod.id, paymentMethod]))
+	);
+	const getCategoryName = (categoryId?: number | null) =>
+		categoryId ? (categoryById.get(categoryId)?.name ?? null) : null;
+
+	const getPaymentMethodName = (paymentMethodId?: number | null) =>
+		paymentMethodId ? (paymentMethodById.get(paymentMethodId)?.name ?? null) : null;
 
 	const pendingCount = $derived(subscriptions.filter((sub) => sub._pending).length);
 	const canMutateSelected = $derived(
@@ -125,6 +144,15 @@
 			sub.tags.some((tag) => tag.trim().toLocaleLowerCase() === normalizedActiveTag)
 		);
 	});
+	const selectedSubscriptionDetail = $derived(
+		selectedSubscription
+			? {
+					...selectedSubscription,
+					categoryName: getCategoryName(selectedSubscription.categoryId),
+					paymentMethodName: getPaymentMethodName(selectedSubscription.paymentMethodId)
+				}
+			: null
+	);
 
 	const cycleDayMap: Record<string, number> = {
 		monthly: 30,
@@ -234,6 +262,14 @@
 			const updated = merged.find((sub) => sub.id === selectedSubscription?.id);
 			selectedSubscription = (updated as SubscriptionView | undefined) ?? null;
 		}
+	};
+
+	const handleManagementItemsChange = (items: {
+		categories: Category[];
+		paymentMethods: PaymentMethod[];
+	}) => {
+		categories = items.categories;
+		paymentMethods = items.paymentMethods;
 	};
 
 	const handleCreateResult = async (serverSubscriptions: Subscription[]) => {
@@ -505,6 +541,16 @@
 									<CardTitle class="truncate text-base">{sub.serviceName}</CardTitle>
 									<CardDescription class="flex flex-wrap items-center gap-2 text-xs">
 										<span>{getCycleLabel(sub.cycle, currentLocale)}</span>
+										{#if getCategoryName(sub.categoryId)}
+											<Badge variant="secondary" class="text-[10px]">
+												{getCategoryName(sub.categoryId)}
+											</Badge>
+										{/if}
+										{#if getPaymentMethodName(sub.paymentMethodId)}
+											<Badge variant="outline" class="text-[10px]">
+												{getPaymentMethodName(sub.paymentMethodId)}
+											</Badge>
+										{/if}
 										{#if sub._pending}
 											<Badge variant="secondary" class="text-[10px]"
 												>{m.subscription_pending_badge()}</Badge
@@ -621,6 +667,16 @@
 														{m.subscription_canceled_badge()}
 													</Badge>
 													<span>{getCycleLabel(sub.cycle, currentLocale)}</span>
+													{#if getCategoryName(sub.categoryId)}
+														<Badge variant="secondary" class="text-[10px]">
+															{getCategoryName(sub.categoryId)}
+														</Badge>
+													{/if}
+													{#if getPaymentMethodName(sub.paymentMethodId)}
+														<Badge variant="outline" class="text-[10px]">
+															{getPaymentMethodName(sub.paymentMethodId)}
+														</Badge>
+													{/if}
 												</CardDescription>
 											</div>
 										</div>
@@ -697,7 +753,7 @@
 		</div>
 		{#if selectedSubscription}
 			<SubscriptionDetailPanel
-				subscription={selectedSubscription}
+				subscription={selectedSubscriptionDetail}
 				locale={currentLocale}
 				canMutate={canMutateSelected}
 				onEdit={openEdit}
@@ -723,9 +779,13 @@
 			{#key selectedSubscription?.id}
 				<EditSubscription
 					subscription={selectedSubscription}
+					{categories}
+					{paymentMethods}
 					{isPremium}
+					{isOnline}
 					onServerResult={handleUpdateResult}
 					onClose={closeEdit}
+					onManagementItemsChange={handleManagementItemsChange}
 				/>
 			{/key}
 		</div>
@@ -803,9 +863,14 @@
 		<AddSubscription
 			{data}
 			open={addSubscriptionOpen}
+			{categories}
+			{paymentMethods}
+			{isPremium}
+			{isOnline}
 			onClose={() => (addSubscriptionOpen = false)}
 			onOfflineSubmit={handleOfflineSubmit}
 			onServerResult={handleCreateResult}
+			onManagementItemsChange={handleManagementItemsChange}
 		/>
 	</Dialog.Content>
 </Dialog.Root>

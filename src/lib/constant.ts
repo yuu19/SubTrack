@@ -29,6 +29,12 @@ export type NotificationMethod = (typeof NOTIFICATION_METHODS)[number];
 export const TRACKED_SUBSCRIPTION_STATUSES = ['active', 'canceled'] as const;
 export type TrackedSubscriptionStatus = (typeof TRACKED_SUBSCRIPTION_STATUSES)[number];
 
+export const SUBSCRIPTION_CATEGORY_KEYS = ['video', 'music', 'work'] as const;
+export type SubscriptionCategoryKey = (typeof SUBSCRIPTION_CATEGORY_KEYS)[number];
+
+export const PAYMENT_METHOD_TYPES = ['credit_card', 'app_store', 'other'] as const;
+export type PaymentMethodType = (typeof PAYMENT_METHOD_TYPES)[number];
+
 export const CANCELLATION_METHODS = [
 	'web',
 	'app',

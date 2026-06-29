@@ -5,6 +5,7 @@ import {
 	emptySubscriptionAnalytics
 } from '$lib/server/subscription-analytics';
 import { resolveSubscriptionColor } from '$lib/subscription-colors';
+import { listSubscriptionManagementItems } from '$lib/server/subscription-management-items';
 
 export const load: PageServerLoad = async ({ locals, request }) => {
 	const db = locals.db;
@@ -31,6 +32,8 @@ export const load: PageServerLoad = async ({ locals, request }) => {
 			color: true,
 			iconType: true,
 			iconValue: true,
+			categoryId: true,
+			paymentMethodId: true,
 			cycle: true,
 			amount: true,
 			currency: true
@@ -39,13 +42,29 @@ export const load: PageServerLoad = async ({ locals, request }) => {
 			and(eq(trackedSubscription.userId, userId), eq(trackedSubscription.status, 'active')),
 		orderBy: (trackedSubscription, { desc }) => desc(trackedSubscription.createdAt)
 	});
+	const { categories, paymentMethods } = await listSubscriptionManagementItems(db, userId);
+	const categoryById = new Map(categories.map((category) => [category.id, category]));
+	const paymentMethodById = new Map(
+		paymentMethods.map((paymentMethod) => [paymentMethod.id, paymentMethod])
+	);
 
 	return {
 		analytics: buildSubscriptionAnalytics(
-			subscriptions.map((subscription) => ({
-				...subscription,
-				color: resolveSubscriptionColor(subscription.color)
-			}))
+			subscriptions.map((subscription) => {
+				const category =
+					subscription.categoryId !== null ? categoryById.get(subscription.categoryId) : null;
+				const paymentMethod =
+					subscription.paymentMethodId !== null
+						? paymentMethodById.get(subscription.paymentMethodId)
+						: null;
+				return {
+					...subscription,
+					color: resolveSubscriptionColor(subscription.color),
+					categoryName: category?.name ?? null,
+					categoryColor: category ? resolveSubscriptionColor(category.color) : null,
+					paymentMethodName: paymentMethod?.name ?? null
+				};
+			})
 		)
 	};
 };

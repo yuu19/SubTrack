@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
+	import { browser } from '$app/environment';
 	import { invalidateAll } from '$app/navigation';
 	import { page } from '$app/state';
 	import { authClient } from '$lib/auth-client';
@@ -11,6 +12,7 @@
 	import UpdateNameModal from '$lib/components/modals/UpdateNameModal.svelte';
 	import ThemeSelectModal from '$lib/components/modals/ThemeSelectModal.svelte';
 	import PushNotificationControl from '$lib/components/push/PushNotificationControl.svelte';
+	import SubscriptionManagementItems from '$lib/components/subscriptions/SubscriptionManagementItems.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import * as Dialog from '$lib/components/ui/dialog';
 	import {
@@ -22,14 +24,24 @@
 	import { localizeInternalHref } from '$lib/locale-routing';
 	import { m } from '$lib/paraglide/messages.js';
 	import { getLocale } from '$lib/paraglide/runtime';
+	import type {
+		subscriptionCategoryTable,
+		subscriptionPaymentMethodTable
+	} from '$lib/server/db/schema';
 	import Check from 'lucide-svelte/icons/check';
 	import X from 'lucide-svelte/icons/x';
 	import { Loader2 } from 'lucide-svelte';
+	import { onMount } from 'svelte';
 	import { toast } from 'svelte-sonner';
+
+	type Category = typeof subscriptionCategoryTable.$inferSelect;
+	type PaymentMethod = typeof subscriptionPaymentMethodTable.$inferSelect;
 
 	let { user, subscription, currentPlan, vapidPublicKey, hasPushSubscription } = $derived(
 		page.data
 	);
+	let categories = $state<Category[]>(page.data.categories ?? []);
+	let paymentMethods = $state<PaymentMethod[]>(page.data.paymentMethods ?? []);
 	const currentLocale = $derived.by(() => {
 		page.url;
 		return resolveLocale(getLocale());
@@ -104,6 +116,40 @@
 	let isUpgrading = $state(false);
 	let isCreatingLifetimeCheckout = $state(false);
 	let isRestoringCancel = $state(false);
+	let isOnline = $state(true);
+
+	$effect(() => {
+		categories = page.data.categories ?? [];
+		paymentMethods = page.data.paymentMethods ?? [];
+	});
+
+	const managementTitle = $derived(currentLocale === 'en' ? 'Management items' : '管理項目');
+	const managementDescription = $derived(
+		currentLocale === 'en'
+			? 'Manage categories and payment methods used by subscriptions.'
+			: 'サブスクに紐付けるカテゴリーと支払い方法を管理します。'
+	);
+
+	const handleManagementItemsChange = (items: {
+		categories: Category[];
+		paymentMethods: PaymentMethod[];
+	}) => {
+		categories = items.categories;
+		paymentMethods = items.paymentMethods;
+	};
+
+	onMount(() => {
+		if (!browser) return;
+		isOnline = navigator.onLine;
+		const handleOnline = () => (isOnline = true);
+		const handleOffline = () => (isOnline = false);
+		window.addEventListener('online', handleOnline);
+		window.addEventListener('offline', handleOffline);
+		return () => {
+			window.removeEventListener('online', handleOnline);
+			window.removeEventListener('offline', handleOffline);
+		};
+	});
 
 	function requestPushSetup() {
 		pushSetupPromptKey += 1;
@@ -355,6 +401,28 @@
 						</div>
 						<p class="text-muted-foreground mt-3 text-xs">{m.settings_plan_refund_policy()}</p>
 					{/if}
+				</div>
+			</div>
+		</div>
+	</section>
+
+	<section class={sectionDividerClass}>
+		<div class={sectionGridClass}>
+			<div class={sectionHeaderClass}>
+				<h2 class="text-muted-foreground text-sm font-semibold tracking-wide uppercase">
+					{managementTitle}
+				</h2>
+				<p class="text-muted-foreground text-sm">{managementDescription}</p>
+			</div>
+			<div class={settingsCardClass}>
+				<div class="p-4 sm:p-5">
+					<SubscriptionManagementItems
+						{categories}
+						{paymentMethods}
+						{isPremium}
+						{isOnline}
+						onItemsChange={handleManagementItemsChange}
+					/>
 				</div>
 			</div>
 		</div>

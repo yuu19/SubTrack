@@ -8,6 +8,7 @@ import {
 } from '$lib/constant';
 
 export type AnalyticsPeriod = 'monthly' | 'yearly';
+export type AnalyticsDimension = 'service' | 'category' | 'paymentMethod';
 
 export type AnalyticsSubscription = Pick<
 	typeof trackedSubscriptionTable.$inferSelect,
@@ -16,6 +17,9 @@ export type AnalyticsSubscription = Pick<
 	color?: SubscriptionColor | null;
 	iconType?: SubscriptionIconType | string | null;
 	iconValue?: string | null;
+	categoryName?: string | null;
+	categoryColor?: SubscriptionColor | null;
+	paymentMethodName?: string | null;
 };
 
 export type SubscriptionAnalyticsItem = {
@@ -42,11 +46,12 @@ export type SubscriptionAnalyticsPeriodSnapshot = {
 };
 
 export type SubscriptionAnalyticsSnapshot = Record<
-	AnalyticsPeriod,
-	SubscriptionAnalyticsPeriodSnapshot
+	AnalyticsDimension,
+	Record<AnalyticsPeriod, SubscriptionAnalyticsPeriodSnapshot>
 >;
 
 const PERIODS: AnalyticsPeriod[] = ['monthly', 'yearly'];
+const DIMENSIONS: AnalyticsDimension[] = ['service', 'category', 'paymentMethod'];
 const AMOUNT_DECIMAL_PLACES = 2;
 
 type GroupedAnalyticsRow = {
@@ -101,83 +106,119 @@ const createEmptySummary = (currency: SubscriptionCurrency): SubscriptionAnalyti
 	subscriptionCount: 0
 });
 
-export const emptySubscriptionAnalytics = (): SubscriptionAnalyticsSnapshot => ({
+const emptyPeriodSnapshots = (): Record<AnalyticsPeriod, SubscriptionAnalyticsPeriodSnapshot> => ({
 	monthly: createEmptyPeriodSnapshot(),
 	yearly: createEmptyPeriodSnapshot()
 });
 
+export const emptySubscriptionAnalytics = (): SubscriptionAnalyticsSnapshot => ({
+	service: emptyPeriodSnapshots(),
+	category: emptyPeriodSnapshots(),
+	paymentMethod: emptyPeriodSnapshots()
+});
+
+const getDimensionValues = (subscription: AnalyticsSubscription, dimension: AnalyticsDimension) => {
+	if (dimension === 'category') {
+		return {
+			groupName: subscription.categoryName?.trim() || 'Uncategorized',
+			color: subscription.categoryColor ?? null,
+			iconType: null,
+			iconValue: null
+		};
+	}
+
+	if (dimension === 'paymentMethod') {
+		return {
+			groupName: subscription.paymentMethodName?.trim() || 'Not set',
+			color: null,
+			iconType: null,
+			iconValue: null
+		};
+	}
+
+	return {
+		groupName: subscription.serviceName.trim() || 'Unknown',
+		color: subscription.color ?? null,
+		iconType: subscription.iconType ?? null,
+		iconValue: subscription.iconValue ?? null
+	};
+};
+
 export const buildSubscriptionAnalytics = (
 	subscriptions: AnalyticsSubscription[]
 ): SubscriptionAnalyticsSnapshot => {
-	const grouped: GroupedAnalytics = {
-		monthly: new Map<SubscriptionCurrency, Map<string, GroupedAnalyticsRow>>(),
-		yearly: new Map<SubscriptionCurrency, Map<string, GroupedAnalyticsRow>>()
-	};
-
-	for (const subscription of subscriptions) {
-		const serviceName = subscription.serviceName.trim() || 'Unknown';
-		const currency = resolveCurrency(subscription.currency);
-
-		for (const period of PERIODS) {
-			const normalizedAmount = normalizeAmount(subscription.amount, subscription.cycle, period);
-			if (normalizedAmount <= 0) continue;
-
-			const currencyGroup = grouped[period].get(currency) ?? new Map<string, GroupedAnalyticsRow>();
-			grouped[period].set(currency, currencyGroup);
-
-			const existing = currencyGroup.get(serviceName);
-			currencyGroup.set(serviceName, {
-				subscriptionId: existing?.subscriptionId ?? subscription.id ?? null,
-				amount: roundAmountSum((existing?.amount ?? 0) + normalizedAmount),
-				color: existing?.color ?? subscription.color ?? null,
-				iconType: existing?.iconType ?? subscription.iconType ?? null,
-				iconValue: existing?.iconValue ?? subscription.iconValue ?? null,
-				subscriptionCount: (existing?.subscriptionCount ?? 0) + 1
-			});
-		}
-	}
-
 	const snapshot = emptySubscriptionAnalytics();
 
-	for (const period of PERIODS) {
-		const summaries = SUPPORTED_CURRENCIES.flatMap((currency) => {
-			const currencyGroup = grouped[period].get(currency);
-			if (!currencyGroup) return [];
-
-			const items = Array.from(currencyGroup.entries())
-				.map(([serviceName, value]) => ({
-					subscriptionId: value.subscriptionId,
-					serviceName,
-					color: value.color,
-					iconType: value.iconType,
-					iconValue: value.iconValue,
-					amount: value.amount,
-					subscriptionCount: value.subscriptionCount,
-					share: 0
-				}))
-				.sort(
-					(left, right) =>
-						right.amount - left.amount || left.serviceName.localeCompare(right.serviceName)
-				);
-
-			const total = roundAmountSum(items.reduce((sum, item) => sum + item.amount, 0));
-			return [
-				{
-					...createEmptySummary(currency),
-					total,
-					subscriptionCount: items.reduce((sum, item) => sum + item.subscriptionCount, 0),
-					items: items.map((item) => ({
-						...item,
-						share: total > 0 ? item.amount / total : 0
-					}))
-				}
-			];
-		});
-
-		snapshot[period] = {
-			summaries,
-			subscriptionCount: subscriptions.length
+	for (const dimension of DIMENSIONS) {
+		const grouped: GroupedAnalytics = {
+			monthly: new Map<SubscriptionCurrency, Map<string, GroupedAnalyticsRow>>(),
+			yearly: new Map<SubscriptionCurrency, Map<string, GroupedAnalyticsRow>>()
 		};
+
+		for (const subscription of subscriptions) {
+			const currency = resolveCurrency(subscription.currency);
+			const dimensionValues = getDimensionValues(subscription, dimension);
+
+			for (const period of PERIODS) {
+				const normalizedAmount = normalizeAmount(subscription.amount, subscription.cycle, period);
+				if (normalizedAmount <= 0) continue;
+
+				const currencyGroup =
+					grouped[period].get(currency) ?? new Map<string, GroupedAnalyticsRow>();
+				grouped[period].set(currency, currencyGroup);
+
+				const existing = currencyGroup.get(dimensionValues.groupName);
+				currencyGroup.set(dimensionValues.groupName, {
+					subscriptionId: existing?.subscriptionId ?? subscription.id ?? null,
+					amount: roundAmountSum((existing?.amount ?? 0) + normalizedAmount),
+					color: existing?.color ?? dimensionValues.color,
+					iconType: existing?.iconType ?? dimensionValues.iconType,
+					iconValue: existing?.iconValue ?? dimensionValues.iconValue,
+					subscriptionCount: (existing?.subscriptionCount ?? 0) + 1
+				});
+			}
+		}
+
+		for (const period of PERIODS) {
+			const summaries = SUPPORTED_CURRENCIES.flatMap((currency) => {
+				const currencyGroup = grouped[period].get(currency);
+				if (!currencyGroup) return [];
+
+				const items = Array.from(currencyGroup.entries())
+					.map(([serviceName, value]) => ({
+						subscriptionId: value.subscriptionId,
+						serviceName,
+						color: value.color,
+						iconType: value.iconType,
+						iconValue: value.iconValue,
+						amount: value.amount,
+						subscriptionCount: value.subscriptionCount,
+						share: 0
+					}))
+					.sort(
+						(left, right) =>
+							right.amount - left.amount || left.serviceName.localeCompare(right.serviceName)
+					);
+
+				const total = roundAmountSum(items.reduce((sum, item) => sum + item.amount, 0));
+				return [
+					{
+						...createEmptySummary(currency),
+						total,
+						subscriptionCount: items.reduce((sum, item) => sum + item.subscriptionCount, 0),
+						items: items.map((item) => ({
+							...item,
+							share: total > 0 ? item.amount / total : 0
+						}))
+					}
+				];
+			});
+
+			snapshot[dimension][period] = {
+				summaries,
+				subscriptionCount: subscriptions.length
+			};
+		}
 	}
 
 	return snapshot;

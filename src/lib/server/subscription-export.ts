@@ -14,10 +14,15 @@ export type ExportableTrackedSubscription = Pick<
 	| 'canceledAt'
 	| 'cancellationMethod'
 	| 'tags'
->;
+> & {
+	categoryName?: string | null;
+	paymentMethodName?: string | null;
+};
 
 export const SUBSCRIPTION_EXPORT_HEADERS = [
 	'service_name',
+	'category',
+	'payment_method',
 	'billing_cycle',
 	'amount',
 	'currency',
@@ -49,6 +54,8 @@ export const buildSubscriptionExportCsv = (subscriptions: ExportableTrackedSubsc
 	const rows = subscriptions.map((subscription) =>
 		[
 			subscription.serviceName,
+			subscription.categoryName,
+			subscription.paymentMethodName,
 			subscription.cycle,
 			subscription.amount,
 			subscription.currency,

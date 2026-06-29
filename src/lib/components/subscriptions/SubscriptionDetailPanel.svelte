@@ -29,6 +29,8 @@
 		serviceName?: string | null;
 		planName?: string | null;
 		serviceUrl?: string | null;
+		categoryName?: string | null;
+		paymentMethodName?: string | null;
 		status?: string | null;
 		color?: string | null;
 		iconType?: string | null;
@@ -90,6 +92,9 @@
 	const formatDaysUntilNextBilling = (value?: number | null) => {
 		return m.subscription_due_in_days({ days: Number(value ?? 0) });
 	};
+	const notSetLabel = $derived(locale === 'en' ? 'Not set' : '未設定');
+	const categoryLabel = $derived(locale === 'en' ? 'Category' : 'カテゴリー');
+	const paymentMethodLabel = $derived(locale === 'en' ? 'Payment method' : '支払い方法');
 </script>
 
 {#if subscription}
@@ -135,6 +140,15 @@
 						<span class="text-right font-medium">{subscription.planName}</span>
 					</div>
 				{/if}
+				<div class="flex items-center justify-between gap-4">
+					<span class="text-muted-foreground">{categoryLabel}</span>
+					<span class="text-right font-medium">{subscription.categoryName ?? notSetLabel}</span>
+				</div>
+				<div class="flex items-center justify-between gap-4">
+					<span class="text-muted-foreground">{paymentMethodLabel}</span>
+					<span class="text-right font-medium">{subscription.paymentMethodName ?? notSetLabel}</span
+					>
+				</div>
 				<div class="flex items-center justify-between">
 					<span class="text-muted-foreground">{m.subscription_days_until_label()}</span>
 					<span class="font-semibold">
