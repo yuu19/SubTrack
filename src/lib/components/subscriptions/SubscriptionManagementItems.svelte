@@ -59,6 +59,21 @@
 	const locale = $derived(resolveLocale(getLocale()));
 	const freeLimitReached = $derived(!isPremium && localCategories.length >= 3);
 	const paymentLimitReached = $derived(!isPremium && localPaymentMethods.length >= 3);
+	const rootClass = $derived(compact ? 'space-y-4' : 'grid gap-8 lg:grid-cols-2');
+	const sectionClass = $derived(
+		compact ? 'space-y-3 rounded-lg border p-3 sm:p-4' : 'min-w-0 space-y-4'
+	);
+	const listItemClass = $derived(
+		compact
+			? 'flex items-center gap-2 rounded-md border px-3 py-2 text-sm'
+			: 'flex items-center gap-2 rounded-md bg-muted/30 px-3 py-2 text-sm'
+	);
+	const addRowClass = $derived(
+		compact
+			? 'grid gap-2 sm:grid-cols-[minmax(0,1fr)_9rem_auto]'
+			: 'grid gap-2 sm:grid-cols-[minmax(0,1fr)_10rem] xl:grid-cols-[minmax(0,1fr)_10rem_auto]'
+	);
+	const addButtonClass = $derived(compact ? '' : 'sm:col-span-2 xl:col-span-1');
 
 	const copy = $derived(getCopy(locale));
 
@@ -219,6 +234,8 @@
 				save: 'Save',
 				edit: 'Edit',
 				cancel: 'Cancel',
+				emptyCategories: 'No categories yet.',
+				emptyPaymentMethods: 'No payment methods yet.',
 				offline: 'Online connection is required to change these items.',
 				categoryLimitReached: 'Free users can create up to 3 categories.',
 				paymentLimitReached: 'Free users can create up to 3 payment methods.',
@@ -235,6 +252,8 @@
 			save: '保存',
 			edit: '編集',
 			cancel: 'キャンセル',
+			emptyCategories: 'カテゴリーはまだありません。',
+			emptyPaymentMethods: '支払い方法はまだありません。',
 			offline: '変更にはオンライン接続が必要です。',
 			categoryLimitReached: '無料プランではカテゴリーを最大3件まで作成できます。',
 			paymentLimitReached: '無料プランでは支払い方法を最大3件まで作成できます。',
@@ -243,8 +262,8 @@
 	}
 </script>
 
-<div class={compact ? 'space-y-4' : 'grid gap-4 lg:grid-cols-2'}>
-	<section class="space-y-3 rounded-lg border p-3 sm:p-4">
+<div class={rootClass}>
+	<section class={sectionClass}>
 		<div class="space-y-1">
 			<h3 class="text-sm font-semibold">{copy.categoryTitle}</h3>
 			<p class="text-muted-foreground text-xs">{copy.categoryDescription}</p>
@@ -255,8 +274,13 @@
 			</p>
 		{/if}
 		<div class="space-y-2">
+			{#if localCategories.length === 0}
+				<p class="text-muted-foreground bg-muted/30 rounded-md px-3 py-2 text-sm">
+					{copy.emptyCategories}
+				</p>
+			{/if}
 			{#each localCategories as category (category.id)}
-				<div class="flex items-center gap-2 rounded-md border px-3 py-2 text-sm">
+				<div class={listItemClass}>
 					{#if editingCategoryId === category.id}
 						<Input bind:value={editingCategoryName} placeholder={copy.namePlaceholder} />
 						<select
@@ -309,7 +333,7 @@
 				</div>
 			{/each}
 		</div>
-		<div class="grid gap-2 sm:grid-cols-[minmax(0,1fr)_9rem_auto]">
+		<div class={addRowClass}>
 			<Input bind:value={newCategoryName} placeholder={copy.namePlaceholder} disabled={!isOnline} />
 			<select
 				class="border-input bg-background h-9 rounded-md border px-2 text-sm"
@@ -322,6 +346,7 @@
 			</select>
 			<Button
 				type="button"
+				class={addButtonClass}
 				disabled={!isOnline || busy || !newCategoryName.trim() || freeLimitReached}
 				onclick={createCategory}
 			>
@@ -331,14 +356,19 @@
 		</div>
 	</section>
 
-	<section class="space-y-3 rounded-lg border p-3 sm:p-4">
+	<section class={sectionClass}>
 		<div class="space-y-1">
 			<h3 class="text-sm font-semibold">{copy.paymentTitle}</h3>
 			<p class="text-muted-foreground text-xs">{copy.paymentDescription}</p>
 		</div>
 		<div class="space-y-2">
+			{#if localPaymentMethods.length === 0}
+				<p class="text-muted-foreground bg-muted/30 rounded-md px-3 py-2 text-sm">
+					{copy.emptyPaymentMethods}
+				</p>
+			{/if}
 			{#each localPaymentMethods as paymentMethod (paymentMethod.id)}
-				<div class="flex items-center gap-2 rounded-md border px-3 py-2 text-sm">
+				<div class={listItemClass}>
 					{#if editingPaymentMethodId === paymentMethod.id}
 						<Input bind:value={editingPaymentMethodName} placeholder={copy.namePlaceholder} />
 						<select
@@ -392,7 +422,7 @@
 				</div>
 			{/each}
 		</div>
-		<div class="grid gap-2 sm:grid-cols-[minmax(0,1fr)_9rem_auto]">
+		<div class={addRowClass}>
 			<Input
 				bind:value={newPaymentMethodName}
 				placeholder={copy.namePlaceholder}
@@ -409,6 +439,7 @@
 			</select>
 			<Button
 				type="button"
+				class={addButtonClass}
 				disabled={!isOnline || busy || !newPaymentMethodName.trim() || paymentLimitReached}
 				onclick={createPaymentMethod}
 			>
