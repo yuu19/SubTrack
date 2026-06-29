@@ -35,6 +35,7 @@
 		return resolveLocale(getLocale());
 	});
 	let pushSetupPromptKey = $state(0);
+	let pushSubscribedOverride = $state<boolean | null>(null);
 	const pushGuideHref = $derived(localizeInternalHref(resolve('/push'), currentLocale));
 	const commercialTransactionsHref = $derived(
 		localizeInternalHref(resolve('/commercial-transactions'), currentLocale)
@@ -67,6 +68,14 @@
 		}
 		return formatCurrencyYen(300, currentLocale);
 	});
+	const pushSubscribedForSettings = $derived(
+		pushSubscribedOverride ?? Boolean(hasPushSubscription)
+	);
+	const notificationMethodDescription = $derived(
+		pushSubscribedForSettings
+			? m.settings_notification_method_description_enabled()
+			: m.settings_notification_method_description()
+	);
 	const premiumPlanName = 'Premium';
 	const sectionGridClass = 'grid gap-4 lg:grid-cols-[minmax(0,12rem)_1fr] lg:gap-8';
 	const sectionHeaderClass = 'space-y-1.5';
@@ -391,7 +400,7 @@
 					<div class={settingTextClass}>
 						<p class="text-sm font-medium">{m.settings_notification_method_label()}</p>
 						<p class="text-muted-foreground text-sm">
-							{m.settings_notification_method_description()}
+							{notificationMethodDescription}
 						</p>
 					</div>
 					<div class={settingActionClass}>
@@ -405,6 +414,7 @@
 						initialSubscribed={Boolean(hasPushSubscription)}
 						guideHref={pushGuideHref}
 						promptKey={pushSetupPromptKey}
+						onSubscriptionChange={(subscribed) => (pushSubscribedOverride = subscribed)}
 					/>
 				</div>
 			</div>

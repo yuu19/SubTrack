@@ -34,7 +34,16 @@
 </script>
 
 <Dialog.Root bind:open={modalState}>
-	<Dialog.Trigger class={buttonVariants({ variant: 'link' })}>{currentLabel}</Dialog.Trigger>
+	<div class="flex flex-wrap items-center gap-2">
+		<span
+			class="bg-secondary text-secondary-foreground rounded-full px-2.5 py-1 text-sm font-medium"
+		>
+			{currentLabel}
+		</span>
+		<Dialog.Trigger class={buttonVariants({ variant: 'outline', size: 'sm' })}>
+			{m.settings_notification_method_change()}
+		</Dialog.Trigger>
+	</div>
 	<Dialog.Content class="w-full p-3 sm:p-5">
 		<Dialog.Header class="mt-10">
 			<Dialog.Title class="font-display text-lg sm:text-xl md:text-3xl">

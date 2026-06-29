@@ -25,6 +25,7 @@
 		guideHref = '',
 		promptKey = 0,
 		variant = 'banner',
+		onSubscriptionChange,
 		class: className
 	}: {
 		vapidPublicKey?: string;
@@ -32,6 +33,7 @@
 		guideHref?: string;
 		promptKey?: number;
 		variant?: Variant;
+		onSubscriptionChange?: (subscribed: boolean) => void;
 		class?: string;
 	} = $props();
 
@@ -64,6 +66,21 @@
 			? m.subscription_push_banner_enabled_description()
 			: m.subscription_push_banner_description()
 	);
+	const settingsNotificationTitle = $derived(
+		pushSubscribed
+			? m.settings_notification_current_title()
+			: m.settings_notification_recommendation_title()
+	);
+	const settingsNotificationDescription = $derived(
+		pushSubscribed
+			? m.settings_notification_current_description()
+			: m.settings_notification_recommendation_description()
+	);
+
+	const setPushSubscribed = (subscribed: boolean) => {
+		pushSubscribed = subscribed;
+		onSubscriptionChange?.(subscribed);
+	};
 
 	const urlBase64ToUint8Array = (base64String: string) => {
 		const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
@@ -179,13 +196,13 @@
 		if (registration) {
 			const subscription = await registration.pushManager.getSubscription();
 			if (subscription) {
-				pushSubscribed = true;
+				setPushSubscribed(true);
 				void syncPushSubscription(subscription).catch((error) => {
 					console.error('Failed to sync push subscription', error);
 				});
 				ensureNotificationMethodBoth();
 			} else {
-				pushSubscribed = false;
+				setPushSubscribed(false);
 			}
 		}
 		pushInitialized = true;
@@ -221,7 +238,7 @@
 
 			await syncPushSubscription(subscription);
 			await persistNotificationMethod('both');
-			pushSubscribed = true;
+			setPushSubscribed(true);
 			optInOpen = false;
 			clearAutoPromptSuppression();
 			toast.success(m.subscription_push_enabled_toast());
@@ -246,7 +263,7 @@
 				await removePushSubscription(subscription.endpoint);
 			}
 			await persistNotificationMethod('email');
-			pushSubscribed = false;
+			setPushSubscribed(false);
 			toast.success(m.subscription_push_disabled_toast());
 		} catch (error) {
 			console.error('Failed to disable push notifications', error);
@@ -351,7 +368,9 @@
 			<div class="rounded-md border px-3 py-3">
 				<div class="flex items-center justify-between gap-3">
 					<span class="text-sm font-medium">{m.settings_email_status_label()}</span>
-					<Badge variant="secondary" class="text-[10px]">{m.settings_email_status_enabled()}</Badge>
+					<Badge variant="secondary" class="text-[10px]"
+						>{m.settings_email_status_always_enabled()}</Badge
+					>
 				</div>
 				<p class="text-muted-foreground mt-2 text-xs">{m.settings_email_status_description()}</p>
 			</div>
@@ -359,9 +378,9 @@
 		<div class="bg-muted/40 rounded-md border px-3 py-3">
 			<div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 				<div class="space-y-1">
-					<p class="text-sm font-medium">{m.settings_notification_recommendation_title()}</p>
+					<p class="text-sm font-medium">{settingsNotificationTitle}</p>
 					<p class="text-muted-foreground text-xs">
-						{m.settings_notification_recommendation_description()}
+						{settingsNotificationDescription}
 					</p>
 				</div>
 				<Button
