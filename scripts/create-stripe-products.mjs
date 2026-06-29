@@ -73,7 +73,24 @@ const formatRecurring = (recurring) => {
 	return `${normalized.interval}:${normalized.interval_count}`;
 };
 
-const assertPriceMatchesConfig = (existing, desired) => {
+const normalizeCurrencyOptions = (currencyOptions) => {
+	const normalized = {};
+	for (const [currency, option] of Object.entries(currencyOptions ?? {})) {
+		normalized[currency.toLowerCase()] = {
+			...option,
+			unit_amount: option.unit_amount
+		};
+	}
+	return normalized;
+};
+
+const buildCurrencyOptionsUpdate = (currencyOptions) => {
+	const normalized = normalizeCurrencyOptions(currencyOptions);
+	if (Object.keys(normalized).length === 0) return undefined;
+	return normalized;
+};
+
+const getBasePriceConfigMismatches = (existing, desired) => {
 	const errors = [];
 	const desiredLookupKey = normalizeLookup(desired.lookup_key);
 	const existingLookupKey = normalizeLookup(existing.lookup_key);
@@ -94,14 +111,44 @@ const assertPriceMatchesConfig = (existing, desired) => {
 		errors.push(`recurring=${formatRecurring(existing.recurring)}`);
 	}
 
-	if (errors.length > 0) {
-		const label = desiredLookupKey ? `lookup_key "${desiredLookupKey}"` : `price "${existing.id}"`;
-		throw new Error(
-			`Existing Stripe price for ${label} does not match scripts/stripe-products.json: ${errors.join(
-				', '
-			)}`
-		);
+	return errors;
+};
+
+const getCurrencyOptionMismatches = (existing, desired) => {
+	const errors = [];
+	const desiredCurrencyOptions = normalizeCurrencyOptions(desired.currency_options);
+	const existingCurrencyOptions = existing.currency_options ?? {};
+
+	for (const [currency, desiredOption] of Object.entries(desiredCurrencyOptions)) {
+		const existingOption = existingCurrencyOptions[currency];
+		if (!existingOption) {
+			errors.push(`currency_options.${currency}=missing`);
+			continue;
+		}
+		if (existingOption.unit_amount !== desiredOption.unit_amount) {
+			errors.push(
+				`currency_options.${currency}.unit_amount=${existingOption.unit_amount ?? 'null'}`
+			);
+		}
 	}
+
+	return errors;
+};
+
+const assertPriceMatchesConfig = (existing, desired) => {
+	const errors = [
+		...getBasePriceConfigMismatches(existing, desired),
+		...getCurrencyOptionMismatches(existing, desired)
+	];
+	if (errors.length === 0) return;
+
+	const desiredLookupKey = normalizeLookup(desired.lookup_key);
+	const label = desiredLookupKey ? `lookup_key "${desiredLookupKey}"` : `price "${existing.id}"`;
+	throw new Error(
+		`Existing Stripe price for ${label} does not match scripts/stripe-products.json: ${errors.join(
+			', '
+		)}`
+	);
 };
 
 const findExistingProduct = async (product) => {
@@ -120,16 +167,24 @@ const findExistingProduct = async (product) => {
 
 const findExistingPrice = async (productId, price) => {
 	if (price.id) {
-		return stripe.prices.retrieve(price.id);
+		return stripe.prices.retrieve(price.id, { expand: ['currency_options'] });
 	}
 
 	const lookupKey = normalizeLookup(price.lookup_key);
 	if (lookupKey) {
-		const list = await stripe.prices.list({ lookup_keys: [lookupKey], limit: 1 });
+		const list = await stripe.prices.list({
+			lookup_keys: [lookupKey],
+			limit: 1,
+			expand: ['data.currency_options']
+		});
 		return list.data[0];
 	}
 
-	const list = await stripe.prices.list({ product: productId, limit: 100 });
+	const list = await stripe.prices.list({
+		product: productId,
+		limit: 100,
+		expand: ['data.currency_options']
+	});
 	return list.data.find((existing) => {
 		const sameAmount = existing.unit_amount === price.unit_amount;
 		const sameCurrency = existing.currency === price.currency;
@@ -162,8 +217,31 @@ const ensureProduct = async (product) => {
 const ensurePrice = async (productId, price) => {
 	const existing = await findExistingPrice(productId, price);
 	if (existing) {
+		const baseMismatches = getBasePriceConfigMismatches(existing, price);
+		if (baseMismatches.length > 0) {
+			const desiredLookupKey = normalizeLookup(price.lookup_key);
+			const label = desiredLookupKey
+				? `lookup_key "${desiredLookupKey}"`
+				: `price "${existing.id}"`;
+			throw new Error(
+				`Existing Stripe price for ${label} does not match scripts/stripe-products.json: ${baseMismatches.join(
+					', '
+				)}`
+			);
+		}
+
+		const currencyOptionMismatches = getCurrencyOptionMismatches(existing, price);
+		if (currencyOptionMismatches.length > 0 && !dryRun) {
+			const updated = await stripe.prices.update(existing.id, {
+				currency_options: buildCurrencyOptionsUpdate(price.currency_options),
+				expand: ['currency_options']
+			});
+			assertPriceMatchesConfig(updated, price);
+			return { price: updated, created: false, updated: true };
+		}
+
 		assertPriceMatchesConfig(existing, price);
-		return { price: existing, created: false };
+		return { price: existing, created: false, updated: false };
 	}
 	if (dryRun) {
 		return { price: { id: 'dry_run_price', lookup_key: price.lookup_key }, created: false };
@@ -173,12 +251,14 @@ const ensurePrice = async (productId, price) => {
 		product: productId,
 		unit_amount: price.unit_amount,
 		currency: price.currency,
+		currency_options: buildCurrencyOptionsUpdate(price.currency_options),
 		recurring: price.recurring,
 		nickname: price.nickname,
 		lookup_key: price.lookup_key,
-		metadata: price.metadata
+		metadata: price.metadata,
+		expand: ['currency_options']
 	});
-	return { price: created, created: true };
+	return { price: created, created: true, updated: false };
 };
 
 const main = async () => {
@@ -195,16 +275,19 @@ const main = async () => {
 		const priceResults = [];
 
 		for (const price of product.prices ?? []) {
-			const { price: stripePrice, created: priceCreated } = await ensurePrice(
-				stripeProduct.id,
-				price
-			);
+			const {
+				price: stripePrice,
+				created: priceCreated,
+				updated: priceUpdated
+			} = await ensurePrice(stripeProduct.id, price);
 			priceResults.push({
 				id: stripePrice.id,
 				lookup_key: stripePrice.lookup_key,
 				created: priceCreated,
+				updated: priceUpdated,
 				unit_amount: stripePrice.unit_amount,
 				currency: stripePrice.currency,
+				currency_options: stripePrice.currency_options,
 				recurring: stripePrice.recurring
 			});
 		}

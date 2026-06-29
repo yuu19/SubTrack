@@ -13,6 +13,11 @@
 					"lookup_key": "premium_monthly",
 					"unit_amount": 300,
 					"currency": "jpy",
+					"currency_options": {
+						"usd": { "unit_amount": 199 },
+						"eur": { "unit_amount": 199 },
+						"gbp": { "unit_amount": 179 }
+					},
 					"recurring": { "interval": "month" },
 					"metadata": {
 						"plan": "premium",
@@ -57,6 +62,11 @@
 					"lookup_key": "premium_lifetime_3000",
 					"unit_amount": 3000,
 					"currency": "jpy",
+					"currency_options": {
+						"usd": { "unit_amount": 1900 },
+						"eur": { "unit_amount": 1900 },
+						"gbp": { "unit_amount": 1700 }
+					},
 					"metadata": {
 						"plan": "premium",
 						"purchase_type": "one_time",

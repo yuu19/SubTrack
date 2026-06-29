@@ -779,8 +779,8 @@ export const landingPageCopy: Record<AppLocale, LandingPageCopy> = {
 			trustItems: ['No bank linking', 'Card details not stored', 'Add to home screen'],
 			metrics: [
 				{ value: '5', label: 'Free entries' },
-				{ value: 'JPY 300', label: 'Premium monthly' },
-				{ value: 'JPY 3,000', label: 'Lifetime' }
+				{ value: '$1.99', label: 'Premium monthly' },
+				{ value: '$19', label: 'Lifetime' }
 			],
 			image: {
 				src: '/images/landing/hero-subscriptions-real-en.png',
@@ -978,22 +978,28 @@ export const landingPageCopy: Record<AppLocale, LandingPageCopy> = {
 				},
 				{
 					name: 'Premium',
-					price: 'JPY 300 / month',
+					price: '$1.99 / month',
 					cycle: 'For ongoing management',
 					description: 'Remove entry limits and use CSV export.',
 					bullets: [
 						'Remove entry limits',
 						'CSV export',
 						'Per-subscription reminder settings',
-						'A 7-day free trial may apply'
+						'A 7-day free trial may apply',
+						'Local currency may be shown at checkout'
 					]
 				},
 				{
 					name: 'Premium Lifetime',
-					price: 'JPY 3,000',
+					price: '$19',
 					cycle: 'For avoiding another monthly bill',
 					description: 'Use Premium-level features with a one-time purchase.',
-					bullets: ['One-time purchase', 'CSV export', 'Remove entry limits'],
+					bullets: [
+						'One-time purchase',
+						'CSV export',
+						'Remove entry limits',
+						'Local currency may be shown at checkout'
+					],
 					badge: 'Recommended',
 					featured: true
 				}
@@ -1624,7 +1630,7 @@ export const commercePageCopy: Record<'ja' | 'en', CommercePageCopy> = {
 			{
 				label: '販売価格',
 				value:
-					'Premium 月額300円（税込）、Premium 買い切り3,000円（税込）。購入画面に異なる表示がある場合は、購入画面の表示を優先します。'
+					'Premium 月額300円（税込）、Premium 買い切り3,000円（税込）。海外からの購入では、購入画面で外貨表示になる場合があります。購入画面に異なる表示がある場合は、購入画面の表示を優先します。'
 			},
 			{
 				label: '商品代金以外の必要料金',
@@ -1688,7 +1694,7 @@ export const commercePageCopy: Record<'ja' | 'en', CommercePageCopy> = {
 			{
 				label: 'Sales price',
 				value:
-					'Premium is JPY 300 per month including tax. Premium Lifetime is JPY 3,000 including tax. If the purchase screen shows different details, the purchase screen prevails.'
+					'Premium is $1.99 per month, and Premium Lifetime is $19. Local currency may be shown at checkout. The default JPY prices are JPY 300 per month and JPY 3,000 for Premium Lifetime. If the purchase screen shows different details, the purchase screen prevails.'
 			},
 			{
 				label: 'Additional fees',
