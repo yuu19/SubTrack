@@ -283,7 +283,12 @@
 </script>
 
 {#if subscription}
-	<form method="post" {action} class="space-y-4" {@attach fromAction(enhance, () => enhanceEvents)}>
+	<form
+		method="post"
+		{action}
+		class="min-w-0 space-y-4 overflow-x-hidden"
+		{@attach fromAction(enhance, () => enhanceEvents)}
+	>
 		<input type="hidden" name="id" value={subscription.id} />
 		<input type="hidden" name="serviceTemplateId" value={$serviceTemplateIdField ?? ''} />
 		<input type="hidden" name="planName" value={$planNameField ?? ''} />
@@ -305,12 +310,12 @@
 			<FieldErrors class="text-destructive text-sm" />
 		</Field>
 
-		<details class="rounded-lg border p-4">
+		<details class="min-w-0 rounded-lg border p-3 sm:p-4">
 			<summary
-				class="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-medium"
+				class="flex min-w-0 cursor-pointer list-none items-center justify-between gap-3 text-sm font-medium"
 			>
-				<span>{iconFieldLabel}</span>
-				<span class="ml-auto flex items-center gap-3">
+				<span class="min-w-0">{iconFieldLabel}</span>
+				<span class="ml-auto flex min-w-0 shrink-0 items-center gap-3">
 					<span
 						class="border-border bg-muted/50 flex size-9 items-center justify-center rounded-md border"
 					>
@@ -326,7 +331,7 @@
 					</span>
 				</span>
 			</summary>
-			<div class="mt-4 space-y-4">
+			<div class="mt-4 min-w-0 space-y-4">
 				<Field {form} name="iconValue">
 					<Control>
 						{#snippet children({ props })}
@@ -386,7 +391,7 @@
 										<Control>
 											{#snippet children({ props })}
 												<Label class="sr-only">{serviceUrlFieldLabel}</Label>
-												<div class="grid gap-2 sm:grid-cols-[1fr_auto]">
+												<div class="grid min-w-0 gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
 													<Input
 														{...props}
 														type="url"
@@ -397,6 +402,7 @@
 													<Button
 														type="button"
 														variant="outline"
+														class="w-full text-center whitespace-normal sm:w-auto sm:whitespace-nowrap"
 														disabled={!serviceFaviconUrl}
 														onclick={selectOfficialSiteIcon}
 													>
@@ -528,7 +534,7 @@
 			<FieldErrors class="text-destructive text-sm" />
 		</Field>
 
-		<div class="grid gap-3 sm:grid-cols-[minmax(0,1fr)_8rem]">
+		<div class="grid min-w-0 gap-3 sm:grid-cols-[minmax(0,1fr)_8rem]">
 			<Field {form} name="number">
 				<Control>
 					{#snippet children({ props })}
@@ -590,14 +596,14 @@
 			<FieldErrors class="text-destructive text-sm" />
 		</Field>
 
-		<details class="rounded-lg border p-4">
+		<details class="min-w-0 rounded-lg border p-3 sm:p-4">
 			<summary class="cursor-pointer text-sm font-semibold">
 				{m.subscription_form_cancellation_summary()}
 			</summary>
 			<p class="text-muted-foreground mt-2 text-xs">
 				{m.subscription_form_cancellation_description()}
 			</p>
-			<div class="mt-4 space-y-4">
+			<div class="mt-4 min-w-0 space-y-4">
 				<Field {form} name="cancellationUrl">
 					<Control>
 						{#snippet children({ props })}

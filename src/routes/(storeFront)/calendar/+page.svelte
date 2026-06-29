@@ -248,7 +248,9 @@
 </div>
 
 <Dialog.Root bind:open={editOpen}>
-	<Dialog.Content class="max-h-[90vh] w-full max-w-3xl overflow-y-auto p-6">
+	<Dialog.Content
+		class="max-h-[90vh] w-full max-w-[calc(100vw-1rem)] overflow-x-hidden overflow-y-auto p-4 sm:max-w-2xl sm:p-6 lg:max-w-3xl"
+	>
 		<Dialog.Header class="space-y-1">
 			<Dialog.Title class="text-2xl font-bold">{m.subscription_edit_title()}</Dialog.Title>
 			<Dialog.Description class="text-muted-foreground text-sm">
