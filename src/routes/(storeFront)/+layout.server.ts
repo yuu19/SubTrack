@@ -52,11 +52,21 @@ export const load = async ({ request, locals, url }) => {
 		: null;
 	const isAdmin = isAdminUser(user, adminUserIds);
 
-	if (user && !user.sampleDataSeeded) {
-		const seedLocale = APP_LOCALES.includes(user.locale as AppLocale)
+	const seedLocale =
+		user && APP_LOCALES.includes(user.locale as AppLocale)
 			? (user.locale as AppLocale)
 			: DEFAULT_LOCALE;
+
+	if (user && !user.subscriptionManagementItemsSeeded) {
 		await seedDefaultSubscriptionManagementItems(db, user.id, seedLocale);
+		await db
+			.update(userTable)
+			.set({ subscriptionManagementItemsSeeded: true })
+			.where(eq(userTable.id, user.id));
+		user.subscriptionManagementItemsSeeded = true;
+	}
+
+	if (user && !user.sampleDataSeeded) {
 		const { categories, paymentMethods } = await listSubscriptionManagementItems(db, user.id);
 		const categoryByKey = new Map(categories.map((category) => [category.key, category.id]));
 		const paymentMethodByType = new Map(

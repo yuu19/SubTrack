@@ -77,6 +77,11 @@ export const user = sqliteTable('user', {
 	})
 		.notNull()
 		.default(false),
+	subscriptionManagementItemsSeeded: integer('subscription_management_items_seeded', {
+		mode: 'boolean'
+	})
+		.notNull()
+		.default(false),
 	banned: integer('banned', {
 		mode: 'boolean'
 	}).default(false),
