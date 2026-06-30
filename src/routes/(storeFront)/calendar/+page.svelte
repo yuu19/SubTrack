@@ -274,7 +274,7 @@
 
 <Dialog.Root bind:open={editOpen}>
 	<Dialog.Content
-		class="flex max-h-[min(92dvh,calc(100dvh-1rem))] w-full max-w-[calc(100vw-1rem)] flex-col overflow-hidden p-0 sm:max-w-2xl lg:max-w-3xl"
+		class="flex h-[min(92dvh,calc(100dvh-1rem))] w-full max-w-[calc(100vw-1rem)] flex-col overflow-hidden p-0 sm:max-w-2xl lg:max-w-3xl"
 	>
 		<Dialog.Header class="shrink-0 space-y-1 border-b px-4 py-4 pr-12 sm:px-6">
 			<Dialog.Title class="text-2xl font-bold">{m.subscription_edit_title()}</Dialog.Title>
@@ -282,7 +282,7 @@
 				{m.subscription_edit_description()}
 			</Dialog.Description>
 		</Dialog.Header>
-		<div class="min-h-0 flex-1">
+		<div class="min-h-0 flex-1 overflow-hidden">
 			{#key selectedSubscription?.id}
 				<EditSubscription
 					subscription={selectedSubscription}
