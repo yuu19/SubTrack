@@ -10,7 +10,7 @@
 	import SubscriptionManagementItems from '$lib/components/subscriptions/SubscriptionManagementItems.svelte';
 	import SubscriptionIcon from '$lib/components/subscriptions/SubscriptionIcon.svelte';
 	import TagsInput from '$lib/components/ui/tags-input/tags-input.svelte';
-	import { ArrowLeft, Pencil } from 'lucide-svelte';
+	import { ArrowLeft, ChevronDown, Pencil } from 'lucide-svelte';
 	import { payloadFromFormData, type SubscriptionPayload } from '$lib/offline/subscriptions';
 	import {
 		formatCurrency,
@@ -595,7 +595,9 @@
 						class="text-primary flex min-w-0 cursor-pointer list-none items-center justify-between gap-3 text-sm font-semibold"
 					>
 						<span class="min-w-0">{managementSummaryLabel}</span>
-						<span class="text-xs font-medium">{isManagementOpen ? '-' : '+'}</span>
+						<ChevronDown
+							class={`size-4 shrink-0 transition-transform ${isManagementOpen ? 'rotate-180' : ''}`}
+						/>
 					</summary>
 					<div class="mt-3">
 						<SubscriptionManagementItems

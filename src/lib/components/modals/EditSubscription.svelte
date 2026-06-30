@@ -29,6 +29,7 @@
 	} from '$lib/server/db/schema';
 	import { UserConfigContext } from '$lib/states/userConfig.svelte';
 	import { defaultSubscriptionColor, resolveSubscriptionColor } from '$lib/subscription-colors';
+	import { ChevronDown } from 'lucide-svelte';
 	import {
 		defaultSubscriptionIconType,
 		defaultSubscriptionIconValue,
@@ -336,7 +337,7 @@
 	$effect(() => {
 		const subscriptionId = subscription?.id ?? null;
 		if (subscriptionId === lastManagementSubscriptionId) return;
-		isManagementOpen = categories.length === 0 || paymentMethods.length === 0;
+		isManagementOpen = false;
 		lastManagementSubscriptionId = subscriptionId;
 	});
 </script>
@@ -424,7 +425,9 @@
 						class="text-primary flex min-w-0 cursor-pointer list-none items-center justify-between gap-3 text-sm font-semibold"
 					>
 						<span class="min-w-0">{managementSummaryLabel}</span>
-						<span class="text-xs font-medium">{isManagementOpen ? '-' : '+'}</span>
+						<ChevronDown
+							class={`size-4 shrink-0 transition-transform ${isManagementOpen ? 'rotate-180' : ''}`}
+						/>
 					</summary>
 					<div class="mt-3">
 						<SubscriptionManagementItems

@@ -60,12 +60,10 @@
 	const freeLimitReached = $derived(!isPremium && localCategories.length >= 3);
 	const paymentLimitReached = $derived(!isPremium && localPaymentMethods.length >= 3);
 	const rootClass = $derived(compact ? 'space-y-4' : 'grid gap-8 lg:grid-cols-2');
-	const sectionClass = $derived(
-		compact ? 'min-w-0 space-y-3 rounded-md bg-muted/20 p-3' : 'min-w-0 space-y-4'
-	);
+	const sectionClass = $derived(compact ? 'min-w-0 space-y-2' : 'min-w-0 space-y-4');
 	const listItemClass = $derived(
 		compact
-			? 'bg-background flex min-w-0 flex-wrap items-center gap-2 rounded-md px-2.5 py-2 text-sm ring-1 ring-border/60'
+			? 'bg-background flex min-w-0 flex-wrap items-center gap-2 rounded-md px-2.5 py-1.5 text-sm ring-1 ring-border/60'
 			: 'flex items-center gap-2 rounded-md bg-muted/30 px-3 py-2 text-sm'
 	);
 	const addRowClass = $derived(
@@ -264,9 +262,11 @@
 
 <div class={rootClass}>
 	<section class={sectionClass}>
-		<div class="space-y-1">
+		<div class={compact ? 'flex items-center justify-between gap-3' : 'space-y-1'}>
 			<h3 class="text-sm font-semibold">{copy.categoryTitle}</h3>
-			<p class="text-muted-foreground text-xs">{copy.categoryDescription}</p>
+			{#if !compact}
+				<p class="text-muted-foreground text-xs">{copy.categoryDescription}</p>
+			{/if}
 		</div>
 		{#if !isOnline}
 			<p class="text-muted-foreground rounded-md border border-dashed px-3 py-2 text-xs">
@@ -274,7 +274,7 @@
 			</p>
 		{/if}
 		<div class="space-y-2">
-			{#if localCategories.length === 0}
+			{#if !compact && localCategories.length === 0}
 				<p class="text-muted-foreground bg-muted/30 rounded-md px-3 py-2 text-sm">
 					{copy.emptyCategories}
 				</p>
@@ -357,12 +357,14 @@
 	</section>
 
 	<section class={sectionClass}>
-		<div class="space-y-1">
+		<div class={compact ? 'flex items-center justify-between gap-3' : 'space-y-1'}>
 			<h3 class="text-sm font-semibold">{copy.paymentTitle}</h3>
-			<p class="text-muted-foreground text-xs">{copy.paymentDescription}</p>
+			{#if !compact}
+				<p class="text-muted-foreground text-xs">{copy.paymentDescription}</p>
+			{/if}
 		</div>
 		<div class="space-y-2">
-			{#if localPaymentMethods.length === 0}
+			{#if !compact && localPaymentMethods.length === 0}
 				<p class="text-muted-foreground bg-muted/30 rounded-md px-3 py-2 text-sm">
 					{copy.emptyPaymentMethods}
 				</p>
