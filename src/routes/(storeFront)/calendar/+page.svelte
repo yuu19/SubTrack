@@ -274,15 +274,15 @@
 
 <Dialog.Root bind:open={editOpen}>
 	<Dialog.Content
-		class="max-h-[90vh] w-full max-w-[calc(100vw-1rem)] overflow-x-hidden overflow-y-auto p-4 sm:max-w-2xl sm:p-6 lg:max-w-3xl"
+		class="flex max-h-[min(92dvh,calc(100dvh-1rem))] w-full max-w-[calc(100vw-1rem)] flex-col overflow-hidden p-0 sm:max-w-2xl lg:max-w-3xl"
 	>
-		<Dialog.Header class="space-y-1">
+		<Dialog.Header class="shrink-0 space-y-1 border-b px-4 py-4 pr-12 sm:px-6">
 			<Dialog.Title class="text-2xl font-bold">{m.subscription_edit_title()}</Dialog.Title>
 			<Dialog.Description class="text-muted-foreground text-sm">
 				{m.subscription_edit_description()}
 			</Dialog.Description>
 		</Dialog.Header>
-		<div class="mt-6">
+		<div class="min-h-0 flex-1">
 			{#key selectedSubscription?.id}
 				<EditSubscription
 					subscription={selectedSubscription}

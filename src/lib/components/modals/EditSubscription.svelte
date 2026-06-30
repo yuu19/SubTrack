@@ -345,7 +345,7 @@
 	<form
 		method="post"
 		{action}
-		class="min-w-0 space-y-4 overflow-x-hidden"
+		class="flex h-full min-h-0 min-w-0 flex-col overflow-hidden"
 		{@attach fromAction(enhance, () => enhanceEvents)}
 	>
 		<input type="hidden" name="id" value={subscription.id} />
@@ -359,459 +359,474 @@
 			value={$priceEditedByUserField ? 'true' : 'false'}
 		/>
 
-		<Field {form} name="text">
-			<Control>
-				{#snippet children({ props })}
-					<Label class="font-medium">{m.subscription_form_service_name_label()}</Label>
-					<Input {...props} type="text" placeholder="Netflix" bind:value={$textField} />
-				{/snippet}
-			</Control>
-			<FieldErrors class="text-destructive text-sm" />
-		</Field>
+		<div class="min-h-0 flex-1 space-y-4 overflow-x-hidden overflow-y-auto px-4 py-4 sm:px-6">
+			<Field {form} name="text">
+				<Control>
+					{#snippet children({ props })}
+						<Label class="font-medium">{m.subscription_form_service_name_label()}</Label>
+						<Input {...props} type="text" placeholder="Netflix" bind:value={$textField} />
+					{/snippet}
+				</Control>
+				<FieldErrors class="text-destructive text-sm" />
+			</Field>
 
-		<section class="min-w-0 space-y-4 rounded-lg border p-3 sm:p-4">
-			<div>
-				<h3 class="text-sm font-semibold">{managementSectionTitle}</h3>
-			</div>
-
-			<div class="grid min-w-0 gap-3 sm:grid-cols-2">
-				<div class="min-w-0 space-y-2">
-					<Field {form} name="categoryId">
-						<Control>
-							{#snippet children({ props })}
-								<Label class="font-medium">{categoryFieldLabel}</Label>
-								<select
-									{...props}
-									class="border-input focus-visible:ring-ring focus-visible:border-ring bg-background flex h-10 w-full rounded-md border px-3 text-sm shadow-sm transition"
-									bind:value={$categoryIdField}
-								>
-									<option value="">{notSetLabel}</option>
-									{#each categories as category (category.id)}
-										<option value={category.id}>{category.name}</option>
-									{/each}
-								</select>
-							{/snippet}
-						</Control>
-						<FieldErrors class="text-destructive text-sm" />
-					</Field>
+			<section class="min-w-0 space-y-4 rounded-lg border p-3 sm:p-4">
+				<div>
+					<h3 class="text-sm font-semibold">{managementSectionTitle}</h3>
 				</div>
 
-				<div class="min-w-0 space-y-2">
-					<Field {form} name="paymentMethodId">
-						<Control>
-							{#snippet children({ props })}
-								<Label class="font-medium">{paymentMethodFieldLabel}</Label>
-								<select
-									{...props}
-									class="border-input focus-visible:ring-ring focus-visible:border-ring bg-background flex h-10 w-full rounded-md border px-3 text-sm shadow-sm transition"
-									bind:value={$paymentMethodIdField}
-								>
-									<option value="">{notSetLabel}</option>
-									{#each paymentMethods as paymentMethod (paymentMethod.id)}
-										<option value={paymentMethod.id}>{paymentMethod.name}</option>
-									{/each}
-								</select>
-							{/snippet}
-						</Control>
-						<FieldErrors class="text-destructive text-sm" />
-					</Field>
-				</div>
-			</div>
+				<div class="grid min-w-0 gap-3 sm:grid-cols-2">
+					<div class="min-w-0 space-y-2">
+						<Field {form} name="categoryId">
+							<Control>
+								{#snippet children({ props })}
+									<Label class="font-medium">{categoryFieldLabel}</Label>
+									<select
+										{...props}
+										class="border-input focus-visible:ring-ring focus-visible:border-ring bg-background flex h-10 w-full rounded-md border px-3 text-sm shadow-sm transition"
+										bind:value={$categoryIdField}
+									>
+										<option value="">{notSetLabel}</option>
+										{#each categories as category (category.id)}
+											<option value={category.id}>{category.name}</option>
+										{/each}
+									</select>
+								{/snippet}
+							</Control>
+							<FieldErrors class="text-destructive text-sm" />
+						</Field>
+					</div>
 
-			<details bind:open={isManagementOpen} class="min-w-0 border-t pt-3">
-				<summary
-					class="text-primary flex min-w-0 cursor-pointer list-none items-center justify-between gap-3 text-sm font-semibold"
-				>
-					<span class="min-w-0">{managementSummaryLabel}</span>
-					<span class="text-xs font-medium">{isManagementOpen ? '-' : '+'}</span>
-				</summary>
-				<div class="mt-3">
-					<SubscriptionManagementItems
-						{categories}
-						{paymentMethods}
-						{isPremium}
-						{isOnline}
-						compact
-						onItemsChange={onManagementItemsChange}
-					/>
+					<div class="min-w-0 space-y-2">
+						<Field {form} name="paymentMethodId">
+							<Control>
+								{#snippet children({ props })}
+									<Label class="font-medium">{paymentMethodFieldLabel}</Label>
+									<select
+										{...props}
+										class="border-input focus-visible:ring-ring focus-visible:border-ring bg-background flex h-10 w-full rounded-md border px-3 text-sm shadow-sm transition"
+										bind:value={$paymentMethodIdField}
+									>
+										<option value="">{notSetLabel}</option>
+										{#each paymentMethods as paymentMethod (paymentMethod.id)}
+											<option value={paymentMethod.id}>{paymentMethod.name}</option>
+										{/each}
+									</select>
+								{/snippet}
+							</Control>
+							<FieldErrors class="text-destructive text-sm" />
+						</Field>
+					</div>
 				</div>
-			</details>
-		</section>
 
-		<details class="min-w-0 rounded-lg border p-3 sm:p-4">
-			<summary
-				class="flex min-w-0 cursor-pointer list-none items-center justify-between gap-3 text-sm font-medium"
-			>
-				<span class="min-w-0">{iconFieldLabel}</span>
-				<span class="ml-auto flex min-w-0 shrink-0 items-center gap-3">
-					<span
-						class="border-border bg-muted/50 flex size-9 items-center justify-center rounded-md border"
+				<details bind:open={isManagementOpen} class="min-w-0 border-t pt-3">
+					<summary
+						class="text-primary flex min-w-0 cursor-pointer list-none items-center justify-between gap-3 text-sm font-semibold"
 					>
-						<SubscriptionIcon
-							iconType={$iconTypeField}
-							iconValue={$iconValueField}
-							subscriptionId={subscription.id}
-							class="size-5"
+						<span class="min-w-0">{managementSummaryLabel}</span>
+						<span class="text-xs font-medium">{isManagementOpen ? '-' : '+'}</span>
+					</summary>
+					<div class="mt-3">
+						<SubscriptionManagementItems
+							{categories}
+							{paymentMethods}
+							{isPremium}
+							{isOnline}
+							compact
+							onItemsChange={onManagementItemsChange}
 						/>
+					</div>
+				</details>
+			</section>
+
+			<details class="min-w-0 rounded-lg border p-3 sm:p-4">
+				<summary
+					class="flex min-w-0 cursor-pointer list-none items-center justify-between gap-3 text-sm font-medium"
+				>
+					<span class="min-w-0">{iconFieldLabel}</span>
+					<span class="ml-auto flex min-w-0 shrink-0 items-center gap-3">
+						<span
+							class="border-border bg-muted/50 flex size-9 items-center justify-center rounded-md border"
+						>
+							<SubscriptionIcon
+								iconType={$iconTypeField}
+								iconValue={$iconValueField}
+								subscriptionId={subscription.id}
+								class="size-5"
+							/>
+						</span>
+						<span class="text-primary text-xs font-medium">
+							{currentLocale === 'en' ? 'Change' : '変更する'}
+						</span>
 					</span>
-					<span class="text-primary text-xs font-medium">
-						{currentLocale === 'en' ? 'Change' : '変更する'}
-					</span>
-				</span>
-			</summary>
-			<div class="mt-4 min-w-0 space-y-4">
-				<Field {form} name="iconValue">
-					<Control>
-						{#snippet children({ props })}
-							<input {...props} type="hidden" bind:value={$iconValueField} />
-							<div class="space-y-3">
-								<div class="space-y-2">
-									<p class="text-muted-foreground text-xs">
-										{currentLocale === 'en' ? 'Recommended' : 'おすすめ'}
-									</p>
-									<div class="flex flex-wrap gap-2" role="radiogroup" aria-label={iconFieldLabel}>
-										{#each recommendedPresetIconOptions as icon (icon.value)}
-											<button
-												type="button"
-												onclick={() => selectIcon('preset', icon.value)}
-												class="border-border bg-background hover:bg-muted/60 flex size-11 items-center justify-center rounded-md border transition-colors {$iconTypeField ===
-													'preset' && icon.value === $iconValueField
-													? 'border-primary bg-primary/10 outline-primary outline outline-2 outline-offset-2'
-													: ''}"
-												role="radio"
-												aria-checked={$iconTypeField === 'preset' && icon.value === $iconValueField}
-												aria-label={icon.label}
-												title={icon.label}
-											>
-												<SubscriptionIcon iconType="preset" iconValue={icon.value} class="size-5" />
-											</button>
-										{/each}
-									</div>
-								</div>
-								<div class="space-y-2">
-									<p class="text-muted-foreground text-xs">
-										{currentLocale === 'en' ? 'Emoji' : '絵文字'}
-									</p>
-									<div class="flex flex-wrap gap-2" role="radiogroup" aria-label={iconFieldLabel}>
-										{#each iconOptions as icon (icon)}
-											<button
-												type="button"
-												onclick={() => selectIcon('emoji', icon)}
-												class="border-border bg-background hover:bg-muted/60 flex size-11 items-center justify-center rounded-md border text-xl transition-colors {$iconTypeField ===
-													'emoji' && icon === $iconValueField
-													? 'border-primary bg-primary/10 outline-primary outline outline-2 outline-offset-2'
-													: ''}"
-												role="radio"
-												aria-checked={$iconTypeField === 'emoji' && icon === $iconValueField}
-												aria-label={icon}
-												title={icon}
-											>
-												{icon}
-											</button>
-										{/each}
-									</div>
-								</div>
-								<div class="space-y-2">
-									<p class="text-muted-foreground text-xs">
-										{currentLocale === 'en' ? 'Get from official website' : '公式サイトから取得'}
-									</p>
-									<Field {form} name="serviceUrl">
-										<Control>
-											{#snippet children({ props })}
-												<Label class="sr-only">{serviceUrlFieldLabel}</Label>
-												<div class="grid min-w-0 gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
-													<Input
-														{...props}
-														type="url"
-														inputmode="url"
-														placeholder="https://www.netflix.com/"
-														bind:value={$serviceUrlField}
+				</summary>
+				<div class="mt-4 min-w-0 space-y-4">
+					<Field {form} name="iconValue">
+						<Control>
+							{#snippet children({ props })}
+								<input {...props} type="hidden" bind:value={$iconValueField} />
+								<div class="space-y-3">
+									<div class="space-y-2">
+										<p class="text-muted-foreground text-xs">
+											{currentLocale === 'en' ? 'Recommended' : 'おすすめ'}
+										</p>
+										<div class="flex flex-wrap gap-2" role="radiogroup" aria-label={iconFieldLabel}>
+											{#each recommendedPresetIconOptions as icon (icon.value)}
+												<button
+													type="button"
+													onclick={() => selectIcon('preset', icon.value)}
+													class="border-border bg-background hover:bg-muted/60 flex size-11 items-center justify-center rounded-md border transition-colors {$iconTypeField ===
+														'preset' && icon.value === $iconValueField
+														? 'border-primary bg-primary/10 outline-primary outline outline-2 outline-offset-2'
+														: ''}"
+													role="radio"
+													aria-checked={$iconTypeField === 'preset' &&
+														icon.value === $iconValueField}
+													aria-label={icon.label}
+													title={icon.label}
+												>
+													<SubscriptionIcon
+														iconType="preset"
+														iconValue={icon.value}
+														class="size-5"
 													/>
-													<Button
-														type="button"
-														variant="outline"
-														class="w-full text-center whitespace-normal sm:w-auto sm:whitespace-nowrap"
-														disabled={!serviceFaviconUrl}
-														onclick={selectOfficialSiteIcon}
-													>
-														{currentLocale === 'en' ? 'Use this URL' : 'このURLから取得'}
-													</Button>
-												</div>
-												<Description class="text-muted-foreground text-xs">
-													{serviceUrlFieldDescription}
-												</Description>
-											{/snippet}
-										</Control>
-										<FieldErrors class="text-destructive text-sm" />
-									</Field>
-								</div>
-								<div class="space-y-2">
-									<p class="text-muted-foreground text-xs">{imageFieldLabel}</p>
-									<div class="flex flex-wrap items-center gap-2">
-										<button
-											type="button"
-											onclick={() =>
-												$iconValueField ? selectIcon('image', $iconValueField) : undefined}
-											disabled={!hasUploadedImage}
-											class="border-border bg-background hover:bg-muted/60 flex size-11 items-center justify-center rounded-md border transition-colors disabled:cursor-not-allowed disabled:opacity-50 {$iconTypeField ===
-											'image'
-												? 'border-primary bg-primary/10 outline-primary outline outline-2 outline-offset-2'
-												: ''}"
-											role="radio"
-											aria-checked={$iconTypeField === 'image'}
-											aria-label={imageFieldLabel}
-											title={imageFieldLabel}
-										>
-											{#if hasUploadedImage}
-												<SubscriptionIcon
-													iconType="image"
-													iconValue={$iconValueField}
-													subscriptionId={subscription.id}
-													class="size-8 rounded-sm object-cover"
-												/>
-											{:else}
-												<span class="text-muted-foreground text-xs">IMG</span>
-											{/if}
-										</button>
-										{#if isPremium}
-											<input
-												bind:this={imageInput}
-												type="file"
-												accept="image/png,image/jpeg,image/webp"
-												class="hidden"
-												onchange={handleImageFileChange}
-											/>
-											<Button
+												</button>
+											{/each}
+										</div>
+									</div>
+									<div class="space-y-2">
+										<p class="text-muted-foreground text-xs">
+											{currentLocale === 'en' ? 'Emoji' : '絵文字'}
+										</p>
+										<div class="flex flex-wrap gap-2" role="radiogroup" aria-label={iconFieldLabel}>
+											{#each iconOptions as icon (icon)}
+												<button
+													type="button"
+													onclick={() => selectIcon('emoji', icon)}
+													class="border-border bg-background hover:bg-muted/60 flex size-11 items-center justify-center rounded-md border text-xl transition-colors {$iconTypeField ===
+														'emoji' && icon === $iconValueField
+														? 'border-primary bg-primary/10 outline-primary outline outline-2 outline-offset-2'
+														: ''}"
+													role="radio"
+													aria-checked={$iconTypeField === 'emoji' && icon === $iconValueField}
+													aria-label={icon}
+													title={icon}
+												>
+													{icon}
+												</button>
+											{/each}
+										</div>
+									</div>
+									<div class="space-y-2">
+										<p class="text-muted-foreground text-xs">
+											{currentLocale === 'en' ? 'Get from official website' : '公式サイトから取得'}
+										</p>
+										<Field {form} name="serviceUrl">
+											<Control>
+												{#snippet children({ props })}
+													<Label class="sr-only">{serviceUrlFieldLabel}</Label>
+													<div class="grid min-w-0 gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
+														<Input
+															{...props}
+															type="url"
+															inputmode="url"
+															placeholder="https://www.netflix.com/"
+															bind:value={$serviceUrlField}
+														/>
+														<Button
+															type="button"
+															variant="outline"
+															class="w-full text-center whitespace-normal sm:w-auto sm:whitespace-nowrap"
+															disabled={!serviceFaviconUrl}
+															onclick={selectOfficialSiteIcon}
+														>
+															{currentLocale === 'en' ? 'Use this URL' : 'このURLから取得'}
+														</Button>
+													</div>
+													<Description class="text-muted-foreground text-xs">
+														{serviceUrlFieldDescription}
+													</Description>
+												{/snippet}
+											</Control>
+											<FieldErrors class="text-destructive text-sm" />
+										</Field>
+									</div>
+									<div class="space-y-2">
+										<p class="text-muted-foreground text-xs">{imageFieldLabel}</p>
+										<div class="flex flex-wrap items-center gap-2">
+											<button
 												type="button"
-												variant="outline"
-												size="sm"
-												disabled={isUploadingImage}
-												onclick={() => imageInput?.click()}
+												onclick={() =>
+													$iconValueField ? selectIcon('image', $iconValueField) : undefined}
+												disabled={!hasUploadedImage}
+												class="border-border bg-background hover:bg-muted/60 flex size-11 items-center justify-center rounded-md border transition-colors disabled:cursor-not-allowed disabled:opacity-50 {$iconTypeField ===
+												'image'
+													? 'border-primary bg-primary/10 outline-primary outline outline-2 outline-offset-2'
+													: ''}"
+												role="radio"
+												aria-checked={$iconTypeField === 'image'}
+												aria-label={imageFieldLabel}
+												title={imageFieldLabel}
 											>
-												{#if isUploadingImage}
-													{currentLocale === 'en' ? 'Uploading...' : 'アップロード中...'}
-												{:else if hasUploadedImage}
-													{currentLocale === 'en' ? 'Replace image' : '画像を差し替え'}
+												{#if hasUploadedImage}
+													<SubscriptionIcon
+														iconType="image"
+														iconValue={$iconValueField}
+														subscriptionId={subscription.id}
+														class="size-8 rounded-sm object-cover"
+													/>
 												{:else}
-													{currentLocale === 'en' ? 'Upload image' : '画像をアップロード'}
+													<span class="text-muted-foreground text-xs">IMG</span>
 												{/if}
-											</Button>
+											</button>
+											{#if isPremium}
+												<input
+													bind:this={imageInput}
+													type="file"
+													accept="image/png,image/jpeg,image/webp"
+													class="hidden"
+													onchange={handleImageFileChange}
+												/>
+												<Button
+													type="button"
+													variant="outline"
+													size="sm"
+													disabled={isUploadingImage}
+													onclick={() => imageInput?.click()}
+												>
+													{#if isUploadingImage}
+														{currentLocale === 'en' ? 'Uploading...' : 'アップロード中...'}
+													{:else if hasUploadedImage}
+														{currentLocale === 'en' ? 'Replace image' : '画像を差し替え'}
+													{:else}
+														{currentLocale === 'en' ? 'Upload image' : '画像をアップロード'}
+													{/if}
+												</Button>
+											{/if}
+										</div>
+										<Description class="text-muted-foreground text-xs"
+											>{imageFieldDescription}</Description
+										>
+										{#if !isPremium}
+											<p class="text-muted-foreground text-xs">
+												{currentLocale === 'en'
+													? 'Image uploads are available on Premium.'
+													: '画像アップロードはPremiumで利用できます。'}
+											</p>
+										{/if}
+										{#if imageUploadError}
+											<p class="text-destructive text-xs" aria-live="polite">{imageUploadError}</p>
 										{/if}
 									</div>
-									<Description class="text-muted-foreground text-xs"
-										>{imageFieldDescription}</Description
-									>
-									{#if !isPremium}
-										<p class="text-muted-foreground text-xs">
-											{currentLocale === 'en'
-												? 'Image uploads are available on Premium.'
-												: '画像アップロードはPremiumで利用できます。'}
-										</p>
-									{/if}
-									{#if imageUploadError}
-										<p class="text-destructive text-xs" aria-live="polite">{imageUploadError}</p>
-									{/if}
 								</div>
-							</div>
-							<Description class="text-muted-foreground text-xs">{iconFieldDescription}</Description
-							>
-						{/snippet}
-					</Control>
-					<FieldErrors class="text-destructive text-sm" />
-				</Field>
-			</div>
-		</details>
+								<Description class="text-muted-foreground text-xs"
+									>{iconFieldDescription}</Description
+								>
+							{/snippet}
+						</Control>
+						<FieldErrors class="text-destructive text-sm" />
+					</Field>
+				</div>
+			</details>
 
-		<Field {form} name="select">
-			<Control>
-				{#snippet children({ props })}
-					<Label class="font-medium">{m.subscription_form_cycle_label()}</Label>
-					<select
-						{...props}
-						class="border-input focus-visible:ring-ring focus-visible:border-ring bg-background flex h-10 w-full rounded-md border px-3 text-sm shadow-sm transition"
-						bind:value={$selectField}
-					>
-						<option value="" disabled>{m.subscription_form_cycle_placeholder()}</option>
-						{#each cycleOptions as option (option.value)}
-							<option value={option.value}>{option.label}</option>
+			<Field {form} name="select">
+				<Control>
+					{#snippet children({ props })}
+						<Label class="font-medium">{m.subscription_form_cycle_label()}</Label>
+						<select
+							{...props}
+							class="border-input focus-visible:ring-ring focus-visible:border-ring bg-background flex h-10 w-full rounded-md border px-3 text-sm shadow-sm transition"
+							bind:value={$selectField}
+						>
+							<option value="" disabled>{m.subscription_form_cycle_placeholder()}</option>
+							{#each cycleOptions as option (option.value)}
+								<option value={option.value}>{option.label}</option>
+							{/each}
+						</select>
+					{/snippet}
+				</Control>
+				<FieldErrors class="text-destructive text-sm" />
+			</Field>
+
+			<Field {form} name="notifyDaysBefore">
+				<Control>
+					{#snippet children({ props })}
+						<Label class="font-medium">{m.subscription_form_custom_notify_label()}</Label>
+						<select
+							{...props}
+							class="border-input focus-visible:ring-ring focus-visible:border-ring bg-background flex h-10 w-full rounded-md border px-3 text-sm shadow-sm transition"
+							bind:value={$notifyDaysBeforeField}
+						>
+							{#each notifyOptions as days (days)}
+								<option value={days}>{formatNotifyDays(days, currentLocale)}</option>
+							{/each}
+						</select>
+					{/snippet}
+				</Control>
+				<Description class="text-muted-foreground text-sm">
+					{m.subscription_form_custom_notify_description({ label: defaultNotifyLabel })}
+				</Description>
+				<FieldErrors class="text-destructive text-sm" />
+			</Field>
+
+			<div class="grid min-w-0 gap-3 sm:grid-cols-[minmax(0,1fr)_8rem]">
+				<div class="min-w-0 space-y-2">
+					<Field {form} name="number">
+						<Control>
+							{#snippet children({ props })}
+								<Label class="font-medium">{m.subscription_form_amount_label()}</Label>
+								<Input
+									{...props}
+									type="number"
+									min="0"
+									step="0.01"
+									inputmode="decimal"
+									placeholder="1000"
+									oninput={markPriceEdited}
+									bind:value={$numberField}
+								/>
+							{/snippet}
+						</Control>
+						<FieldErrors class="text-destructive text-sm" />
+					</Field>
+				</div>
+
+				<div class="min-w-0 space-y-2">
+					<Field {form} name="currency">
+						<Control>
+							{#snippet children({ props })}
+								<Label class="font-medium">{currencyFieldLabel}</Label>
+								<select
+									{...props}
+									class="border-input focus-visible:ring-ring focus-visible:border-ring bg-background flex h-10 w-full rounded-md border px-3 text-sm shadow-sm transition"
+									bind:value={$currencyField}
+								>
+									{#each currencyOptions as option (option.value)}
+										<option value={option.value}>{option.value}</option>
+									{/each}
+								</select>
+							{/snippet}
+						</Control>
+						<FieldErrors class="text-destructive text-sm" />
+					</Field>
+				</div>
+			</div>
+
+			<Field {form} name="datepicker">
+				<Control>
+					{#snippet children({ props })}
+						<Label class="font-medium">{m.subscription_form_first_payment_label()}</Label>
+						<Input {...props} type="date" bind:value={$datepickerField} />
+					{/snippet}
+				</Control>
+				<FieldErrors class="text-destructive text-sm" />
+			</Field>
+
+			<Field {form} name="tagsinput">
+				<Control>
+					{#snippet children({ props })}
+						<Label class="font-medium">{m.subscription_form_tags_label()}</Label>
+						<TagsInput
+							bind:value={$tagsField}
+							placeholder={m.subscription_form_tags_placeholder()}
+						/>
+						{#each $tagsField as tag, i (i)}
+							<input {...props} type="hidden" value={tag} name="tagsinput" />
 						{/each}
-					</select>
-				{/snippet}
-			</Control>
-			<FieldErrors class="text-destructive text-sm" />
-		</Field>
+					{/snippet}
+				</Control>
+				<FieldErrors class="text-destructive text-sm" />
+			</Field>
 
-		<Field {form} name="notifyDaysBefore">
-			<Control>
-				{#snippet children({ props })}
-					<Label class="font-medium">{m.subscription_form_custom_notify_label()}</Label>
-					<select
-						{...props}
-						class="border-input focus-visible:ring-ring focus-visible:border-ring bg-background flex h-10 w-full rounded-md border px-3 text-sm shadow-sm transition"
-						bind:value={$notifyDaysBeforeField}
-					>
-						{#each notifyOptions as days (days)}
-							<option value={days}>{formatNotifyDays(days, currentLocale)}</option>
-						{/each}
-					</select>
-				{/snippet}
-			</Control>
-			<Description class="text-muted-foreground text-sm">
-				{m.subscription_form_custom_notify_description({ label: defaultNotifyLabel })}
-			</Description>
-			<FieldErrors class="text-destructive text-sm" />
-		</Field>
+			<details class="min-w-0 rounded-lg border p-3 sm:p-4">
+				<summary class="cursor-pointer text-sm font-semibold">
+					{m.subscription_form_cancellation_summary()}
+				</summary>
+				<p class="text-muted-foreground mt-2 text-xs">
+					{m.subscription_form_cancellation_description()}
+				</p>
+				<div class="mt-4 min-w-0 space-y-4">
+					<Field {form} name="cancellationUrl">
+						<Control>
+							{#snippet children({ props })}
+								<Label class="font-medium">{m.subscription_form_cancellation_url_label()}</Label>
+								<Input
+									{...props}
+									type="url"
+									inputmode="url"
+									placeholder={m.subscription_form_cancellation_url_placeholder()}
+									bind:value={$cancellationUrlField}
+								/>
+								<Description class="text-muted-foreground text-xs">
+									{m.subscription_form_cancellation_url_description()}
+								</Description>
+							{/snippet}
+						</Control>
+						<FieldErrors class="text-destructive text-sm" />
+					</Field>
 
-		<div class="grid min-w-0 gap-3 sm:grid-cols-[minmax(0,1fr)_8rem]">
-			<div class="min-w-0 space-y-2">
-				<Field {form} name="number">
-					<Control>
-						{#snippet children({ props })}
-							<Label class="font-medium">{m.subscription_form_amount_label()}</Label>
-							<Input
-								{...props}
-								type="number"
-								min="0"
-								step="0.01"
-								inputmode="decimal"
-								placeholder="1000"
-								oninput={markPriceEdited}
-								bind:value={$numberField}
-							/>
-						{/snippet}
-					</Control>
-					<FieldErrors class="text-destructive text-sm" />
-				</Field>
-			</div>
+					<Field {form} name="cancellationMethod">
+						<Control>
+							{#snippet children({ props })}
+								<Label class="font-medium">{m.subscription_form_cancellation_method_label()}</Label>
+								<select
+									{...props}
+									class="border-input focus-visible:ring-ring focus-visible:border-ring bg-background flex h-10 w-full rounded-md border px-3 text-sm shadow-sm transition"
+									bind:value={$cancellationMethodField}
+								>
+									<option value="">{m.subscription_form_cancellation_method_placeholder()}</option>
+									{#each cancellationMethodOptions as option (option.value)}
+										<option value={option.value}>{option.label}</option>
+									{/each}
+								</select>
+							{/snippet}
+						</Control>
+						<FieldErrors class="text-destructive text-sm" />
+					</Field>
 
-			<div class="min-w-0 space-y-2">
-				<Field {form} name="currency">
-					<Control>
-						{#snippet children({ props })}
-							<Label class="font-medium">{currencyFieldLabel}</Label>
-							<select
-								{...props}
-								class="border-input focus-visible:ring-ring focus-visible:border-ring bg-background flex h-10 w-full rounded-md border px-3 text-sm shadow-sm transition"
-								bind:value={$currencyField}
-							>
-								{#each currencyOptions as option (option.value)}
-									<option value={option.value}>{option.value}</option>
-								{/each}
-							</select>
-						{/snippet}
-					</Control>
-					<FieldErrors class="text-destructive text-sm" />
-				</Field>
-			</div>
+					<Field {form} name="cancellationMemo">
+						<Control>
+							{#snippet children({ props })}
+								<Label class="font-medium">{m.subscription_form_cancellation_memo_label()}</Label>
+								<textarea
+									{...props}
+									class="border-input focus-visible:ring-ring focus-visible:border-ring bg-background min-h-24 w-full rounded-md border px-3 py-2 text-sm shadow-sm transition outline-none focus-visible:ring-[3px]"
+									placeholder={m.subscription_form_cancellation_memo_placeholder()}
+									bind:value={$cancellationMemoField}
+								></textarea>
+							{/snippet}
+						</Control>
+						<FieldErrors class="text-destructive text-sm" />
+					</Field>
+
+					<Field {form} name="cancellationDeadlineMemo">
+						<Control>
+							{#snippet children({ props })}
+								<Label class="font-medium">
+									{m.subscription_form_cancellation_deadline_memo_label()}
+								</Label>
+								<Input
+									{...props}
+									type="text"
+									placeholder={m.subscription_form_cancellation_deadline_memo_placeholder()}
+									bind:value={$cancellationDeadlineMemoField}
+								/>
+							{/snippet}
+						</Control>
+						<FieldErrors class="text-destructive text-sm" />
+					</Field>
+				</div>
+			</details>
 		</div>
 
-		<Field {form} name="datepicker">
-			<Control>
-				{#snippet children({ props })}
-					<Label class="font-medium">{m.subscription_form_first_payment_label()}</Label>
-					<Input {...props} type="date" bind:value={$datepickerField} />
-				{/snippet}
-			</Control>
-			<FieldErrors class="text-destructive text-sm" />
-		</Field>
-
-		<Field {form} name="tagsinput">
-			<Control>
-				{#snippet children({ props })}
-					<Label class="font-medium">{m.subscription_form_tags_label()}</Label>
-					<TagsInput bind:value={$tagsField} placeholder={m.subscription_form_tags_placeholder()} />
-					{#each $tagsField as tag, i (i)}
-						<input {...props} type="hidden" value={tag} name="tagsinput" />
-					{/each}
-				{/snippet}
-			</Control>
-			<FieldErrors class="text-destructive text-sm" />
-		</Field>
-
-		<details class="min-w-0 rounded-lg border p-3 sm:p-4">
-			<summary class="cursor-pointer text-sm font-semibold">
-				{m.subscription_form_cancellation_summary()}
-			</summary>
-			<p class="text-muted-foreground mt-2 text-xs">
-				{m.subscription_form_cancellation_description()}
-			</p>
-			<div class="mt-4 min-w-0 space-y-4">
-				<Field {form} name="cancellationUrl">
-					<Control>
-						{#snippet children({ props })}
-							<Label class="font-medium">{m.subscription_form_cancellation_url_label()}</Label>
-							<Input
-								{...props}
-								type="url"
-								inputmode="url"
-								placeholder={m.subscription_form_cancellation_url_placeholder()}
-								bind:value={$cancellationUrlField}
-							/>
-							<Description class="text-muted-foreground text-xs">
-								{m.subscription_form_cancellation_url_description()}
-							</Description>
-						{/snippet}
-					</Control>
-					<FieldErrors class="text-destructive text-sm" />
-				</Field>
-
-				<Field {form} name="cancellationMethod">
-					<Control>
-						{#snippet children({ props })}
-							<Label class="font-medium">{m.subscription_form_cancellation_method_label()}</Label>
-							<select
-								{...props}
-								class="border-input focus-visible:ring-ring focus-visible:border-ring bg-background flex h-10 w-full rounded-md border px-3 text-sm shadow-sm transition"
-								bind:value={$cancellationMethodField}
-							>
-								<option value="">{m.subscription_form_cancellation_method_placeholder()}</option>
-								{#each cancellationMethodOptions as option (option.value)}
-									<option value={option.value}>{option.label}</option>
-								{/each}
-							</select>
-						{/snippet}
-					</Control>
-					<FieldErrors class="text-destructive text-sm" />
-				</Field>
-
-				<Field {form} name="cancellationMemo">
-					<Control>
-						{#snippet children({ props })}
-							<Label class="font-medium">{m.subscription_form_cancellation_memo_label()}</Label>
-							<textarea
-								{...props}
-								class="border-input focus-visible:ring-ring focus-visible:border-ring bg-background min-h-24 w-full rounded-md border px-3 py-2 text-sm shadow-sm transition outline-none focus-visible:ring-[3px]"
-								placeholder={m.subscription_form_cancellation_memo_placeholder()}
-								bind:value={$cancellationMemoField}
-							></textarea>
-						{/snippet}
-					</Control>
-					<FieldErrors class="text-destructive text-sm" />
-				</Field>
-
-				<Field {form} name="cancellationDeadlineMemo">
-					<Control>
-						{#snippet children({ props })}
-							<Label class="font-medium">
-								{m.subscription_form_cancellation_deadline_memo_label()}
-							</Label>
-							<Input
-								{...props}
-								type="text"
-								placeholder={m.subscription_form_cancellation_deadline_memo_placeholder()}
-								bind:value={$cancellationDeadlineMemoField}
-							/>
-						{/snippet}
-					</Control>
-					<FieldErrors class="text-destructive text-sm" />
-				</Field>
-			</div>
-		</details>
-
-		<Button type="submit" class="h-12 w-full text-base sm:h-10 sm:text-sm"
-			>{m.common_update()}</Button
-		>
+		<div class="bg-background shrink-0 border-t p-4 sm:px-6">
+			<Button type="submit" class="h-12 w-full text-base sm:h-10 sm:text-sm"
+				>{m.common_update()}</Button
+			>
+		</div>
 	</form>
 {:else}
-	<div class="text-muted-foreground text-sm">{m.subscription_select_to_edit()}</div>
+	<div class="text-muted-foreground px-4 py-4 text-sm sm:px-6">
+		{m.subscription_select_to_edit()}
+	</div>
 {/if}
