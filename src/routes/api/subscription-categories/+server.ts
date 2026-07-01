@@ -2,7 +2,6 @@ import type { RequestHandler } from './$types';
 import { createAuth } from '$lib/auth';
 import { subscriptionCategoryTable } from '$lib/server/db/schema';
 import {
-	hasReachedFreeCategoryLimit,
 	listSubscriptionManagementItems,
 	resolveCurrentPlanForUser
 } from '$lib/server/subscription-management-items';
@@ -25,8 +24,8 @@ export const POST: RequestHandler = async ({ request, locals: { db } }) => {
 	if (!parsed.success) error(400, 'invalid category');
 
 	const currentPlan = await resolveCurrentPlanForUser(db, userId);
-	if (!currentPlan.isPremium && (await hasReachedFreeCategoryLimit(db, userId))) {
-		return json({ error: 'category_limit_reached' }, { status: 403 });
+	if (!currentPlan.isPremium) {
+		return json({ error: 'category_premium_required' }, { status: 403 });
 	}
 
 	await db.insert(subscriptionCategoryTable).values({

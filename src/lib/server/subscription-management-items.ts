@@ -1,4 +1,4 @@
-import { and, eq, isNull } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import {
 	PAYMENT_METHOD_TYPES,
 	SUBSCRIPTION_CATEGORY_KEYS,
@@ -200,15 +200,6 @@ export const resolveCurrentPlanForUser = async (db: Db, userId: string) => {
 	return currentPlan;
 };
 
-export const hasReachedFreeCategoryLimit = async (db: Db, userId: string) => {
-	const categories = await db.query.subscriptionCategoryTable.findMany({
-		columns: { id: true },
-		where: (category, { and, eq }) => and(eq(category.userId, userId), isNull(category.key)),
-		limit: FREE_MANAGEMENT_ITEM_LIMIT
-	});
-	return categories.length >= FREE_MANAGEMENT_ITEM_LIMIT;
-};
-
 export const hasReachedFreePaymentMethodLimit = async (db: Db, userId: string) => {
 	const paymentMethods = await db.query.subscriptionPaymentMethodTable.findMany({
 		columns: { id: true },
@@ -239,32 +230,6 @@ export const getOwnedPaymentMethodId = async (
 			and(eq(paymentMethod.id, paymentMethodId), eq(paymentMethod.userId, userId))
 	});
 	return paymentMethod?.id ?? null;
-};
-
-export const deleteOwnedCategory = async (db: Db, userId: string, categoryId: number) => {
-	const category = await db.query.subscriptionCategoryTable.findFirst({
-		columns: { id: true, key: true },
-		where: (category, { and, eq }) => and(eq(category.id, categoryId), eq(category.userId, userId))
-	});
-	if (!category || category.key !== null) return;
-
-	await db
-		.update(trackedSubscriptionTable)
-		.set({ categoryId: null })
-		.where(
-			and(
-				eq(trackedSubscriptionTable.userId, userId),
-				eq(trackedSubscriptionTable.categoryId, categoryId)
-			)
-		);
-	return db
-		.delete(subscriptionCategoryTable)
-		.where(
-			and(
-				eq(subscriptionCategoryTable.id, categoryId),
-				eq(subscriptionCategoryTable.userId, userId)
-			)
-		);
 };
 
 export const deleteOwnedPaymentMethod = async (db: Db, userId: string, paymentMethodId: number) => {

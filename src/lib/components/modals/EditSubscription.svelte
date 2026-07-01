@@ -27,7 +27,12 @@
 		subscriptionPaymentMethodTable
 	} from '$lib/server/db/schema';
 	import { UserConfigContext } from '$lib/states/userConfig.svelte';
-	import { defaultSubscriptionColor, resolveSubscriptionColor } from '$lib/subscription-colors';
+	import {
+		defaultSubscriptionColor,
+		getSubscriptionColorStyle,
+		resolveSubscriptionColor,
+		type SubscriptionColor
+	} from '$lib/subscription-colors';
 	import { ChevronDown } from 'lucide-svelte';
 	import {
 		defaultSubscriptionIconType,
@@ -130,6 +135,28 @@
 		currentLocale === 'en' ? 'Category and payment' : 'カテゴリー・支払い方法'
 	);
 	const currencyOptions = $derived(SUPPORTED_CURRENCIES.map((currency) => ({ value: currency })));
+	const categoryIcon = (key: string | null) => {
+		const icons: Record<string, string> = {
+			video: '🎬',
+			music: '🎵',
+			ai: '🤖',
+			tools: '🔧',
+			storage: '☁️',
+			development: '💻',
+			design: '🎨',
+			business: '💼',
+			shopping: '🛒'
+		};
+		return key ? (icons[key] ?? '📁') : '';
+	};
+	const isCategorySelected = (id: number | null) =>
+		id === null ? !$categoryIdField : Number($categoryIdField) === id;
+	const categoryChipClass = (selected: boolean) =>
+		`inline-flex min-w-0 max-w-full items-center gap-2 rounded-full border px-3 py-2 text-sm font-medium shadow-sm transition ${
+			selected
+				? 'border-primary bg-primary/10 text-primary ring-primary/20 ring-2'
+				: 'border-border bg-background text-foreground hover:border-primary/50 hover:bg-muted/50'
+		}`;
 
 	const defaultNotifyDaysBefore = $derived(userConfig.current.defaultNotifyDaysBefore ?? 3);
 	const defaultNotifyLabel = $derived(formatNotifyDays(defaultNotifyDaysBefore, currentLocale));
@@ -380,16 +407,43 @@
 							<Control>
 								{#snippet children({ props })}
 									<Label class="font-medium">{categoryFieldLabel}</Label>
-									<select
-										{...props}
-										class="border-input focus-visible:ring-ring focus-visible:border-ring bg-background flex h-10 w-full rounded-md border px-3 text-sm shadow-sm transition"
-										bind:value={$categoryIdField}
+									<input {...props} type="hidden" value={$categoryIdField ?? ''} />
+									<div
+										class="flex min-w-0 flex-wrap gap-2"
+										role="radiogroup"
+										aria-label={categoryFieldLabel}
 									>
-										<option value="">{notSetLabel}</option>
+										<button
+											type="button"
+											class={categoryChipClass(isCategorySelected(null))}
+											aria-pressed={isCategorySelected(null)}
+											onclick={() => ($categoryIdField = null)}
+										>
+											{notSetLabel}
+										</button>
 										{#each categories as category (category.id)}
-											<option value={category.id}>{category.name}</option>
+											<button
+												type="button"
+												class={categoryChipClass(isCategorySelected(category.id))}
+												aria-pressed={isCategorySelected(category.id)}
+												onclick={() => ($categoryIdField = category.id)}
+											>
+												{#if category.key}
+													<span class="text-base leading-none" aria-hidden="true">
+														{categoryIcon(category.key)}
+													</span>
+												{:else}
+													<span
+														class="size-2.5 shrink-0 rounded-full"
+														style:background-color={getSubscriptionColorStyle(
+															category.color as SubscriptionColor
+														)}
+													></span>
+												{/if}
+												<span class="min-w-0 truncate">{category.name}</span>
+											</button>
 										{/each}
-									</select>
+									</div>
 								{/snippet}
 							</Control>
 							<FieldErrors class="text-destructive text-sm" />

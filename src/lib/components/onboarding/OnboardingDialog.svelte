@@ -288,7 +288,11 @@
 
 	const premiumFeatures = $derived([
 		{ label: m.premium_feature_subscription_limit(), free: '5', premium: '∞' },
-		{ label: m.premium_feature_category_limit(), free: '3', premium: '∞' },
+		{
+			label: m.premium_feature_category_limit(),
+			free: locale === 'en' ? 'Standard only' : '標準のみ',
+			premium: '∞'
+		},
 		{ label: m.premium_feature_payment_method_limit(), free: '3', premium: '∞' },
 		{ label: m.premium_feature_hide_ads(), free: false, premium: true },
 		{ label: m.premium_feature_image_upload(), free: false, premium: true },

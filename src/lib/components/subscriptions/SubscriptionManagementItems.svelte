@@ -48,19 +48,12 @@
 	let newCategoryColor = $state<SubscriptionColor>('blue');
 	let newPaymentMethodName = $state('');
 	let newPaymentMethodType = $state<PaymentMethodType>('credit_card');
-	let editingCategoryId = $state<number | null>(null);
-	let editingCategoryName = $state('');
-	let editingCategoryColor = $state<SubscriptionColor>('blue');
 	let editingPaymentMethodId = $state<number | null>(null);
 	let editingPaymentMethodName = $state('');
 	let editingPaymentMethodType = $state<PaymentMethodType>('credit_card');
 	let busy = $state(false);
 
 	const locale = $derived(resolveLocale(getLocale()));
-	const customCategoryCount = $derived(
-		localCategories.filter((category) => category.key === null).length
-	);
-	const freeLimitReached = $derived(!isPremium && customCategoryCount >= 3);
 	const paymentLimitReached = $derived(!isPremium && localPaymentMethods.length >= 3);
 	const rootClass = $derived(compact ? 'space-y-4' : 'grid gap-8 lg:grid-cols-2');
 	const sectionClass = $derived(compact ? 'min-w-0 space-y-2' : 'min-w-0 space-y-4');
@@ -96,6 +89,21 @@
 		][locale];
 	};
 
+	const categoryIcon = (key: string | null) => {
+		const icons: Record<string, string> = {
+			video: '🎬',
+			music: '🎵',
+			ai: '🤖',
+			tools: '🔧',
+			storage: '☁️',
+			development: '💻',
+			design: '🎨',
+			business: '💼',
+			shopping: '🛒'
+		};
+		return key ? (icons[key] ?? '📁') : '';
+	};
+
 	const syncItems = (items: ManagementItems) => {
 		localCategories = items.categories;
 		localPaymentMethods = items.paymentMethods;
@@ -118,8 +126,8 @@
 				| null;
 
 			if (!response.ok || !payload) {
-				if (payload?.error === 'category_limit_reached') {
-					toast.error(copy.categoryLimitReached);
+				if (payload?.error === 'category_premium_required') {
+					toast.error(copy.categoryPremiumRequired);
 				} else if (payload?.error === 'payment_method_limit_reached') {
 					toast.error(copy.paymentLimitReached);
 				} else {
@@ -138,6 +146,10 @@
 	const createCategory = async () => {
 		const name = newCategoryName.trim();
 		if (!name || !isOnline || busy) return;
+		if (!isPremium) {
+			toast.error(copy.categoryPremiumRequired);
+			return;
+		}
 		const result = await requestJson('/api/subscription-categories', {
 			method: 'POST',
 			body: JSON.stringify({ name, color: newCategoryColor })
@@ -146,33 +158,6 @@
 			newCategoryName = '';
 			newCategoryColor = 'blue';
 		}
-	};
-
-	const updateCategory = async () => {
-		if (!editingCategoryId || !editingCategoryName.trim() || !isOnline || busy) return;
-		const result = await requestJson(`/api/subscription-categories/${editingCategoryId}`, {
-			method: 'PATCH',
-			body: JSON.stringify({ name: editingCategoryName.trim(), color: editingCategoryColor })
-		});
-		if (result) cancelCategoryEdit();
-	};
-
-	const deleteCategory = async (id: number) => {
-		if (!isOnline || busy) return;
-		const result = await requestJson(`/api/subscription-categories/${id}`, { method: 'DELETE' });
-		if (result && editingCategoryId === id) cancelCategoryEdit();
-	};
-
-	const startCategoryEdit = (category: Category) => {
-		editingCategoryId = category.id;
-		editingCategoryName = category.name;
-		editingCategoryColor = category.color as SubscriptionColor;
-	};
-
-	const cancelCategoryEdit = () => {
-		editingCategoryId = null;
-		editingCategoryName = '';
-		editingCategoryColor = 'blue';
 	};
 
 	const createPaymentMethod = async () => {
@@ -227,10 +212,13 @@
 		if (currentLocale === 'en') {
 			return {
 				categoryTitle: 'Categories',
-				categoryDescription: 'Free users can add up to 3 custom categories.',
+				categoryDescription: 'Standard categories are available to everyone.',
 				paymentTitle: 'Payment methods',
 				paymentDescription: 'Free users can keep up to 3 payment methods.',
 				namePlaceholder: 'Name',
+				customCategoryTitle: 'Custom category',
+				customCategoryDescription: 'Premium users can add custom categories.',
+				categoryPremiumNotice: 'Custom categories are available with Premium.',
 				add: 'Add',
 				save: 'Save',
 				edit: 'Edit',
@@ -238,17 +226,20 @@
 				emptyCategories: 'No categories yet.',
 				emptyPaymentMethods: 'No payment methods yet.',
 				offline: 'Online connection is required to change these items.',
-				categoryLimitReached: 'Free users can create up to 3 custom categories.',
+				categoryPremiumRequired: 'Custom categories are available with Premium.',
 				paymentLimitReached: 'Free users can create up to 3 payment methods.',
 				saveFailed: 'Failed to save.'
 			};
 		}
 		return {
 			categoryTitle: 'カテゴリー',
-			categoryDescription: '無料プランでは独自カテゴリーを最大3件まで追加できます。',
+			categoryDescription: '標準カテゴリーはすべてのプランで利用できます。',
 			paymentTitle: '支払い方法',
 			paymentDescription: '無料プランでは最大3件まで管理できます。',
 			namePlaceholder: '名前',
+			customCategoryTitle: 'カスタムカテゴリー',
+			customCategoryDescription: 'Premiumユーザーはカスタムカテゴリーを追加できます。',
+			categoryPremiumNotice: 'カスタムカテゴリーの追加はPremiumで利用できます。',
 			add: '追加',
 			save: '保存',
 			edit: '編集',
@@ -256,7 +247,7 @@
 			emptyCategories: 'カテゴリーはまだありません。',
 			emptyPaymentMethods: '支払い方法はまだありません。',
 			offline: '変更にはオンライン接続が必要です。',
-			categoryLimitReached: '無料プランでは独自カテゴリーを最大3件まで作成できます。',
+			categoryPremiumRequired: 'カスタムカテゴリーの追加はPremiumで利用できます。',
 			paymentLimitReached: '無料プランでは支払い方法を最大3件まで作成できます。',
 			saveFailed: '保存に失敗しました。'
 		};
@@ -282,83 +273,65 @@
 					{copy.emptyCategories}
 				</p>
 			{/if}
-			{#each localCategories as category (category.id)}
-				<div class={listItemClass}>
-					{#if editingCategoryId === category.id}
-						<Input bind:value={editingCategoryName} placeholder={copy.namePlaceholder} />
-						<select
-							class="border-input bg-background h-9 rounded-md border px-2 text-sm"
-							bind:value={editingCategoryColor}
-						>
-							{#each subscriptionColors as color (color)}
-								<option value={color}>{getSubscriptionColorLabel(color, locale)}</option>
-							{/each}
-						</select>
-						<Button
-							type="button"
-							size="icon-sm"
-							disabled={!isOnline || busy}
-							onclick={updateCategory}
-						>
-							{#if busy}<Loader2 class="size-4 animate-spin" />{:else}<Check class="size-4" />{/if}
-						</Button>
-						<Button type="button" size="icon-sm" variant="outline" onclick={cancelCategoryEdit}>
-							<X class="size-4" />
-						</Button>
-					{:else}
-						<span
-							class="size-2.5 rounded-full"
-							style:background-color={getSubscriptionColorStyle(
-								category.color as SubscriptionColor
-							)}
-						></span>
-						<span class="min-w-0 flex-1 truncate">{category.name}</span>
-						<Button
-							type="button"
-							size="icon-sm"
-							variant="ghost"
-							disabled={!isOnline || busy}
-							onclick={() => startCategoryEdit(category)}
-							title={copy.edit}
-						>
-							<Pencil class="size-4" />
-						</Button>
-						{#if category.key === null}
-							<Button
-								type="button"
-								size="icon-sm"
-								variant="ghost"
-								disabled={!isOnline || busy}
-								onclick={() => deleteCategory(category.id)}
-							>
-								<Trash2 class="size-4" />
-							</Button>
+			<div class="flex min-w-0 flex-wrap gap-2">
+				{#each localCategories as category (category.id)}
+					<div
+						class="bg-background text-foreground ring-border/70 inline-flex max-w-full min-w-0 items-center gap-2 rounded-full px-3 py-2 text-sm font-medium shadow-sm ring-1"
+					>
+						{#if category.key}
+							<span class="text-base leading-none" aria-hidden="true">
+								{categoryIcon(category.key)}
+							</span>
+						{:else}
+							<span
+								class="size-2.5 shrink-0 rounded-full"
+								style:background-color={getSubscriptionColorStyle(
+									category.color as SubscriptionColor
+								)}
+							></span>
 						{/if}
-					{/if}
-				</div>
-			{/each}
-		</div>
-		<div class={addRowClass}>
-			<Input bind:value={newCategoryName} placeholder={copy.namePlaceholder} disabled={!isOnline} />
-			<select
-				class="border-input bg-background h-9 rounded-md border px-2 text-sm"
-				bind:value={newCategoryColor}
-				disabled={!isOnline}
-			>
-				{#each subscriptionColors as color (color)}
-					<option value={color}>{getSubscriptionColorLabel(color, locale)}</option>
+						<span class="min-w-0 truncate">{category.name}</span>
+					</div>
 				{/each}
-			</select>
-			<Button
-				type="button"
-				class={addButtonClass}
-				disabled={!isOnline || busy || !newCategoryName.trim() || freeLimitReached}
-				onclick={createCategory}
-			>
-				<Plus class="size-4" />
-				{copy.add}
-			</Button>
+			</div>
 		</div>
+		{#if isPremium}
+			<div class="space-y-2">
+				<div class="space-y-0.5">
+					<p class="text-sm font-medium">{copy.customCategoryTitle}</p>
+					<p class="text-muted-foreground text-xs">{copy.customCategoryDescription}</p>
+				</div>
+				<div class={addRowClass}>
+					<Input
+						bind:value={newCategoryName}
+						placeholder={copy.namePlaceholder}
+						disabled={!isOnline}
+					/>
+					<select
+						class="border-input bg-background h-9 rounded-md border px-2 text-sm"
+						bind:value={newCategoryColor}
+						disabled={!isOnline}
+					>
+						{#each subscriptionColors as color (color)}
+							<option value={color}>{getSubscriptionColorLabel(color, locale)}</option>
+						{/each}
+					</select>
+					<Button
+						type="button"
+						class={addButtonClass}
+						disabled={!isOnline || busy || !newCategoryName.trim()}
+						onclick={createCategory}
+					>
+						<Plus class="size-4" />
+						{copy.add}
+					</Button>
+				</div>
+			</div>
+		{:else}
+			<p class="text-muted-foreground bg-muted/30 rounded-md px-3 py-2 text-xs">
+				{copy.categoryPremiumNotice}
+			</p>
+		{/if}
 	</section>
 
 	<section class={sectionClass}>
