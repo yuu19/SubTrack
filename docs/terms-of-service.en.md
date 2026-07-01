@@ -18,7 +18,7 @@ The terms used in these Terms have the following meanings.
 
 ## Article 3 (Service Description)
 
-The Service is a web application that lets Users record contract information, fees, billing dates, tags, notification settings, and other information for External Services, and review spending and upcoming billing dates.
+The Service is a web application that lets Users record contract information, fees, billing dates, categories, notification settings, and other information for External Services, and review spending and upcoming billing dates.
 
 1. Users may use features such as subscription registration, list display, analysis, calendar display, notification settings, and export.
 2. The Service does not act on behalf of Users to contract, cancel, change fees, obtain refunds, or stop payments for External Services.

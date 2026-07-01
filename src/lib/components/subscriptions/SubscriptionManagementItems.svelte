@@ -57,7 +57,10 @@
 	let busy = $state(false);
 
 	const locale = $derived(resolveLocale(getLocale()));
-	const freeLimitReached = $derived(!isPremium && localCategories.length >= 3);
+	const customCategoryCount = $derived(
+		localCategories.filter((category) => category.key === null).length
+	);
+	const freeLimitReached = $derived(!isPremium && customCategoryCount >= 3);
 	const paymentLimitReached = $derived(!isPremium && localPaymentMethods.length >= 3);
 	const rootClass = $derived(compact ? 'space-y-4' : 'grid gap-8 lg:grid-cols-2');
 	const sectionClass = $derived(compact ? 'min-w-0 space-y-2' : 'min-w-0 space-y-4');
@@ -224,7 +227,7 @@
 		if (currentLocale === 'en') {
 			return {
 				categoryTitle: 'Categories',
-				categoryDescription: 'Free users can keep up to 3 categories.',
+				categoryDescription: 'Free users can add up to 3 custom categories.',
 				paymentTitle: 'Payment methods',
 				paymentDescription: 'Free users can keep up to 3 payment methods.',
 				namePlaceholder: 'Name',
@@ -235,14 +238,14 @@
 				emptyCategories: 'No categories yet.',
 				emptyPaymentMethods: 'No payment methods yet.',
 				offline: 'Online connection is required to change these items.',
-				categoryLimitReached: 'Free users can create up to 3 categories.',
+				categoryLimitReached: 'Free users can create up to 3 custom categories.',
 				paymentLimitReached: 'Free users can create up to 3 payment methods.',
 				saveFailed: 'Failed to save.'
 			};
 		}
 		return {
 			categoryTitle: 'カテゴリー',
-			categoryDescription: '無料プランでは最大3件まで管理できます。',
+			categoryDescription: '無料プランでは独自カテゴリーを最大3件まで追加できます。',
 			paymentTitle: '支払い方法',
 			paymentDescription: '無料プランでは最大3件まで管理できます。',
 			namePlaceholder: '名前',
@@ -253,7 +256,7 @@
 			emptyCategories: 'カテゴリーはまだありません。',
 			emptyPaymentMethods: '支払い方法はまだありません。',
 			offline: '変更にはオンライン接続が必要です。',
-			categoryLimitReached: '無料プランではカテゴリーを最大3件まで作成できます。',
+			categoryLimitReached: '無料プランでは独自カテゴリーを最大3件まで作成できます。',
 			paymentLimitReached: '無料プランでは支払い方法を最大3件まで作成できます。',
 			saveFailed: '保存に失敗しました。'
 		};
@@ -320,15 +323,17 @@
 						>
 							<Pencil class="size-4" />
 						</Button>
-						<Button
-							type="button"
-							size="icon-sm"
-							variant="ghost"
-							disabled={!isOnline || busy}
-							onclick={() => deleteCategory(category.id)}
-						>
-							<Trash2 class="size-4" />
-						</Button>
+						{#if category.key === null}
+							<Button
+								type="button"
+								size="icon-sm"
+								variant="ghost"
+								disabled={!isOnline || busy}
+								onclick={() => deleteCategory(category.id)}
+							>
+								<Trash2 class="size-4" />
+							</Button>
+						{/if}
 					{/if}
 				</div>
 			{/each}

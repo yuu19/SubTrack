@@ -1165,6 +1165,3 @@ export const getTemplatePlanName = (
 ) => template.plans.find((plan) => plan.id === planId)?.name[locale] ?? '';
 
 export const getTemplateDisplayName = (template: ServiceTemplate) => template.name;
-
-export const getTemplateTags = (template: ServiceTemplate, locale: AppLocale) =>
-	template.tags[locale];

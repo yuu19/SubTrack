@@ -9,7 +9,6 @@
 	import Input from '$lib/components/ui/input/input.svelte';
 	import SubscriptionManagementItems from '$lib/components/subscriptions/SubscriptionManagementItems.svelte';
 	import SubscriptionIcon from '$lib/components/subscriptions/SubscriptionIcon.svelte';
-	import TagsInput from '$lib/components/ui/tags-input/tags-input.svelte';
 	import {
 		formatNotifyDays,
 		getCancellationMethodLabel,
@@ -165,7 +164,7 @@
 				cancellationMethod: subscription.cancellationMethod ?? '',
 				cancellationMemo: subscription.cancellationMemo ?? '',
 				cancellationDeadlineMemo: subscription.cancellationDeadlineMemo ?? '',
-				tagsinput: Array.isArray(subscription.tags) ? subscription.tags : []
+				tagsinput: [] as string[]
 			};
 		}
 
@@ -189,7 +188,7 @@
 			cancellationMethod: '',
 			cancellationMemo: '',
 			cancellationDeadlineMemo: '',
-			tagsinput: []
+			tagsinput: [] as string[]
 		};
 	}
 
@@ -218,7 +217,6 @@
 	const cancellationMethodField = fieldProxy(form, 'cancellationMethod');
 	const cancellationMemoField = fieldProxy(form, 'cancellationMemo');
 	const cancellationDeadlineMemoField = fieldProxy(form, 'cancellationDeadlineMemo');
-	const tagsField = fieldProxy(form, 'tagsinput');
 
 	const enhanceEvents = {
 		onResult: async (event: any) => {
@@ -720,22 +718,6 @@
 					{#snippet children({ props })}
 						<Label class="font-medium">{m.subscription_form_first_payment_label()}</Label>
 						<Input {...props} type="date" bind:value={$datepickerField} />
-					{/snippet}
-				</Control>
-				<FieldErrors class="text-destructive text-sm" />
-			</Field>
-
-			<Field {form} name="tagsinput">
-				<Control>
-					{#snippet children({ props })}
-						<Label class="font-medium">{m.subscription_form_tags_label()}</Label>
-						<TagsInput
-							bind:value={$tagsField}
-							placeholder={m.subscription_form_tags_placeholder()}
-						/>
-						{#each $tagsField as tag, i (i)}
-							<input {...props} type="hidden" value={tag} name="tagsinput" />
-						{/each}
 					{/snippet}
 				</Control>
 				<FieldErrors class="text-destructive text-sm" />

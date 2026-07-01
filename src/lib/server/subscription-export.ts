@@ -13,7 +13,6 @@ export type ExportableTrackedSubscription = Pick<
 	| 'status'
 	| 'canceledAt'
 	| 'cancellationMethod'
-	| 'tags'
 > & {
 	categoryName?: string | null;
 	paymentMethodName?: string | null;
@@ -32,8 +31,7 @@ export const SUBSCRIPTION_EXPORT_HEADERS = [
 	'notify_days_before',
 	'status',
 	'canceled_at',
-	'cancellation_method',
-	'tags'
+	'cancellation_method'
 ] as const;
 
 export const UTF8_BOM = '\uFEFF';
@@ -47,8 +45,6 @@ const escapeCsvCell = (value: unknown) => {
 
 	return normalized;
 };
-
-const serializeTags = (tags: string[]) => tags.filter(Boolean).join(', ');
 
 export const buildSubscriptionExportCsv = (subscriptions: ExportableTrackedSubscription[]) => {
 	const rows = subscriptions.map((subscription) =>
@@ -67,8 +63,7 @@ export const buildSubscriptionExportCsv = (subscriptions: ExportableTrackedSubsc
 			subscription.canceledAt instanceof Date
 				? subscription.canceledAt.toISOString()
 				: subscription.canceledAt,
-			subscription.cancellationMethod,
-			serializeTags(subscription.tags)
+			subscription.cancellationMethod
 		]
 			.map(escapeCsvCell)
 			.join(',')

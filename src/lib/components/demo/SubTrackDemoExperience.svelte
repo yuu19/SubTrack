@@ -72,7 +72,6 @@
 		notifyDaysBefore: number;
 		amount: number;
 		firstPaymentDate: string;
-		tags: string;
 	};
 
 	type AnalyticsItem = {
@@ -115,8 +114,7 @@
 	let { copy, locale }: Props = $props();
 
 	const cloneSubscription = (item: DemoSubscription): DemoSubscription => ({
-		...item,
-		tags: [...item.tags]
+		...item
 	});
 	const cloneSubscriptions = (items: DemoSubscription[]) => items.map(cloneSubscription);
 	const getInitialSubscriptions = () => cloneSubscriptions(copy.samples.initialSubscriptions);
@@ -134,8 +132,7 @@
 		cycle: subscription.cycle,
 		notifyDaysBefore: subscription.notifyDaysBefore,
 		amount: subscription.amount,
-		firstPaymentDate: subscription.firstPaymentDate,
-		tags: subscription.tags.join(', ')
+		firstPaymentDate: subscription.firstPaymentDate
 	});
 
 	let activeTab = $state<DemoTab>('subscriptions');
@@ -314,7 +311,7 @@
 					date: occurrence.format('YYYY-MM-DD'),
 					amount: Number(subscription.amount ?? 0),
 					color,
-					description: subscription.tags.join(' / ')
+					description: ''
 				});
 				occurrence = occurrence.add(interval, 'month');
 			}
@@ -328,11 +325,6 @@
 			? dayjs(addForm.firstPaymentDate).format('YYYY-MM-DD')
 			: copy.samples.addCandidate.firstPaymentDate;
 		const nextBilling = calculateNextBilling(firstPayment, addForm.cycle);
-		const tags = addForm.tags
-			.split(',')
-			.map((tag) => tag.trim())
-			.filter(Boolean);
-
 		return {
 			id: nextDemoId++,
 			userId: null,
@@ -344,7 +336,6 @@
 			nextBillingAt: nextBilling.format('YYYY-MM-DD'),
 			daysUntilNextBilling: Math.max(0, nextBilling.diff(demoToday, 'day')),
 			notifyDaysBefore: Number(addForm.notifyDaysBefore) || 3,
-			tags,
 			isSample: true,
 			note: copy.samples.addCandidate.note
 		};
@@ -584,9 +575,6 @@
 										</CardTitle>
 										<CardDescription class="flex flex-wrap items-center gap-2 text-xs">
 											<span>{getCycleLabel(sub.cycle, locale)}</span>
-											{#each sub.tags as tag (tag)}
-												<Badge variant="secondary" class="text-[10px]">{tag}</Badge>
-											{/each}
 										</CardDescription>
 									</div>
 									<div class="shrink-0 text-right">
@@ -921,16 +909,6 @@
 							bind:value={addForm.firstPaymentDate}
 						/>
 					</div>
-				</div>
-
-				<div class="space-y-2">
-					<label for="demo-tags" class="font-medium">{copy.subscriptions.formTags}</label>
-					<Input
-						id="demo-tags"
-						type="text"
-						placeholder={copy.subscriptions.formTagsPlaceholder}
-						bind:value={addForm.tags}
-					/>
 				</div>
 
 				<Button type="submit" class="h-12 w-full text-base sm:h-10 sm:text-sm">

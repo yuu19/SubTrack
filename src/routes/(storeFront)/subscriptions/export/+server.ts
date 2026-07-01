@@ -40,8 +40,7 @@ export const GET: RequestHandler = async ({ request, locals: { db } }) => {
 			paymentMethodId: true,
 			status: true,
 			canceledAt: true,
-			cancellationMethod: true,
-			tags: true
+			cancellationMethod: true
 		},
 		where: (trackedSubscription, { eq }) => eq(trackedSubscription.userId, userId),
 		orderBy: (trackedSubscription, { desc }) => desc(trackedSubscription.createdAt)

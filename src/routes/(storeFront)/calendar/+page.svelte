@@ -110,7 +110,7 @@
 					color,
 					iconType: sub.iconType,
 					iconValue: sub.iconValue,
-					description: sub.tags?.length ? sub.tags.join(' / ') : ''
+					description: ''
 				});
 				occurrence = occurrence.add(interval, 'month');
 			}

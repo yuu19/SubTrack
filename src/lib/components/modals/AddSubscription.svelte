@@ -9,7 +9,6 @@
 	import Input from '$lib/components/ui/input/input.svelte';
 	import SubscriptionManagementItems from '$lib/components/subscriptions/SubscriptionManagementItems.svelte';
 	import SubscriptionIcon from '$lib/components/subscriptions/SubscriptionIcon.svelte';
-	import TagsInput from '$lib/components/ui/tags-input/tags-input.svelte';
 	import { ArrowLeft, ChevronDown, Pencil } from 'lucide-svelte';
 	import { payloadFromFormData, type SubscriptionPayload } from '$lib/offline/subscriptions';
 	import {
@@ -192,9 +191,7 @@
 	const cancellationMethodField = fieldProxy(form, 'cancellationMethod');
 	const cancellationMemoField = fieldProxy(form, 'cancellationMemo');
 	const cancellationDeadlineMemoField = fieldProxy(form, 'cancellationDeadlineMemo');
-	const tagsField = fieldProxy(form, 'tagsinput');
 
-	const localizedTemplateTags = (template: ServiceTemplate) => template.tags[currentLocale];
 	const localizedPlanName = (plan: ServiceTemplatePlan) => plan.name[currentLocale];
 	const getTemplateCategoryLabel = (category: 'all' | ServiceTemplateCategory) => {
 		const labels: Record<'all' | ServiceTemplateCategory, { ja: string; en: string }> = {
@@ -251,7 +248,6 @@
 		$cancellationMethodField = '';
 		$cancellationMemoField = '';
 		$cancellationDeadlineMemoField = '';
-		$tagsField = [];
 		selectedPlanId = '';
 	};
 	const templateQuery = $derived(templateSearch.trim().toLocaleLowerCase());
@@ -271,8 +267,6 @@
 				const haystack = [
 					template.name,
 					getTemplateCategoryLabel(template.category),
-					...template.tags.ja,
-					...template.tags.en,
 					...template.plans.flatMap((plan) => [plan.name.ja, plan.name.en])
 				]
 					.join(' ')
@@ -287,15 +281,8 @@
 	const selectedPlanPriceVerifiedAt = $derived(
 		selectedPlanPrice ? formatLongDate(selectedPlanPrice.verifiedAt, currentLocale) : ''
 	);
-	const mergeTemplateTags = (template: ServiceTemplate) => {
-		const tags = localizedTemplateTags(template);
-		const existingTags = Array.isArray($tagsField) ? $tagsField : [];
-		const seen = new Set(tags.map((tag) => tag.trim().toLocaleLowerCase()));
-		$tagsField = [
-			...tags,
-			...existingTags.filter((tag) => !seen.has(tag.trim().toLocaleLowerCase()))
-		];
-	};
+	const resolveTemplateCategoryId = (template: ServiceTemplate) =>
+		categories.find((category: Category) => category.key === template.category)?.id ?? null;
 
 	const applyTemplatePlan = (
 		template: ServiceTemplate,
@@ -320,7 +307,7 @@
 		$cancellationMethodField = template.cancellation.method;
 		$cancellationMemoField = template.cancellation.memo[currentLocale];
 		$cancellationDeadlineMemoField = template.cancellation.deadlineMemo?.[currentLocale] ?? '';
-		mergeTemplateTags(template);
+		$categoryIdField = resolveTemplateCategoryId(template);
 	};
 
 	const selectTemplate = (template: ServiceTemplate) => {
@@ -847,22 +834,6 @@
 					{#snippet children({ props })}
 						<Label class="font-medium">{m.subscription_form_first_payment_label()}</Label>
 						<Input {...props} type="date" bind:value={$datepickerField} />
-					{/snippet}
-				</Control>
-				<FieldErrors class="text-destructive text-sm" />
-			</Field>
-
-			<Field {form} name="tagsinput">
-				<Control>
-					{#snippet children({ props })}
-						<Label class="font-medium">{m.subscription_form_tags_label()}</Label>
-						<TagsInput
-							bind:value={$tagsField}
-							placeholder={m.subscription_form_tags_placeholder()}
-						/>
-						{#each $tagsField as tag, i (i)}
-							<input {...props} type="hidden" value={tag} name="tagsinput" />
-						{/each}
 					{/snippet}
 				</Control>
 				<FieldErrors class="text-destructive text-sm" />

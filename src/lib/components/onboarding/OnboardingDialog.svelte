@@ -88,13 +88,13 @@
 				{
 					title: 'サブスクをまとめて管理',
 					description:
-						'料金・支払い間隔・タグをまとめて管理できます。毎月の支出をすぐに把握できます。',
+						'料金・支払い間隔・カテゴリーをまとめて管理できます。毎月の支出をすぐに把握できます。',
 					badge: 'サブスク一覧',
 					previewAlt: 'SubTrackのサブスク一覧画面',
 					previewLabel: '一覧画面',
 					previewTitle: '支払い額・周期・通知日を一覧で確認',
-					previewHintMobile: '登録後すぐに、支払い予定とタグを見比べられます。',
-					previewHint: '登録後すぐに、月額・年額の支払い予定とタグを見比べられます。'
+					previewHintMobile: '登録後すぐに、支払い予定とカテゴリーを見比べられます。',
+					previewHint: '登録後すぐに、月額・年額の支払い予定とカテゴリーを見比べられます。'
 				},
 				{
 					title: '支払い日をカレンダーで確認',
@@ -164,14 +164,14 @@
 				{
 					title: 'Add subscriptions in one place',
 					description:
-						'Track price, cycle, and tags together so your recurring costs become visible immediately.',
+						'Track price, cycle, and category together so your recurring costs become visible immediately.',
 					badge: 'Subscriptions',
 					previewAlt: 'SubTrack subscriptions screen',
 					previewLabel: 'List view',
 					previewTitle: 'Check amount, cycle, and reminder dates in one list',
-					previewHintMobile: 'Compare upcoming payments and tags as soon as you add them.',
+					previewHintMobile: 'Compare upcoming payments and categories as soon as you add them.',
 					previewHint:
-						'Compare monthly and annual payment schedules, reminder timing, and tags as soon as you add them.'
+						'Compare monthly and annual payment schedules, reminder timing, and categories as soon as you add them.'
 				},
 				{
 					title: 'See renewal dates on a calendar',

@@ -32,8 +32,6 @@ describe('serviceTemplates', () => {
 			expect(template.name.trim()).not.toBe('');
 			expect(supportedTemplateCategories).toContain(template.category);
 			expect(new URL(template.sourceUrl).protocol).toBe('https:');
-			expect(template.tags.ja.length).toBeGreaterThan(0);
-			expect(template.tags.en.length).toBeGreaterThan(0);
 			expect(CANCELLATION_METHODS).toContain(template.cancellation.method);
 
 			if (template.cancellation.url) {

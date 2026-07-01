@@ -1,4 +1,4 @@
-import { and, eq } from 'drizzle-orm';
+import { and, eq, isNull } from 'drizzle-orm';
 import {
 	PAYMENT_METHOD_TYPES,
 	SUBSCRIPTION_CATEGORY_KEYS,
@@ -33,7 +33,13 @@ type DefaultPaymentMethod = {
 export const defaultSubscriptionCategories: DefaultCategory[] = [
 	{ key: 'video', name: { ja: '動画', en: 'Video' }, color: 'red' },
 	{ key: 'music', name: { ja: '音楽', en: 'Music' }, color: 'green' },
-	{ key: 'work', name: { ja: '仕事', en: 'Work' }, color: 'blue' }
+	{ key: 'ai', name: { ja: 'AI', en: 'AI' }, color: 'purple' },
+	{ key: 'tools', name: { ja: 'ツール', en: 'Tools' }, color: 'blue' },
+	{ key: 'storage', name: { ja: 'ストレージ', en: 'Storage' }, color: 'yellow' },
+	{ key: 'development', name: { ja: '開発', en: 'Development' }, color: 'orange' },
+	{ key: 'design', name: { ja: 'デザイン', en: 'Design' }, color: 'purple' },
+	{ key: 'business', name: { ja: 'ビジネス', en: 'Business' }, color: 'blue' },
+	{ key: 'shopping', name: { ja: '買い物', en: 'Shopping' }, color: 'orange' }
 ];
 
 export const defaultSubscriptionPaymentMethods: DefaultPaymentMethod[] = [
@@ -84,16 +90,86 @@ export const seedDefaultSubscriptionManagementItems = async (
 		listSubscriptionCategories(db, userId),
 		listSubscriptionPaymentMethods(db, userId)
 	]);
+	const toolsDefaultCategory = defaultSubscriptionCategories.find(
+		(category) => category.key === 'tools'
+	);
+	const legacyWorkCategory = categories.find((category) => `${category.key}` === 'work');
+	if (legacyWorkCategory && toolsDefaultCategory) {
+		const existingToolsCategory = categories.find((category) => category.key === 'tools');
 
-	if (categories.length === 0) {
-		await db.insert(subscriptionCategoryTable).values(
-			defaultSubscriptionCategories.map((category) => ({
-				userId,
-				key: category.key,
-				name: category.name[locale],
-				color: category.color
-			}))
+		if (existingToolsCategory) {
+			await db
+				.update(trackedSubscriptionTable)
+				.set({ categoryId: existingToolsCategory.id })
+				.where(
+					and(
+						eq(trackedSubscriptionTable.userId, userId),
+						eq(trackedSubscriptionTable.categoryId, legacyWorkCategory.id)
+					)
+				);
+			await db
+				.delete(subscriptionCategoryTable)
+				.where(
+					and(
+						eq(subscriptionCategoryTable.id, legacyWorkCategory.id),
+						eq(subscriptionCategoryTable.userId, userId)
+					)
+				);
+			categories.splice(categories.indexOf(legacyWorkCategory), 1);
+		} else {
+			const toolsCategoryName = toolsDefaultCategory.name[locale];
+			const hasToolsCategoryName = categories.some(
+				(category) => category.id !== legacyWorkCategory.id && category.name === toolsCategoryName
+			);
+			await db
+				.update(subscriptionCategoryTable)
+				.set({
+					key: 'tools',
+					name: hasToolsCategoryName ? legacyWorkCategory.name : toolsCategoryName,
+					color: 'blue'
+				})
+				.where(
+					and(
+						eq(subscriptionCategoryTable.id, legacyWorkCategory.id),
+						eq(subscriptionCategoryTable.userId, userId)
+					)
+				);
+			legacyWorkCategory.key = 'tools';
+			legacyWorkCategory.name = hasToolsCategoryName ? legacyWorkCategory.name : toolsCategoryName;
+			legacyWorkCategory.color = 'blue';
+		}
+	}
+
+	const existingCategoryKeys = new Set(categories.map((category) => category.key).filter(Boolean));
+	const missingDefaultCategories = defaultSubscriptionCategories.filter(
+		(category) => !existingCategoryKeys.has(category.key)
+	);
+
+	for (const category of missingDefaultCategories) {
+		const existingCategory = categories.find(
+			(item) =>
+				item.key === null && (item.name === category.name.ja || item.name === category.name.en)
 		);
+
+		if (existingCategory) {
+			await db
+				.update(subscriptionCategoryTable)
+				.set({ key: category.key, color: category.color })
+				.where(
+					and(
+						eq(subscriptionCategoryTable.id, existingCategory.id),
+						eq(subscriptionCategoryTable.userId, userId)
+					)
+				);
+			continue;
+		}
+
+		await db.insert(subscriptionCategoryTable).values({
+			userId,
+			key: category.key,
+			name: category.name[locale],
+			color: category.color
+		});
 	}
 
 	if (paymentMethods.length === 0) {
@@ -127,7 +203,7 @@ export const resolveCurrentPlanForUser = async (db: Db, userId: string) => {
 export const hasReachedFreeCategoryLimit = async (db: Db, userId: string) => {
 	const categories = await db.query.subscriptionCategoryTable.findMany({
 		columns: { id: true },
-		where: (category, { eq }) => eq(category.userId, userId),
+		where: (category, { and, eq }) => and(eq(category.userId, userId), isNull(category.key)),
 		limit: FREE_MANAGEMENT_ITEM_LIMIT
 	});
 	return categories.length >= FREE_MANAGEMENT_ITEM_LIMIT;
@@ -166,6 +242,12 @@ export const getOwnedPaymentMethodId = async (
 };
 
 export const deleteOwnedCategory = async (db: Db, userId: string, categoryId: number) => {
+	const category = await db.query.subscriptionCategoryTable.findFirst({
+		columns: { id: true, key: true },
+		where: (category, { and, eq }) => and(eq(category.id, categoryId), eq(category.userId, userId))
+	});
+	if (!category || category.key !== null) return;
+
 	await db
 		.update(trackedSubscriptionTable)
 		.set({ categoryId: null })

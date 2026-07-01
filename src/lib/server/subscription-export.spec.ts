@@ -21,13 +21,12 @@ describe('subscription export', () => {
 				notifyDaysBefore: 3,
 				status: 'active',
 				canceledAt: null,
-				cancellationMethod: 'web',
-				tags: ['動画', 'エンタメ']
+				cancellationMethod: 'web'
 			}
 		]);
 
 		expect(csv).toBe(
-			`${SUBSCRIPTION_EXPORT_HEADERS.join(',')}\r\nNetflix,動画,クレジットカード,monthly,1490,JPY,2026-03-01,2026-04-01T00:00:00.000Z,8,3,active,,web,"動画, エンタメ"`
+			`${SUBSCRIPTION_EXPORT_HEADERS.join(',')}\r\nNetflix,動画,クレジットカード,monthly,1490,JPY,2026-03-01,2026-04-01T00:00:00.000Z,8,3,active,,web`
 		);
 	});
 
@@ -46,14 +45,14 @@ describe('subscription export', () => {
 				notifyDaysBefore: 14,
 				status: 'canceled',
 				canceledAt: new Date('2026-06-01T00:00:00.000Z'),
-				cancellationMethod: 'email',
-				tags: ['line1\nline2', 'office']
+				cancellationMethod: 'email'
 			}
 		]);
 
 		expect(csv).toContain('"Plan ""A"", Plus"');
+		expect(csv).toContain('"Work, Tools"');
+		expect(csv).toContain('"Card ""A"""');
 		expect(csv).toContain('2026-06-01T00:00:00.000Z');
-		expect(csv).toContain('"line1\nline2, office"');
 	});
 
 	it('builds a deterministic export filename', () => {

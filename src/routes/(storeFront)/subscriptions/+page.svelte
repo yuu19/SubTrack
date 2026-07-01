@@ -5,7 +5,7 @@
 	import SubscriptionDetailPanel from '$lib/components/subscriptions/SubscriptionDetailPanel.svelte';
 	import SubscriptionIcon from '$lib/components/subscriptions/SubscriptionIcon.svelte';
 	import * as AlertDialog from '$lib/components/ui/alert-dialog';
-	import { Badge, badgeVariants } from '$lib/components/ui/badge';
+	import { Badge } from '$lib/components/ui/badge';
 	import Button from '$lib/components/ui/button/button.svelte';
 	import {
 		Card,
@@ -37,11 +37,9 @@
 	import { getLocale } from '$lib/paraglide/runtime';
 	import { browser } from '$app/environment';
 	import { enhance as kitEnhance } from '$app/forms';
-	import { goto } from '$app/navigation';
 	import { base, resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import { fromAction } from 'svelte/attachments';
-	import { cn } from '$lib/utils';
 	import { onMount, untrack } from 'svelte';
 	import { toast } from 'svelte-sonner';
 	import type {
@@ -106,9 +104,7 @@
 		localizeInternalHref(`${resolve('/me/settings')}#plan-info`, currentLocale)
 	);
 	const pushGuideHref = $derived(localizeInternalHref(resolve('/push'), currentLocale));
-	const activeTag = $derived(page.url.searchParams.get('tag')?.trim() ?? '');
 	const activeSubscriptionParam = $derived(page.url.searchParams.get('subscription')?.trim() ?? '');
-	const normalizedActiveTag = $derived(activeTag.toLocaleLowerCase());
 	const categoryById = $derived(new Map(categories.map((category) => [category.id, category])));
 	const paymentMethodById = $derived(
 		new Map(paymentMethods.map((paymentMethod) => [paymentMethod.id, paymentMethod]))
@@ -123,27 +119,14 @@
 	const canMutateSelected = $derived(
 		Boolean(selectedSubscription) && isOnline && !selectedSubscription?._pending
 	);
-	const hasActiveTagFilter = $derived(activeTag.length > 0);
 	const activeSubscriptions = $derived(
 		subscriptions.filter((sub) => (sub.status ?? 'active') !== 'canceled')
 	);
 	const canceledSubscriptions = $derived(
 		subscriptions.filter((sub) => (sub.status ?? 'active') === 'canceled')
 	);
-	const filteredSubscriptions = $derived.by(() => {
-		if (!normalizedActiveTag) return activeSubscriptions;
-
-		return activeSubscriptions.filter((sub) =>
-			sub.tags.some((tag) => tag.trim().toLocaleLowerCase() === normalizedActiveTag)
-		);
-	});
-	const filteredCanceledSubscriptions = $derived.by(() => {
-		if (!normalizedActiveTag) return canceledSubscriptions;
-
-		return canceledSubscriptions.filter((sub) =>
-			sub.tags.some((tag) => tag.trim().toLocaleLowerCase() === normalizedActiveTag)
-		);
-	});
+	const filteredSubscriptions = $derived(activeSubscriptions);
+	const filteredCanceledSubscriptions = $derived(canceledSubscriptions);
 	const selectedSubscriptionDetail = $derived(
 		selectedSubscription
 			? {
@@ -171,30 +154,6 @@
 		if (!Number.isFinite(daysLeft)) return 1;
 		const elapsed = Math.max(0, total - daysLeft);
 		return Math.min(1, elapsed / total);
-	};
-
-	const isActiveTag = (tag: string) => tag.trim().toLocaleLowerCase() === normalizedActiveTag;
-
-	const updateTagFilter = async (tag: string) => {
-		const nextTag = isActiveTag(tag) ? '' : tag.trim();
-		const url = new URL(page.url);
-
-		if (nextTag) {
-			url.searchParams.set('tag', nextTag);
-		} else {
-			url.searchParams.delete('tag');
-		}
-
-		await goto(url, {
-			replaceState: true,
-			noScroll: true,
-			keepFocus: true
-		});
-	};
-
-	const handleTagClick = async (event: MouseEvent, tag: string) => {
-		event.stopPropagation();
-		await updateTagFilter(tag);
 	};
 
 	const handleLifetimeCheckout = async () => {
@@ -483,26 +442,9 @@
 		</div>
 	{/if}
 
-	{#if hasActiveTagFilter}
-		<div class="bg-muted/50 flex flex-wrap items-center gap-2 rounded-lg border px-4 py-3 text-sm">
-			<span class="text-muted-foreground">{m.subscription_tag_filter_active()}</span>
-			<Badge class="text-[10px]">{activeTag}</Badge>
-			<Button
-				size="sm"
-				variant="ghost"
-				class="h-7 px-2 text-xs"
-				onclick={() => void updateTagFilter('')}
-			>
-				{m.subscription_tag_filter_clear()}
-			</Button>
-		</div>
-	{/if}
-
 	{#if filteredSubscriptions.length === 0}
 		<div class="text-muted-foreground rounded-lg border border-dashed p-6">
-			{#if hasActiveTagFilter}
-				{m.subscription_tag_filter_empty({ tag: activeTag })}
-			{:else if canceledSubscriptions.length > 0}
+			{#if canceledSubscriptions.length > 0}
 				{m.subscription_active_empty_state()}
 			{:else}
 				{m.subscription_empty_state()}
@@ -585,26 +527,6 @@
 								{m.subscription_notify_label()}
 								{formatNotifyDays(sub.notifyDaysBefore, currentLocale)}
 							</span>
-							{#if sub.tags.length > 0}
-								<div class="flex flex-wrap gap-2">
-									{#each sub.tags as tag, i (i)}
-										<button
-											type="button"
-											class={cn(
-												badgeVariants({
-													variant: isActiveTag(tag) ? 'default' : 'secondary'
-												}),
-												'cursor-pointer text-[10px]'
-											)}
-											aria-pressed={isActiveTag(tag)}
-											onclick={(event) => void handleTagClick(event, tag)}
-											onkeydown={(event) => event.stopPropagation()}
-										>
-											{tag}
-										</button>
-									{/each}
-								</div>
-							{/if}
 						</div>
 						<div class="bg-muted h-1 w-full rounded-full">
 							<div
@@ -627,103 +549,77 @@
 				<p class="text-muted-foreground mb-4 text-sm">
 					{m.subscription_canceled_section_description()}
 				</p>
-				{#if filteredCanceledSubscriptions.length === 0}
-					<div class="text-muted-foreground rounded-lg border border-dashed p-4 text-sm">
-						{m.subscription_tag_filter_empty({ tag: activeTag })}
-					</div>
-				{:else}
-					<div class="flex flex-col gap-3">
-						{#each filteredCanceledSubscriptions as sub (sub.id)}
-							<Card
-								class="cursor-pointer overflow-hidden opacity-80"
-								role="button"
-								tabindex={0}
-								onkeydown={(event) => {
-									if (event.key === 'Enter' || event.key === ' ') {
-										event.preventDefault();
-										openDetail(sub);
-									}
-								}}
-								onclick={() => openDetail(sub)}
-							>
-								<CardHeader class="pb-3">
-									<div class="flex items-start justify-between gap-4">
-										<div class="flex min-w-0 items-start gap-3">
-											<div
-												class="border-border bg-muted/50 flex size-10 shrink-0 items-center justify-center rounded-md border text-lg"
-												aria-hidden="true"
-											>
-												<SubscriptionIcon
-													iconType={sub.iconType}
-													iconValue={sub.iconValue}
-													subscriptionId={sub.id}
-													class="size-5"
-												/>
-											</div>
-											<div class="min-w-0 space-y-1">
-												<CardTitle class="truncate text-base">{sub.serviceName}</CardTitle>
-												<CardDescription class="flex flex-wrap items-center gap-2 text-xs">
+				<div class="flex flex-col gap-3">
+					{#each filteredCanceledSubscriptions as sub (sub.id)}
+						<Card
+							class="cursor-pointer overflow-hidden opacity-80"
+							role="button"
+							tabindex={0}
+							onkeydown={(event) => {
+								if (event.key === 'Enter' || event.key === ' ') {
+									event.preventDefault();
+									openDetail(sub);
+								}
+							}}
+							onclick={() => openDetail(sub)}
+						>
+							<CardHeader class="pb-3">
+								<div class="flex items-start justify-between gap-4">
+									<div class="flex min-w-0 items-start gap-3">
+										<div
+											class="border-border bg-muted/50 flex size-10 shrink-0 items-center justify-center rounded-md border text-lg"
+											aria-hidden="true"
+										>
+											<SubscriptionIcon
+												iconType={sub.iconType}
+												iconValue={sub.iconValue}
+												subscriptionId={sub.id}
+												class="size-5"
+											/>
+										</div>
+										<div class="min-w-0 space-y-1">
+											<CardTitle class="truncate text-base">{sub.serviceName}</CardTitle>
+											<CardDescription class="flex flex-wrap items-center gap-2 text-xs">
+												<Badge variant="secondary" class="text-[10px]">
+													{m.subscription_canceled_badge()}
+												</Badge>
+												<span>{getCycleLabel(sub.cycle, currentLocale)}</span>
+												{#if getCategoryName(sub.categoryId)}
 													<Badge variant="secondary" class="text-[10px]">
-														{m.subscription_canceled_badge()}
+														{getCategoryName(sub.categoryId)}
 													</Badge>
-													<span>{getCycleLabel(sub.cycle, currentLocale)}</span>
-													{#if getCategoryName(sub.categoryId)}
-														<Badge variant="secondary" class="text-[10px]">
-															{getCategoryName(sub.categoryId)}
-														</Badge>
-													{/if}
-													{#if getPaymentMethodName(sub.paymentMethodId)}
-														<Badge variant="outline" class="text-[10px]">
-															{getPaymentMethodName(sub.paymentMethodId)}
-														</Badge>
-													{/if}
-												</CardDescription>
-											</div>
-										</div>
-										<div class="text-right">
-											<div class="text-base font-semibold">
-												{formatCurrency(sub.amount, sub.currency, currentLocale)}
-												<span class="text-muted-foreground text-xs">
-													/ {getCycleUnitLabel(sub.cycle, currentLocale)}
-												</span>
-											</div>
+												{/if}
+												{#if getPaymentMethodName(sub.paymentMethodId)}
+													<Badge variant="outline" class="text-[10px]">
+														{getPaymentMethodName(sub.paymentMethodId)}
+													</Badge>
+												{/if}
+											</CardDescription>
 										</div>
 									</div>
-								</CardHeader>
-								<CardContent class="space-y-3 pt-0">
-									<div class="flex items-center justify-between text-sm">
-										<span class="text-muted-foreground">
-											{m.subscription_canceled_at_label()}
-										</span>
-										<span class="text-muted-foreground">
-											{formatBillingDate(sub.canceledAt)}
-										</span>
-									</div>
-									{#if sub.tags.length > 0}
-										<div class="flex flex-wrap gap-2">
-											{#each sub.tags as tag, i (i)}
-												<button
-													type="button"
-													class={cn(
-														badgeVariants({
-															variant: isActiveTag(tag) ? 'default' : 'secondary'
-														}),
-														'cursor-pointer text-[10px]'
-													)}
-													aria-pressed={isActiveTag(tag)}
-													onclick={(event) => void handleTagClick(event, tag)}
-													onkeydown={(event) => event.stopPropagation()}
-												>
-													{tag}
-												</button>
-											{/each}
+									<div class="text-right">
+										<div class="text-base font-semibold">
+											{formatCurrency(sub.amount, sub.currency, currentLocale)}
+											<span class="text-muted-foreground text-xs">
+												/ {getCycleUnitLabel(sub.cycle, currentLocale)}
+											</span>
 										</div>
-									{/if}
-								</CardContent>
-							</Card>
-						{/each}
-					</div>
-				{/if}
+									</div>
+								</div>
+							</CardHeader>
+							<CardContent class="space-y-3 pt-0">
+								<div class="flex items-center justify-between text-sm">
+									<span class="text-muted-foreground">
+										{m.subscription_canceled_at_label()}
+									</span>
+									<span class="text-muted-foreground">
+										{formatBillingDate(sub.canceledAt)}
+									</span>
+								</div>
+							</CardContent>
+						</Card>
+					{/each}
+				</div>
 			</div>
 		</details>
 	{/if}

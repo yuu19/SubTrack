@@ -57,13 +57,15 @@ export const load = async ({ request, locals, url }) => {
 			? (user.locale as AppLocale)
 			: DEFAULT_LOCALE;
 
-	if (user && !user.subscriptionManagementItemsSeeded) {
+	if (user) {
 		await seedDefaultSubscriptionManagementItems(db, user.id, seedLocale);
-		await db
-			.update(userTable)
-			.set({ subscriptionManagementItemsSeeded: true })
-			.where(eq(userTable.id, user.id));
-		user.subscriptionManagementItemsSeeded = true;
+		if (!user.subscriptionManagementItemsSeeded) {
+			await db
+				.update(userTable)
+				.set({ subscriptionManagementItemsSeeded: true })
+				.where(eq(userTable.id, user.id));
+			user.subscriptionManagementItemsSeeded = true;
+		}
 	}
 
 	if (user && !user.sampleDataSeeded) {
@@ -94,7 +96,7 @@ export const load = async ({ request, locals, url }) => {
 					notifyDaysBefore: 3,
 					categoryId: categoryByKey.get('video') ?? null,
 					paymentMethodId: paymentMethodByType.get('credit_card') ?? null,
-					tags: ['動画', 'エンタメ']
+					tags: []
 				},
 				{
 					serviceName: 'Spotify',
@@ -107,7 +109,7 @@ export const load = async ({ request, locals, url }) => {
 					notifyDaysBefore: 3,
 					categoryId: categoryByKey.get('music') ?? null,
 					paymentMethodId: paymentMethodByType.get('app_store') ?? null,
-					tags: ['音楽']
+					tags: []
 				},
 				{
 					serviceName: 'Notion',
@@ -118,9 +120,9 @@ export const load = async ({ request, locals, url }) => {
 					amount: 12000,
 					firstPaymentDate: dateSeed,
 					notifyDaysBefore: 7,
-					categoryId: categoryByKey.get('work') ?? null,
+					categoryId: categoryByKey.get('tools') ?? null,
 					paymentMethodId: paymentMethodByType.get('credit_card') ?? null,
-					tags: ['仕事', 'ツール']
+					tags: []
 				}
 			];
 

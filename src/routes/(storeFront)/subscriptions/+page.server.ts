@@ -302,7 +302,7 @@ export const actions: Actions = {
 				nextBillingAt,
 				daysUntilNextBilling,
 				notifyDaysBefore: form.data.notifyDaysBefore ?? defaultNotifyDaysBefore,
-				tags: form.data.tagsinput,
+				tags: [],
 				...buildCancellationValues(form.data)
 			});
 
@@ -385,7 +385,7 @@ export const actions: Actions = {
 					nextBillingAt,
 					daysUntilNextBilling,
 					notifyDaysBefore: form.data.notifyDaysBefore ?? defaultNotifyDaysBefore,
-					tags: form.data.tagsinput,
+					tags: [],
 					...buildCancellationValues(form.data)
 				})
 				.where(

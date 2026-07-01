@@ -114,7 +114,6 @@ export type DemoSubscriptionSample = {
 	nextBillingAt: string;
 	daysUntilNextBilling: number;
 	notifyDaysBefore: number;
-	tags: string[];
 	isSample: boolean;
 	note: string;
 };
@@ -146,7 +145,6 @@ export type DemoPageCopy = {
 		cycle: string;
 		notification: string;
 		firstPayment: string;
-		tags: string;
 	};
 	cycleLabels: Record<DemoSubscriptionCycle, string>;
 	subscriptions: {
@@ -169,8 +167,6 @@ export type DemoPageCopy = {
 		formCycle: string;
 		formFirstPayment: string;
 		formNotify: string;
-		formTags: string;
-		formTagsPlaceholder: string;
 	};
 	calendar: {
 		title: string;
@@ -660,7 +656,7 @@ export const landingPageCopy: Record<AppLocale, LandingPageCopy> = {
 				{
 					title: '一覧管理',
 					description: '契約中のサービスをまとめて表示',
-					detail: '金額、支払い周期、タグ、次回請求日を一覧で確認できます。'
+					detail: '金額、支払い周期、カテゴリー、次回請求日を一覧で確認できます。'
 				},
 				{
 					title: '更新日確認',
@@ -934,7 +930,7 @@ export const landingPageCopy: Record<AppLocale, LandingPageCopy> = {
 				{
 					title: 'List management',
 					description: 'Keep active subscriptions together',
-					detail: 'View amount, billing cycle, tags, and next billing date in one list.'
+					detail: 'View amount, billing cycle, category, and next billing date in one list.'
 				},
 				{
 					title: 'Renewal dates',
@@ -1078,8 +1074,7 @@ export const demoPageCopy: Record<AppLocale, DemoPageCopy> = {
 			amount: '金額',
 			cycle: '周期',
 			notification: '通知',
-			firstPayment: '初回支払日',
-			tags: 'タグ'
+			firstPayment: '初回支払日'
 		},
 		cycleLabels: {
 			monthly: '月額',
@@ -1107,9 +1102,7 @@ export const demoPageCopy: Record<AppLocale, DemoPageCopy> = {
 			formAmount: '金額',
 			formCycle: '支払い周期',
 			formFirstPayment: '初回支払日',
-			formNotify: '通知タイミング',
-			formTags: 'タグ',
-			formTagsPlaceholder: 'クラウド, 仕事'
+			formNotify: '通知タイミング'
 		},
 		calendar: {
 			title: 'カレンダー',
@@ -1151,7 +1144,6 @@ export const demoPageCopy: Record<AppLocale, DemoPageCopy> = {
 					nextBillingAt: '2026-06-15',
 					daysUntilNextBilling: 2,
 					notifyDaysBefore: 3,
-					tags: ['動画', 'エンタメ'],
 					isSample: true,
 					note: '週末前に視聴状況を確認'
 				},
@@ -1166,7 +1158,6 @@ export const demoPageCopy: Record<AppLocale, DemoPageCopy> = {
 					nextBillingAt: '2026-06-21',
 					daysUntilNextBilling: 8,
 					notifyDaysBefore: 1,
-					tags: ['音楽'],
 					isSample: true,
 					note: '家族プラン移行を検討'
 				},
@@ -1181,7 +1172,6 @@ export const demoPageCopy: Record<AppLocale, DemoPageCopy> = {
 					nextBillingAt: '2026-06-28',
 					daysUntilNextBilling: 15,
 					notifyDaysBefore: 7,
-					tags: ['仕事', 'ツール'],
 					isSample: true,
 					note: '年額更新前にワークスペースを確認'
 				},
@@ -1196,7 +1186,6 @@ export const demoPageCopy: Record<AppLocale, DemoPageCopy> = {
 					nextBillingAt: '2026-06-20',
 					daysUntilNextBilling: 7,
 					notifyDaysBefore: 3,
-					tags: ['制作'],
 					isSample: true,
 					note: '使っているアプリを棚卸し'
 				},
@@ -1211,7 +1200,6 @@ export const demoPageCopy: Record<AppLocale, DemoPageCopy> = {
 					nextBillingAt: '2026-06-18',
 					daysUntilNextBilling: 5,
 					notifyDaysBefore: 7,
-					tags: ['デザイン', '仕事'],
 					isSample: true,
 					note: '共同編集メンバーを確認'
 				}
@@ -1227,7 +1215,6 @@ export const demoPageCopy: Record<AppLocale, DemoPageCopy> = {
 				nextBillingAt: '2026-06-24',
 				daysUntilNextBilling: 11,
 				notifyDaysBefore: 3,
-				tags: ['クラウド'],
 				isSample: true,
 				note: 'ストレージ容量を確認'
 			}
@@ -1262,8 +1249,7 @@ export const demoPageCopy: Record<AppLocale, DemoPageCopy> = {
 			amount: 'Amount',
 			cycle: 'Cycle',
 			notification: 'Reminder',
-			firstPayment: 'First payment',
-			tags: 'Tags'
+			firstPayment: 'First payment'
 		},
 		cycleLabels: {
 			monthly: 'Monthly',
@@ -1292,9 +1278,7 @@ export const demoPageCopy: Record<AppLocale, DemoPageCopy> = {
 			formAmount: 'Amount',
 			formCycle: 'Billing cycle',
 			formFirstPayment: 'First payment date',
-			formNotify: 'Reminder timing',
-			formTags: 'Tags',
-			formTagsPlaceholder: 'Cloud, Work'
+			formNotify: 'Reminder timing'
 		},
 		calendar: {
 			title: 'Calendar',
@@ -1337,7 +1321,6 @@ export const demoPageCopy: Record<AppLocale, DemoPageCopy> = {
 					nextBillingAt: '2026-06-15',
 					daysUntilNextBilling: 2,
 					notifyDaysBefore: 3,
-					tags: ['Video', 'Entertainment'],
 					isSample: true,
 					note: 'Review watch usage before the weekend'
 				},
@@ -1352,7 +1335,6 @@ export const demoPageCopy: Record<AppLocale, DemoPageCopy> = {
 					nextBillingAt: '2026-06-21',
 					daysUntilNextBilling: 8,
 					notifyDaysBefore: 1,
-					tags: ['Music'],
 					isSample: true,
 					note: 'Consider whether a family plan fits'
 				},
@@ -1367,7 +1349,6 @@ export const demoPageCopy: Record<AppLocale, DemoPageCopy> = {
 					nextBillingAt: '2026-06-28',
 					daysUntilNextBilling: 15,
 					notifyDaysBefore: 7,
-					tags: ['Work', 'Tools'],
 					isSample: true,
 					note: 'Review workspace usage before annual renewal'
 				},
@@ -1382,7 +1363,6 @@ export const demoPageCopy: Record<AppLocale, DemoPageCopy> = {
 					nextBillingAt: '2026-06-20',
 					daysUntilNextBilling: 7,
 					notifyDaysBefore: 3,
-					tags: ['Creative'],
 					isSample: true,
 					note: 'Check which apps are still in use'
 				},
@@ -1397,7 +1377,6 @@ export const demoPageCopy: Record<AppLocale, DemoPageCopy> = {
 					nextBillingAt: '2026-06-18',
 					daysUntilNextBilling: 5,
 					notifyDaysBefore: 7,
-					tags: ['Design', 'Work'],
 					isSample: true,
 					note: 'Review collaborating seats'
 				}
@@ -1413,7 +1392,6 @@ export const demoPageCopy: Record<AppLocale, DemoPageCopy> = {
 				nextBillingAt: '2026-06-24',
 				daysUntilNextBilling: 11,
 				notifyDaysBefore: 3,
-				tags: ['Cloud'],
 				isSample: true,
 				note: 'Review storage usage'
 			}
@@ -1500,7 +1478,7 @@ export const faqPageCopy: Record<'ja' | 'en', FAQPageCopy> = {
 					{
 						question: 'アプリにはどのような情報が保存されますか？',
 						answer:
-							'アカウント情報、登録したサービス名、料金、支払日、タグ、通知設定、お支払い管理に必要な情報などが、サービス提供のために利用されます。'
+							'アカウント情報、登録したサービス名、料金、支払日、カテゴリー、通知設定、お支払い管理に必要な情報などが、サービス提供のために利用されます。'
 					},
 					{
 						question: 'クレジットカード情報は SubTrack に保存されますか？',
@@ -1589,7 +1567,7 @@ export const faqPageCopy: Record<'ja' | 'en', FAQPageCopy> = {
 					{
 						question: 'What information does SubTrack store?',
 						answer:
-							'SubTrack uses account details, subscription names, amounts, billing dates, tags, notification settings, and billing-related information needed to provide the service.'
+							'SubTrack uses account details, subscription names, amounts, billing dates, categories, notification settings, and billing-related information needed to provide the service.'
 					},
 					{
 						question: 'Does SubTrack store my credit card details?',

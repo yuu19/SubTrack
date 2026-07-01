@@ -10,7 +10,7 @@ This Privacy Policy explains how SubTrack Operator (the "Operator") handles pers
 
 1. The Operator may collect the following information when customers use the Service.
 2. Account information, such as name or display name, email address, profile image, and identifiers from external authentication providers.
-3. Subscription management information, such as service names, amounts, billing cycles, billing dates, tags, and notification settings.
+3. Subscription management information, such as service names, amounts, billing cycles, billing dates, categories, and notification settings.
 4. Payment-related information, such as Stripe customer IDs, subscription IDs, checkout session IDs, purchase status, and plan information. Card numbers and other card details are managed by Stripe and are not retained by the Operator.
 5. Notification-related information, such as push notification subscription information, device or browser notification settings, and information needed to send email notifications.
 6. Usage environment information, such as cookies, session information, IP address, user agent, request headers, access time, error information, and technical information related to operations.

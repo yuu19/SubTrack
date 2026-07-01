@@ -228,11 +228,6 @@ const computeBillingInfo = (payload: SubscriptionPayload) => {
 };
 
 export const payloadFromFormData = (formData: FormData): SubscriptionPayload => {
-	const tags = formData
-		.getAll('tagsinput')
-		.map((tag) => `${tag}`.trim())
-		.filter((tag) => tag.length > 0);
-
 	return {
 		serviceName: `${formData.get('text') ?? ''}`,
 		serviceTemplateId: normalizeOptionalText(formData.get('serviceTemplateId')),
@@ -256,7 +251,7 @@ export const payloadFromFormData = (formData: FormData): SubscriptionPayload => 
 		cancellationMethod: normalizeCancellationMethod(formData.get('cancellationMethod')),
 		cancellationMemo: normalizeOptionalText(formData.get('cancellationMemo')),
 		cancellationDeadlineMemo: normalizeOptionalText(formData.get('cancellationDeadlineMemo')),
-		tags
+		tags: []
 	};
 };
 
@@ -328,7 +323,7 @@ export const addPendingSubscription = async (
 		cancellationMethod: payload.cancellationMethod ?? null,
 		cancellationMemo: payload.cancellationMemo ?? null,
 		cancellationDeadlineMemo: payload.cancellationDeadlineMemo ?? null,
-		tags: payload.tags,
+		tags: [],
 		createdAt: now,
 		updatedAt: now
 	};
@@ -372,9 +367,6 @@ const buildFormData = (payload: SubscriptionPayload) => {
 	formData.set('cancellationMethod', payload.cancellationMethod ?? '');
 	formData.set('cancellationMemo', payload.cancellationMemo ?? '');
 	formData.set('cancellationDeadlineMemo', payload.cancellationDeadlineMemo ?? '');
-	for (const tag of payload.tags) {
-		formData.append('tagsinput', tag);
-	}
 	return formData;
 };
 
