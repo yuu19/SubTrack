@@ -74,3 +74,8 @@ export const buildSubscriptionExportCsv = (subscriptions: ExportableTrackedSubsc
 
 export const buildSubscriptionExportFilename = (now = new Date()) =>
 	`subtrack-subscriptions-${now.toISOString().slice(0, 10)}.csv`;
+
+export const buildSubscriptionImportTemplateCsv = () =>
+	`${SUBSCRIPTION_EXPORT_HEADERS.join(',')}\r\n`;
+
+export const buildSubscriptionImportTemplateFilename = () => 'subtrack-import-template.csv';

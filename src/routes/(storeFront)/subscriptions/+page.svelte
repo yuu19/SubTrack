@@ -2,6 +2,7 @@
 	import AddSubscription from '$lib/components/modals/AddSubscription.svelte';
 	import EditSubscription from '$lib/components/modals/EditSubscription.svelte';
 	import PushNotificationControl from '$lib/components/push/PushNotificationControl.svelte';
+	import SubscriptionCsvImportDialog from '$lib/components/subscriptions/SubscriptionCsvImportDialog.svelte';
 	import SubscriptionDetailPanel from '$lib/components/subscriptions/SubscriptionDetailPanel.svelte';
 	import SubscriptionIcon from '$lib/components/subscriptions/SubscriptionIcon.svelte';
 	import * as AlertDialog from '$lib/components/ui/alert-dialog';
@@ -15,6 +16,7 @@
 		CardTitle
 	} from '$lib/components/ui/card';
 	import * as Dialog from '$lib/components/ui/dialog';
+	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
 	import {
 		addPendingSubscription,
 		getCachedSubscriptions,
@@ -42,6 +44,7 @@
 	import { fromAction } from 'svelte/attachments';
 	import { onMount, untrack } from 'svelte';
 	import { toast } from 'svelte-sonner';
+	import { ChevronDown, Download, FileDown, FileUp, FileSpreadsheet } from 'lucide-svelte';
 	import type {
 		subscriptionCategoryTable,
 		subscriptionPaymentMethodTable,
@@ -86,6 +89,7 @@
 	let isCreatingLifetimeCheckout = $state(false);
 	let detailOpen = $state(false);
 	let addSubscriptionOpen = $state(false);
+	let csvImportOpen = $state(false);
 	let editOpen = $state(false);
 	let cancelOpen = $state(false);
 	let reactivateOpen = $state(false);
@@ -99,7 +103,6 @@
 	const shouldShowLifetimeEntry = $derived(
 		!isPremium && !hasSubscriptionAccess && !hasLifetimeEntitlement
 	);
-	const exportHref = $derived(resolve('/subscriptions/export'));
 	const upgradePlanHref = $derived(
 		localizeInternalHref(`${resolve('/me/settings')}#plan-info`, currentLocale)
 	);
@@ -114,6 +117,23 @@
 
 	const getPaymentMethodName = (paymentMethodId?: number | null) =>
 		paymentMethodId ? (paymentMethodById.get(paymentMethodId)?.name ?? null) : null;
+	const csvCopy = $derived(
+		currentLocale === 'en'
+			? {
+					menu: 'CSV',
+					export: 'Export CSV',
+					import: 'Import CSV',
+					template: 'Download template',
+					upgrade: 'Unlock CSV'
+				}
+			: {
+					menu: 'CSV',
+					export: 'CSVを書き出す',
+					import: 'CSVを取り込む',
+					template: 'テンプレートCSV',
+					upgrade: 'PremiumでCSV'
+				}
+	);
 
 	const pendingCount = $derived(subscriptions.filter((sub) => sub._pending).length);
 	const canMutateSelected = $derived(
@@ -240,6 +260,23 @@
 	const handleUpdateResult = async (serverSubscriptions: Subscription[]) => {
 		await handleServerResult(serverSubscriptions);
 		toast.success(m.subscription_updated_toast());
+	};
+
+	const handleImportResult = async (result: {
+		subscriptions?: Subscription[];
+		categories?: Category[];
+		paymentMethods?: PaymentMethod[];
+	}) => {
+		if (result.subscriptions) {
+			await handleServerResult(result.subscriptions);
+		}
+		if (result.categories && result.paymentMethods) {
+			handleManagementItemsChange({
+				categories: result.categories,
+				paymentMethods: result.paymentMethods
+			});
+		}
+		pushPromptKey += 1;
 	};
 
 	const openDetail = (subscription: SubscriptionView) => {
@@ -380,12 +417,41 @@
 		</div>
 		<div class="flex flex-wrap items-center gap-2">
 			{#if isPremium}
-				<Button size="sm" variant="outline" href={exportHref} download>
-					{m.subscription_export_button()}
-				</Button>
+				<DropdownMenu.Root>
+					<DropdownMenu.Trigger>
+						<Button size="sm" variant="outline">
+							<FileSpreadsheet class="size-4" />
+							{csvCopy.menu}
+							<ChevronDown class="size-4" />
+						</Button>
+					</DropdownMenu.Trigger>
+					<DropdownMenu.Content align="end" class="w-56">
+						<DropdownMenu.Item>
+							{#snippet child({ props })}
+								<a href={resolve('/subscriptions/export')} download {...props}>
+									<Download class="size-4" />
+									{csvCopy.export}
+								</a>
+							{/snippet}
+						</DropdownMenu.Item>
+						<DropdownMenu.Item onclick={() => (csvImportOpen = true)}>
+							<FileUp class="size-4" />
+							{csvCopy.import}
+						</DropdownMenu.Item>
+						<DropdownMenu.Separator />
+						<DropdownMenu.Item>
+							{#snippet child({ props })}
+								<a href={resolve('/subscriptions/import-template')} download {...props}>
+									<FileDown class="size-4" />
+									{csvCopy.template}
+								</a>
+							{/snippet}
+						</DropdownMenu.Item>
+					</DropdownMenu.Content>
+				</DropdownMenu.Root>
 			{:else}
 				<Button size="sm" variant="outline" href={upgradePlanHref}>
-					{m.subscription_export_upgrade_button()}
+					{csvCopy.upgrade}
 				</Button>
 			{/if}
 			<Button onclick={() => (addSubscriptionOpen = true)}
@@ -770,3 +836,5 @@
 		/>
 	</Dialog.Content>
 </Dialog.Root>
+
+<SubscriptionCsvImportDialog bind:open={csvImportOpen} onImported={handleImportResult} />
