@@ -230,7 +230,8 @@
 		isUpgrading = true;
 		try {
 			const { data, error } = await authClient.subscription.billingPortal({
-				returnUrl: page.url.pathname
+				returnUrl: page.url.pathname,
+				disableRedirect: true
 			});
 
 			if (error) {
