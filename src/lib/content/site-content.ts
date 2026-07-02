@@ -702,11 +702,12 @@ export const landingPageCopy: Record<AppLocale, LandingPageCopy> = {
 					name: 'Premium',
 					price: '月額300円',
 					cycle: '継続的に管理したい方向け',
-					description: '登録件数の上限解除や CSV エクスポートを利用できます。',
+					description: '登録件数の上限解除や CSV の書き出し・取り込みを利用できます。',
 					bullets: [
 						'登録件数の上限解除',
-						'CSV エクスポート',
-						'個別通知設定',
+						'CSV 書き出し・取り込み',
+						'カスタムカテゴリー・支払い方法',
+						'サブスク画像アップロード',
 						'7日間無料トライアルが適用される場合があります'
 					]
 				},
@@ -715,7 +716,12 @@ export const landingPageCopy: Record<AppLocale, LandingPageCopy> = {
 					price: '3,000円',
 					cycle: '月額を増やしたくない方向け',
 					description: '一度の支払いで Premium 相当の機能を使い続けられます。',
-					bullets: ['買い切りで利用', 'CSV エクスポート', '登録件数制限の解除'],
+					bullets: [
+						'買い切りで利用',
+						'登録件数の上限解除',
+						'CSV 書き出し・取り込み',
+						'カスタム管理項目と画像アップロード'
+					],
 					badge: 'おすすめ',
 					featured: true
 				}
@@ -976,11 +982,12 @@ export const landingPageCopy: Record<AppLocale, LandingPageCopy> = {
 					name: 'Premium',
 					price: '$1.99 / month',
 					cycle: 'For ongoing management',
-					description: 'Remove entry limits and use CSV export.',
+					description: 'Remove entry limits and use CSV export and import.',
 					bullets: [
 						'Remove entry limits',
-						'CSV export',
-						'Per-subscription reminder settings',
+						'CSV export and import',
+						'Custom categories and payment methods',
+						'Subscription image uploads',
 						'A 7-day free trial may apply',
 						'Local currency may be shown at checkout'
 					]
@@ -992,8 +999,9 @@ export const landingPageCopy: Record<AppLocale, LandingPageCopy> = {
 					description: 'Use Premium-level features with a one-time purchase.',
 					bullets: [
 						'One-time purchase',
-						'CSV export',
 						'Remove entry limits',
+						'CSV export and import',
+						'Custom items and image uploads',
 						'Local currency may be shown at checkout'
 					],
 					badge: 'Recommended',

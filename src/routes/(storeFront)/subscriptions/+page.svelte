@@ -39,6 +39,7 @@
 	import { getLocale } from '$lib/paraglide/runtime';
 	import { browser } from '$app/environment';
 	import { enhance as kitEnhance } from '$app/forms';
+	import { invalidateAll } from '$app/navigation';
 	import { base, resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import { fromAction } from 'svelte/attachments';
@@ -132,6 +133,17 @@
 					import: 'CSVを取り込む',
 					template: 'テンプレートCSV',
 					upgrade: 'PremiumでCSV'
+				}
+	);
+	const checkoutCopy = $derived(
+		currentLocale === 'en'
+			? {
+					success: 'Purchase completed. Premium status is being updated.',
+					cancel: 'Checkout was canceled.'
+				}
+			: {
+					success: '購入が完了しました。Premium状態を更新しています。',
+					cancel: '購入手続きがキャンセルされました。'
 				}
 	);
 
@@ -369,6 +381,22 @@
 
 	onMount(() => {
 		isOnline = navigator.onLine;
+		const checkoutResult = new URL(window.location.href).searchParams.get('checkout');
+		if (checkoutResult === 'success' || checkoutResult === 'cancel') {
+			if (checkoutResult === 'success') {
+				toast.success(checkoutCopy.success);
+				void invalidateAll();
+			} else {
+				toast.message(checkoutCopy.cancel);
+			}
+			const cleanUrl = new URL(window.location.href);
+			cleanUrl.searchParams.delete('checkout');
+			window.history.replaceState(
+				null,
+				'',
+				`${cleanUrl.pathname}${cleanUrl.search}${cleanUrl.hash}`
+			);
+		}
 		void loadCachedSubscriptions();
 		if (navigator.onLine) {
 			void applyServerSubscriptions(data.subscriptions);

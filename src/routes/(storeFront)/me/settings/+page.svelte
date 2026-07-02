@@ -29,7 +29,6 @@
 		subscriptionPaymentMethodTable
 	} from '$lib/server/db/schema';
 	import Check from 'lucide-svelte/icons/check';
-	import X from 'lucide-svelte/icons/x';
 	import { Loader2 } from 'lucide-svelte';
 	import { onMount } from 'svelte';
 	import { toast } from 'svelte-sonner';
@@ -49,11 +48,6 @@
 	let pushSetupPromptKey = $state(0);
 	let pushSubscribedOverride = $state<boolean | null>(null);
 	const pushGuideHref = $derived(localizeInternalHref(resolve('/push'), currentLocale));
-	const commercialTransactionsHref = $derived(
-		localizeInternalHref(resolve('/commercial-transactions'), currentLocale)
-	);
-	const termsHref = $derived(localizeInternalHref(resolve('/terms'), currentLocale));
-	const privacyHref = $derived(localizeInternalHref(resolve('/privacy'), currentLocale));
 	const isPremium = $derived(currentPlan?.isPremium ?? false);
 	const hasSubscriptionAccess = $derived(currentPlan?.hasSubscriptionAccess ?? false);
 	const hasLifetimeEntitlement = $derived(currentPlan?.hasLifetimeEntitlement ?? false);
@@ -102,19 +96,57 @@
 		'flex flex-col gap-1 px-4 py-3 sm:px-5 md:flex-row md:items-center md:justify-between md:gap-4';
 	const planDetailValueClass = 'break-words font-medium md:text-right';
 	const responsiveButtonClass = 'h-auto min-h-9 whitespace-normal py-2 text-center leading-snug';
-	const premiumFeatures = $derived([
-		{ label: m.premium_feature_subscription_limit(), free: '5', premium: '∞' },
-		{
-			label: m.premium_feature_category_limit(),
-			free: currentLocale === 'en' ? 'Standard only' : '標準のみ',
-			premium: '∞'
-		},
-		{ label: m.premium_feature_payment_method_limit(), free: '3', premium: '∞' },
-		{ label: m.premium_feature_hide_ads(), free: false, premium: true },
-		{ label: m.premium_feature_image_upload(), free: false, premium: true },
-		{ label: m.premium_feature_custom_notification(), free: false, premium: true },
-		{ label: m.premium_feature_csv_export(), free: false, premium: true }
-	]);
+	const billingCopy = $derived(
+		currentLocale === 'en'
+			? {
+					recommended: 'Recommended',
+					lifetimeTitle: 'Premium Lifetime',
+					lifetimePrice: '$19',
+					lifetimeCycle: 'One-time purchase',
+					lifetimeDescription: 'Pay once and keep Premium features without another monthly bill.',
+					lifetimeCta: 'Buy lifetime for $19',
+					monthlyTitle: 'Premium Monthly',
+					monthlyPrice: '$1.99',
+					monthlyCycle: 'per month',
+					monthlyDescription: 'Use Premium with monthly billing. Good for trying a lighter start.',
+					monthlyCta: 'Start monthly Premium',
+					trialNote: 'A 7-day free trial may apply on the first upgrade.',
+					checkoutNote: 'Local currency and final pricing may be shown at checkout.',
+					featuresTitle: 'Included with Premium',
+					features: [
+						'Unlimited subscription entries',
+						'CSV export and import',
+						'Custom categories and payment methods',
+						'Subscription image uploads'
+					],
+					successToast: 'Purchase completed. Premium status is being updated.',
+					cancelToast: 'Checkout was canceled.'
+				}
+			: {
+					recommended: 'おすすめ',
+					lifetimeTitle: 'Premium 買い切り',
+					lifetimePrice: '3,000円',
+					lifetimeCycle: '一度だけのお支払い',
+					lifetimeDescription: '月額を増やさず、Premium機能をそのまま使い続けられます。',
+					lifetimeCta: '3,000円で買い切る',
+					monthlyTitle: 'Premium 月額',
+					monthlyPrice: '300円',
+					monthlyCycle: '月額',
+					monthlyDescription: '月ごとの支払いでPremiumを利用できます。まず試したい方向けです。',
+					monthlyCta: '月額Premiumを始める',
+					trialNote: '初回アップグレード時は7日間無料の場合があります。',
+					checkoutNote: '購入画面で最終金額や外貨表示が案内される場合があります。',
+					featuresTitle: 'Premiumで使えること',
+					features: [
+						'サブスク登録数の上限解除',
+						'CSVの書き出し・取り込み',
+						'カスタムカテゴリー・支払い方法',
+						'サブスク画像のアップロード'
+					],
+					successToast: '購入が完了しました。Premium状態を更新しています。',
+					cancelToast: '購入手続きがキャンセルされました。'
+				}
+	);
 
 	let isPremiumModalOpen = $state(false);
 	let isUpgrading = $state(false);
@@ -145,6 +177,22 @@
 	onMount(() => {
 		if (!browser) return;
 		isOnline = navigator.onLine;
+		const checkoutResult = new URL(window.location.href).searchParams.get('checkout');
+		if (checkoutResult === 'success' || checkoutResult === 'cancel') {
+			if (checkoutResult === 'success') {
+				toast.success(billingCopy.successToast);
+				void invalidateAll();
+			} else {
+				toast.message(billingCopy.cancelToast);
+			}
+			const cleanUrl = new URL(window.location.href);
+			cleanUrl.searchParams.delete('checkout');
+			window.history.replaceState(
+				null,
+				'',
+				`${cleanUrl.pathname}${cleanUrl.search}${cleanUrl.hash}`
+			);
+		}
 		const handleOnline = () => (isOnline = true);
 		const handleOffline = () => (isOnline = false);
 		window.addEventListener('online', handleOnline);
@@ -541,102 +589,119 @@
 
 	{#if !isPremium}
 		<Dialog.Root bind:open={isPremiumModalOpen}>
-			<Dialog.Content class="w-full max-w-[420px] p-4 sm:p-7">
-				<div class="flex flex-col items-center gap-4 text-center">
-					<span class="rounded-full bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-600">
+			<Dialog.Content class="w-full max-w-[calc(100vw-1rem)] p-4 sm:max-w-2xl sm:p-6">
+				<div class="flex flex-col items-center gap-3 text-center">
+					<span
+						class="rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-700"
+					>
 						{m.premium_modal_badge()}
 					</span>
 					<h3 class="text-xl font-semibold">{m.premium_modal_title()}</h3>
-					<div class="bg-muted flex h-32 w-32 items-center justify-center rounded-full">
-						<span class="text-4xl">¥</span>
-					</div>
 					<p class="text-muted-foreground text-sm">
 						{m.premium_modal_description()}
 					</p>
 				</div>
 
-				<div class="bg-muted/30 mt-6 rounded-xl border p-3 text-sm sm:p-4">
-					<div
-						class="text-muted-foreground flex items-center justify-between gap-3 pb-3 text-xs font-semibold"
+				<div class="mt-5 grid gap-3 sm:grid-cols-2">
+					<article
+						class="border-primary bg-primary/5 flex flex-col rounded-lg border p-4 shadow-sm"
 					>
-						<span class="min-w-0">{m.premium_modal_feature_label()}</span>
-						<div class="flex shrink-0 items-center gap-2 sm:gap-4">
-							<span class="bg-muted rounded-full px-2 py-0.5">{m.plan_free()}</span>
-							<span class="bg-primary text-primary-foreground rounded-full px-2 py-0.5">
-								{m.plan_premium()}
+						<div class="flex items-start justify-between gap-3">
+							<div>
+								<p class="text-base font-semibold">{billingCopy.lifetimeTitle}</p>
+								<p class="text-muted-foreground text-xs">{billingCopy.lifetimeCycle}</p>
+							</div>
+							<span
+								class="bg-primary text-primary-foreground rounded-md px-2 py-1 text-xs font-medium"
+							>
+								{billingCopy.recommended}
 							</span>
 						</div>
-					</div>
-					<div class="divide-y">
-						{#each premiumFeatures as feature (feature.label)}
-							<div class="flex items-center justify-between gap-3 py-2">
-								<span class="text-foreground min-w-0 flex-1 leading-snug">{feature.label}</span>
-								<div class="flex shrink-0 items-center gap-4 sm:gap-6">
-									<span class="text-muted-foreground flex w-12 items-center justify-center">
-										{#if typeof feature.free === 'boolean'}
-											{#if feature.free}
-												<Check class="h-4 w-4 text-emerald-500" />
-											{:else}
-												<X class="text-muted-foreground h-4 w-4" />
-											{/if}
-										{:else}
-											{feature.free}
-										{/if}
-									</span>
-									<span class="flex w-12 items-center justify-center">
-										{#if typeof feature.premium === 'boolean'}
-											{#if feature.premium}
-												<Check class="h-4 w-4 text-emerald-500" />
-											{:else}
-												<X class="text-muted-foreground h-4 w-4" />
-											{/if}
-										{:else}
-											{feature.premium}
-										{/if}
-									</span>
-								</div>
-							</div>
-						{/each}
-					</div>
+						<div class="mt-5">
+							<p class="text-3xl leading-tight font-semibold">{billingCopy.lifetimePrice}</p>
+							<p class="text-muted-foreground mt-2 text-sm leading-6">
+								{billingCopy.lifetimeDescription}
+							</p>
+						</div>
+						<Button
+							class={`${responsiveButtonClass} mt-5 w-full`}
+							onclick={handleLifetimeCheckout}
+							disabled={isCreatingLifetimeCheckout}
+						>
+							{#if isCreatingLifetimeCheckout}
+								<Loader2 class="size-4 animate-spin" />
+							{/if}
+							{billingCopy.lifetimeCta}
+						</Button>
+					</article>
+
+					<article class="bg-background flex flex-col rounded-lg border p-4">
+						<div>
+							<p class="text-base font-semibold">{billingCopy.monthlyTitle}</p>
+							<p class="text-muted-foreground text-xs">{billingCopy.monthlyCycle}</p>
+						</div>
+						<div class="mt-5">
+							<p class="text-3xl leading-tight font-semibold">{billingCopy.monthlyPrice}</p>
+							<p class="text-muted-foreground mt-2 text-sm leading-6">
+								{billingCopy.monthlyDescription}
+							</p>
+							<p class="text-muted-foreground mt-2 text-xs leading-5">{billingCopy.trialNote}</p>
+						</div>
+						<Button
+							class={`${responsiveButtonClass} mt-5 w-full`}
+							variant="outline"
+							onclick={handleUpgrade}
+							disabled={isUpgrading}
+						>
+							{#if isUpgrading}
+								<Loader2 class="size-4 animate-spin" />
+							{/if}
+							{billingCopy.monthlyCta}
+						</Button>
+					</article>
 				</div>
 
-				<div class="mt-6 flex flex-col gap-3">
-					<Button
-						class={`${responsiveButtonClass} w-full`}
-						onclick={handleUpgrade}
-						disabled={isUpgrading}
-					>
-						{#if isUpgrading}
-							<Loader2 class="size-4 animate-spin" />
-						{/if}
-						{m.premium_modal_cta()}
-					</Button>
-					<Button
-						class={`${responsiveButtonClass} w-full`}
-						variant="outline"
-						onclick={handleLifetimeCheckout}
-						disabled={isCreatingLifetimeCheckout}
-					>
-						{#if isCreatingLifetimeCheckout}
-							<Loader2 class="size-4 animate-spin" />
-						{/if}
-						{m.premium_modal_cta_lifetime()}
-					</Button>
-					<p class="text-muted-foreground text-center text-xs">
-						{m.premium_modal_lifetime_caption()}
+				<div class="bg-muted/30 mt-4 rounded-lg border p-3">
+					<p class="text-sm font-semibold">{billingCopy.featuresTitle}</p>
+					<ul class="mt-3 grid gap-2 text-sm sm:grid-cols-2">
+						{#each billingCopy.features as feature (feature)}
+							<li class="flex gap-2 leading-6">
+								<Check class="text-primary mt-1 size-4 shrink-0" />
+								<span>{feature}</span>
+							</li>
+						{/each}
+					</ul>
+				</div>
+
+				<div class="mt-4 flex flex-col gap-3">
+					<p class="text-muted-foreground text-center text-xs leading-5">
+						{billingCopy.checkoutNote}
+						{m.settings_plan_refund_policy()}
 					</p>
 					<div
 						class="text-muted-foreground flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-center text-xs"
 					>
-						<a class="underline-offset-4 hover:underline" href={commercialTransactionsHref}>
+						<Button
+							variant="link"
+							class="text-muted-foreground h-auto p-0 text-xs underline-offset-4"
+							href={localizeInternalHref(resolve('/commercial-transactions'), currentLocale)}
+						>
 							特定商取引法に基づく表記
-						</a>
-						<a class="underline-offset-4 hover:underline" href={termsHref}>
+						</Button>
+						<Button
+							variant="link"
+							class="text-muted-foreground h-auto p-0 text-xs underline-offset-4"
+							href={localizeInternalHref(resolve('/terms'), currentLocale)}
+						>
 							{m.legal_terms()}
-						</a>
-						<a class="underline-offset-4 hover:underline" href={privacyHref}>
+						</Button>
+						<Button
+							variant="link"
+							class="text-muted-foreground h-auto p-0 text-xs underline-offset-4"
+							href={localizeInternalHref(resolve('/privacy'), currentLocale)}
+						>
 							{m.legal_privacy()}
-						</a>
+						</Button>
 					</div>
 				</div>
 			</Dialog.Content>
