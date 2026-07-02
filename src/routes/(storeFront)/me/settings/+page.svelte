@@ -112,6 +112,15 @@
 					monthlyCta: 'Start monthly Premium',
 					trialNote: 'A 7-day free trial may apply on the first upgrade.',
 					checkoutNote: 'Local currency and final pricing may be shown at checkout.',
+					monthlyToLifetimeTitle: 'Switch to Premium Lifetime',
+					monthlyToLifetimeDescription:
+						'You can purchase Lifetime while your monthly plan is active. After purchase, open plan management and cancel the monthly plan before the next renewal.',
+					monthlyToLifetimePendingDescription:
+						'Your monthly plan is scheduled to end. Purchase Lifetime if you want to keep Premium after that date without recurring billing.',
+					lifetimeWithMonthlyTitle: 'Lifetime purchased. Monthly plan is still active.',
+					lifetimeWithMonthlyDescription:
+						'Open plan management and cancel the monthly plan before the next renewal if you do not want recurring billing to continue.',
+					manageMonthlyCta: 'Open monthly plan management',
 					featuresTitle: 'Included with Premium',
 					features: [
 						'Unlimited subscription entries',
@@ -136,6 +145,15 @@
 					monthlyCta: '月額Premiumを始める',
 					trialNote: '初回アップグレード時は7日間無料の場合があります。',
 					checkoutNote: '購入画面で最終金額や外貨表示が案内される場合があります。',
+					monthlyToLifetimeTitle: '買い切りに切り替える',
+					monthlyToLifetimeDescription:
+						'月額プランが有効な間でも買い切りを購入できます。購入後、次回更新前にプラン管理画面から月額プランをキャンセルしてください。',
+					monthlyToLifetimePendingDescription:
+						'月額プランは解約予定です。期限後も Premium を使う場合は、継続課金なしの買い切りを購入できます。',
+					lifetimeWithMonthlyTitle: '買い切り購入済みです。月額プランはまだ有効です。',
+					lifetimeWithMonthlyDescription:
+						'月額課金を続けない場合は、次回更新前に管理画面から月額プランをキャンセルしてください。',
+					manageMonthlyCta: '月額プランの管理を開く',
 					featuresTitle: 'Premiumで使えること',
 					features: [
 						'サブスク登録数の上限解除',
@@ -421,10 +439,34 @@
 
 				<div class="border-t px-4 py-4 sm:px-5">
 					{#if isPremium}
-						<div
-							class="flex flex-col items-start gap-3 md:flex-row md:items-center md:justify-between"
-						>
-							{#if hasSubscriptionAccess}
+						<div class="flex flex-col items-start gap-3">
+							{#if hasSubscriptionAccess && hasLifetimeEntitlement}
+								<div
+									class="w-full rounded-lg border border-amber-200 bg-amber-50 p-4 text-amber-950"
+								>
+									<div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+										<div class="space-y-1">
+											<p class="text-sm font-semibold">
+												{billingCopy.lifetimeWithMonthlyTitle}
+											</p>
+											<p class="text-sm leading-6 text-amber-900">
+												{billingCopy.lifetimeWithMonthlyDescription}
+											</p>
+										</div>
+										<Button
+											variant="outline"
+											class={`${responsiveButtonClass} w-full border-amber-200 bg-white text-amber-950 hover:bg-amber-100 md:w-auto`}
+											onclick={handleManagePlan}
+											disabled={isUpgrading}
+										>
+											{#if isUpgrading}
+												<Loader2 class="size-4 animate-spin" />
+											{/if}
+											{billingCopy.manageMonthlyCta}
+										</Button>
+									</div>
+								</div>
+							{:else if hasSubscriptionAccess}
 								<Button
 									class={`${responsiveButtonClass} w-full md:w-auto`}
 									onclick={handleManagePlan}
@@ -438,6 +480,30 @@
 							{:else if hasLifetimeEntitlement}
 								<div class="rounded-full border px-4 py-2 text-sm font-medium">
 									{m.settings_plan_lifetime_purchased()}
+								</div>
+							{/if}
+							{#if hasSubscriptionAccess && !hasLifetimeEntitlement}
+								<div class="bg-muted/30 w-full rounded-lg border p-4">
+									<div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+										<div class="space-y-1">
+											<p class="text-sm font-semibold">{billingCopy.monthlyToLifetimeTitle}</p>
+											<p class="text-muted-foreground text-sm leading-6">
+												{isPendingCancel
+													? billingCopy.monthlyToLifetimePendingDescription
+													: billingCopy.monthlyToLifetimeDescription}
+											</p>
+										</div>
+										<Button
+											class={`${responsiveButtonClass} w-full md:w-auto`}
+											onclick={handleLifetimeCheckout}
+											disabled={isCreatingLifetimeCheckout}
+										>
+											{#if isCreatingLifetimeCheckout}
+												<Loader2 class="size-4 animate-spin" />
+											{/if}
+											{billingCopy.lifetimeCta}
+										</Button>
+									</div>
 								</div>
 							{/if}
 							<span class="text-muted-foreground text-xs">{m.settings_plan_refund_policy()}</span>
