@@ -1,6 +1,10 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type Stripe from 'stripe';
-import { getStripePriceMismatch } from './stripe';
+import {
+	createOneTimeCheckoutSession,
+	getStripePriceMismatch,
+	isRecoverableCheckoutCustomerError
+} from './stripe';
 
 const price = (overrides: Partial<Stripe.Price> = {}): Stripe.Price =>
 	({
@@ -39,5 +43,87 @@ describe('getStripePriceMismatch', () => {
 				}
 			)
 		).toEqual(['unit_amount=5000', 'currency=usd', 'recurring=month']);
+	});
+});
+
+describe('isRecoverableCheckoutCustomerError', () => {
+	it('accepts missing customer errors for a provided customer id', () => {
+		expect(
+			isRecoverableCheckoutCustomerError(
+				{
+					type: 'StripeInvalidRequestError',
+					code: 'resource_missing',
+					message: 'No such customer: cus_deleted'
+				},
+				'cus_deleted'
+			)
+		).toBe(true);
+	});
+
+	it('rejects non-customer checkout errors', () => {
+		expect(
+			isRecoverableCheckoutCustomerError(
+				{
+					type: 'StripeInvalidRequestError',
+					code: 'parameter_invalid_integer',
+					param: 'line_items',
+					message: 'Invalid quantity'
+				},
+				'cus_valid'
+			)
+		).toBe(false);
+	});
+});
+
+describe('createOneTimeCheckoutSession', () => {
+	it('retries without a stale customer and keeps the email for customer creation', async () => {
+		const session = { id: 'cs_test', url: 'https://checkout.stripe.com/test' };
+		const create = vi
+			.fn()
+			.mockRejectedValueOnce({
+				type: 'StripeInvalidRequestError',
+				code: 'resource_missing',
+				param: 'customer',
+				message: 'No such customer: cus_deleted'
+			})
+			.mockResolvedValueOnce(session);
+		const stripeClient = {
+			checkout: {
+				sessions: {
+					create
+				}
+			}
+		} as unknown as Stripe;
+
+		await expect(
+			createOneTimeCheckoutSession(stripeClient, {
+				priceId: 'price_lifetime',
+				userId: 'user_1',
+				customerId: 'cus_deleted',
+				customerEmail: 'user@example.com',
+				successUrl: 'https://example.com/success',
+				cancelUrl: 'https://example.com/cancel',
+				entitlementKey: 'premium_lifetime',
+				lookupKey: 'premium_lifetime_3000'
+			})
+		).resolves.toBe(session);
+
+		expect(create).toHaveBeenCalledTimes(2);
+		expect(create).toHaveBeenNthCalledWith(
+			1,
+			expect.objectContaining({
+				customer: 'cus_deleted',
+				customer_email: undefined,
+				customer_creation: undefined
+			})
+		);
+		expect(create).toHaveBeenNthCalledWith(
+			2,
+			expect.objectContaining({
+				customer: undefined,
+				customer_email: 'user@example.com',
+				customer_creation: 'always'
+			})
+		);
 	});
 });

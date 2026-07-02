@@ -1,4 +1,5 @@
 import type Stripe from 'stripe';
+import { eq } from 'drizzle-orm';
 import type { DrizzleD1Database } from 'drizzle-orm/d1';
 import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 import { grantStripeCheckoutEntitlement, PREMIUM_LIFETIME_ENTITLEMENT_KEY } from './entitlements';
@@ -32,6 +33,14 @@ export async function handlePremiumLifetimeCheckoutSessionCompleted(
 	const metadata = session.metadata ?? {};
 	const userId = metadata.userId;
 	if (!userId) return null;
+	const customerId = typeof session.customer === 'string' ? session.customer : null;
+
+	if (customerId) {
+		await db
+			.update(schema.user)
+			.set({ stripeCustomerId: customerId })
+			.where(eq(schema.user.id, userId));
+	}
 
 	return grantStripeCheckoutEntitlement(db, {
 		userId,
@@ -42,7 +51,7 @@ export async function handlePremiumLifetimeCheckoutSessionCompleted(
 		metadata: {
 			mode: session.mode,
 			lookupKey: metadata.lookup_key ?? PREMIUM_LIFETIME_LOOKUP_KEY,
-			customerId: typeof session.customer === 'string' ? session.customer : null
+			customerId
 		}
 	});
 }

@@ -23,6 +23,17 @@ type ExpectedStripePrice = {
 	recurring?: boolean;
 };
 
+type OneTimeCheckoutSessionParams = {
+	priceId: string;
+	userId: string;
+	customerId?: string | null;
+	customerEmail?: string | null;
+	successUrl: string;
+	cancelUrl: string;
+	entitlementKey: string;
+	lookupKey: string;
+};
+
 export function getStripeClient() {
 	return stripeClient;
 }
@@ -83,6 +94,78 @@ export async function getPriceIdByLookupKey(lookupKey: string, expected?: Expect
 	return price.id;
 }
 
+export function isRecoverableCheckoutCustomerError(error: unknown, customerId?: string | null) {
+	if (!customerId) return false;
+
+	const stripeError = error as {
+		type?: string;
+		code?: string;
+		param?: string;
+		message?: string;
+	};
+
+	if (stripeError.type !== 'StripeInvalidRequestError') return false;
+	if (stripeError.param === 'customer') return true;
+
+	const message = stripeError.message ?? '';
+	return (
+		stripeError.code === 'resource_missing' &&
+		(message.includes(customerId) || message.toLowerCase().includes('customer'))
+	);
+}
+
+function buildOneTimeCheckoutSessionParams({
+	priceId,
+	userId,
+	customerId,
+	customerEmail,
+	successUrl,
+	cancelUrl,
+	entitlementKey,
+	lookupKey
+}: OneTimeCheckoutSessionParams): Stripe.Checkout.SessionCreateParams {
+	return {
+		mode: 'payment',
+		line_items: [{ price: priceId, quantity: 1 }],
+		success_url: successUrl,
+		cancel_url: cancelUrl,
+		client_reference_id: userId,
+		customer: customerId ?? undefined,
+		customer_email: customerId ? undefined : (customerEmail ?? undefined),
+		customer_creation: customerId ? undefined : 'always',
+		metadata: {
+			userId,
+			purchase_type: 'one_time',
+			entitlement: entitlementKey,
+			lookup_key: lookupKey
+		}
+	};
+}
+
+export async function createOneTimeCheckoutSession(
+	stripeClient: Stripe,
+	params: OneTimeCheckoutSessionParams
+) {
+	try {
+		return await stripeClient.checkout.sessions.create(buildOneTimeCheckoutSessionParams(params));
+	} catch (error) {
+		if (!isRecoverableCheckoutCustomerError(error, params.customerId)) {
+			throw error;
+		}
+
+		console.warn('[stripe] checkout customer is unavailable; retrying without customer', {
+			customerId: params.customerId
+		});
+
+		return stripeClient.checkout.sessions.create(
+			buildOneTimeCheckoutSessionParams({
+				...params,
+				customerId: null
+			})
+		);
+	}
+}
+
 export async function createOneTimeCheckoutUrl({
 	lookupKey,
 	userId,
@@ -116,20 +199,15 @@ export async function createOneTimeCheckoutUrl({
 	}
 
 	try {
-		const session = await stripeClient.checkout.sessions.create({
-			mode: 'payment',
-			line_items: [{ price: priceId, quantity: 1 }],
-			success_url: successUrl,
-			cancel_url: cancelUrl,
-			client_reference_id: userId,
-			customer: customerId ?? undefined,
-			customer_email: customerId ? undefined : (customerEmail ?? undefined),
-			metadata: {
-				userId,
-				purchase_type: 'one_time',
-				entitlement: entitlementKey,
-				lookup_key: lookupKey
-			}
+		const session = await createOneTimeCheckoutSession(stripeClient, {
+			priceId,
+			userId,
+			customerId,
+			customerEmail,
+			successUrl,
+			cancelUrl,
+			entitlementKey,
+			lookupKey
 		});
 
 		return session.url ?? null;
