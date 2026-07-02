@@ -3,6 +3,7 @@ import { error, json } from '@sveltejs/kit';
 import Stripe from 'stripe';
 import { handlePremiumLifetimeCheckoutSessionCompleted } from '$lib/server/stripe-lifetime';
 import { getStripeClient, getStripeWebhookSecret } from '$lib/server/stripe';
+import { constructStripeWebhookEvent } from '$lib/server/stripe-webhook';
 
 export const POST: RequestHandler = async ({ request, locals }) => {
 	const stripeClient = getStripeClient();
@@ -21,7 +22,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	let event: Stripe.Event;
 
 	try {
-		event = stripeClient.webhooks.constructEvent(payload, signature, webhookSecret);
+		event = await constructStripeWebhookEvent(stripeClient, payload, signature, webhookSecret);
 	} catch (err) {
 		console.error('[stripe-webhook] invalid signature', err);
 		error(400, 'invalid stripe signature');
