@@ -235,6 +235,7 @@
 	"analysis_period_hint_yearly": "Billing cycles are normalized to yearly-equivalent values.",
 	"analysis_total_label": "Total",
 	"analysis_top_service_label": "Largest spend",
+	"analysis_top_service_short_label": "Largest",
 	"analysis_subscription_count_label": "Tracked subscriptions",
 	"analysis_breakdown_count_label": "Breakdown rows",
 	"analysis_breakdown_title": "Breakdown by service",

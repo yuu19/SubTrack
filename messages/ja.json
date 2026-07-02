@@ -235,6 +235,7 @@
 	"analysis_period_hint_yearly": "支払い周期を年あたりの金額に換算しています。",
 	"analysis_total_label": "合計",
 	"analysis_top_service_label": "最大の支出",
+	"analysis_top_service_short_label": "最大",
 	"analysis_subscription_count_label": "登録中のサブスク",
 	"analysis_breakdown_count_label": "内訳の件数",
 	"analysis_breakdown_title": "サービス別の内訳",

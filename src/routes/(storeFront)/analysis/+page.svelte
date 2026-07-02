@@ -48,15 +48,13 @@
 			value: item.amount,
 			color: getSubscriptionColorStyle(item.color ?? getFallbackSubscriptionColor(index))
 		}));
-	const topSummary = $derived(summaries.find((summary) => summary.items.length > 0) ?? null);
-	const topItem = $derived(topSummary?.items[0] ?? null);
 	const hasAnalytics = $derived(summaries.some((summary) => summary.items.length > 0));
 </script>
 
 <div
 	class="mx-auto flex max-w-5xl flex-col gap-6 px-4 pt-6 pb-[calc(env(safe-area-inset-bottom)+6rem)] md:px-8 md:pb-8"
 >
-	<div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+	<div class="space-y-2">
 		<div class="space-y-2">
 			<div class="text-primary inline-flex items-center gap-2 text-sm font-medium">
 				<ChartPie class="size-4" />
@@ -69,32 +67,6 @@
 				</p>
 			</div>
 		</div>
-
-		{#if topItem}
-			<div class="bg-muted/40 hidden min-w-[240px] rounded-3xl border p-4 lg:block">
-				<p class="text-muted-foreground text-xs font-medium tracking-[0.2em] uppercase">
-					{m.analysis_top_service_label()}
-				</p>
-				<div class="mt-3 flex items-center gap-3">
-					<span
-						class="bg-background flex size-11 shrink-0 items-center justify-center rounded-xl border"
-					>
-						<SubscriptionIcon
-							iconType={topItem.iconType}
-							iconValue={topItem.iconValue}
-							subscriptionId={topItem.subscriptionId}
-							class="size-6"
-						/>
-					</span>
-					<div class="min-w-0">
-						<p class="text-foreground truncate text-lg font-semibold">{topItem.serviceName}</p>
-						<p class="text-primary mt-1 text-sm font-medium">
-							{formatCurrency(topItem.amount, topSummary?.currency, locale)}
-						</p>
-					</div>
-				</div>
-			</div>
-		{/if}
 	</div>
 
 	<div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -138,10 +110,28 @@
 	{:else}
 		<div class="space-y-8">
 			{#each summaries as summary (summary.currency)}
+				{@const summaryTopItem = summary.items[0]}
 				<div class="space-y-3">
-					<h2 class="text-muted-foreground text-sm font-semibold tracking-[0.18em] uppercase">
-						{summary.currency}
-					</h2>
+					<div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+						<h2 class="text-muted-foreground text-sm font-semibold tracking-[0.18em] uppercase">
+							{summary.currency}
+						</h2>
+						{#if summaryTopItem}
+							<div
+								class="bg-muted/40 flex max-w-full flex-wrap items-center gap-x-2 gap-y-1 rounded-full border px-3 py-1.5 text-sm"
+							>
+								<span class="text-muted-foreground text-xs font-semibold uppercase">
+									{m.analysis_top_service_short_label()}
+								</span>
+								<span class="max-w-full min-w-0 font-medium break-words">
+									{summaryTopItem.serviceName}
+								</span>
+								<span class="text-primary font-semibold">
+									{formatCurrency(summaryTopItem.amount, summary.currency, locale)}
+								</span>
+							</div>
+						{/if}
+					</div>
 					<div class="grid gap-6 lg:grid-cols-[minmax(320px,380px)_minmax(0,1fr)]">
 						<section class="bg-background rounded-[2rem] border p-5 shadow-sm sm:p-6">
 							<DonutChart
