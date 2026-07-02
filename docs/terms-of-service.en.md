@@ -1,6 +1,6 @@
 # Terms of Service
 
-Last updated: May 31, 2026
+Last updated: July 2, 2026
 
 ## Article 1 (Purpose)
 
@@ -39,8 +39,8 @@ The Service is a web application that lets Users record contract information, fe
 ## Article 6 (Plans, Fees, and Payment Terms)
 
 1. The Service offers a Free Plan, Premium subscriptions, and a Premium Lifetime Purchase.
-2. Premium subscription fees are JPY 300 per month by default. In the English purchase flow, the representative price is USD 1.99 per month, and local currency may be shown at checkout.
-3. The Premium Lifetime Purchase fee is JPY 3,000 by default. In the English purchase flow, the representative price is USD 19, and local currency may be shown at checkout.
+2. Premium subscription fees are JPY 300 per month by default. In the English purchase flow, the representative price is USD 1.99 per month, and local currency may be shown at checkout. If the purchase screen shows different pricing or currency, the purchase screen prevails.
+3. The Premium Lifetime Purchase fee is JPY 3,000 by default. In the English purchase flow, the representative price is USD 19, and local currency may be shown at checkout. If the purchase screen shows different pricing or currency, the purchase screen prevails.
 4. A 7-day free trial may apply to the first upgrade to a subscription. Unless canceled, billing automatically begins after the free trial ends.
 5. Subscriptions automatically renew for each billing period. To stop the next renewal, the User must complete cancellation from the billing management page at least 24 hours before the next renewal date.
 6. Lifetime Purchase is charged once at the time of application. No recurring billing occurs for the Lifetime Purchase.

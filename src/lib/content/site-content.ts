@@ -1427,12 +1427,17 @@ export const faqPageCopy: Record<'ja' | 'en', FAQPageCopy> = {
 					{
 						question: 'Premium では何が増えますか？',
 						answer:
-							'現在の画面表示では、登録件数の上限解除、CSV エクスポート、個別通知設定などが Premium 向け機能として案内されています。'
+							'Premium では、サブスクリプション登録数の上限解除、CSV の書き出し・取り込み、カスタムカテゴリー・支払い方法、サブスク画像アップロードを利用できます。'
+					},
+					{
+						question: '月額 Premium と買い切りの違いは何ですか？',
+						answer:
+							'月額 Premium は月額300円（税込）の継続課金です。Premium 買い切りは3,000円（税込）の一度だけのお支払いで、継続課金なしで Premium 機能を利用できます。海外からの購入では、購入画面で外貨表示になる場合があります。'
 					},
 					{
 						question: 'Premium にトライアルはありますか？',
 						answer:
-							'Premium プランには 7 日間の無料トライアルがあります。課金状況は設定画面やお支払い管理ページで確認できます。'
+							'月額 Premium には、初回アップグレード時に7日間の無料トライアルが適用される場合があります。課金状況は設定画面やお支払い管理ページで確認できます。'
 					},
 					{
 						question: '有料プランの解約や請求情報の変更はどこで行いますか？',
@@ -1516,12 +1521,17 @@ export const faqPageCopy: Record<'ja' | 'en', FAQPageCopy> = {
 					{
 						question: 'What changes on Premium?',
 						answer:
-							'The current UI presents Premium as including higher or unlimited limits plus features such as CSV export and more flexible notification controls.'
+							'Premium unlocks unlimited subscription entries, CSV export and import, custom categories and payment methods, and subscription image uploads.'
+					},
+					{
+						question: 'What is the difference between monthly Premium and Lifetime?',
+						answer:
+							'Monthly Premium is a recurring subscription shown as $1.99 per month in the English UI. Premium Lifetime is a one-time purchase shown as $19 in the English UI. Local currency and final pricing may be shown at checkout.'
 					},
 					{
 						question: 'Is there a trial for Premium?',
 						answer:
-							'Premium currently includes a 7-day free trial. You can review billing status from the settings page and the billing management page.'
+							'A 7-day free trial may apply to the first upgrade to monthly Premium. You can review billing status from the settings page and the billing management page.'
 					},
 					{
 						question: 'Where do I manage cancellation or billing details?',
@@ -1648,7 +1658,7 @@ export const commercePageCopy: Record<'ja' | 'en', CommercePageCopy> = {
 					'最新の主要ブラウザでの利用を想定しています。ご利用環境により一部機能が異なる場合があります。'
 			}
 		],
-		note: '運営責任者、所在地、電話番号の開示を希望される場合は、legal@subtracknotify.com までご請求ください。購入の判断に必要な時間を確保できるよう、法令に基づき遅滞なく電子メールで開示します。'
+		note: '運営責任者、所在地、電話番号の開示を希望される場合は、購入前でも legal@subtracknotify.com までご請求ください。購入の判断に必要な時間を確保できるよう、法令に基づき遅滞なく電子メールで開示します。'
 	},
 	en: {
 		headTitle: 'Legal Notice for Commercial Transactions | SubTrack',
@@ -1704,7 +1714,7 @@ export const commercePageCopy: Record<'ja' | 'en', CommercePageCopy> = {
 			{
 				label: 'Term and renewal',
 				value:
-					'Subscriptions renew automatically monthly or yearly. A 7-day free trial may apply to the first upgrade.'
+					'Subscriptions renew automatically monthly. A 7-day free trial may apply to the first upgrade.'
 			},
 			{
 				label: 'Returns and cancellation',
@@ -1717,6 +1727,6 @@ export const commercePageCopy: Record<'ja' | 'en', CommercePageCopy> = {
 					'Use on the latest major browsers is expected. Some functions may vary depending on the environment.'
 			}
 		],
-		note: 'To request disclosure of the responsible person, address, or phone number, contact legal@subtracknotify.com. The information will be disclosed by email without delay in accordance with applicable law so that there is sufficient time for purchase decisions.'
+		note: 'To request disclosure of the responsible person, address, or phone number, contact legal@subtracknotify.com before purchase if needed. The information will be disclosed by email without delay in accordance with applicable law so that there is sufficient time for purchase decisions.'
 	}
 };
