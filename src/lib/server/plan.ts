@@ -9,6 +9,7 @@ import {
 	isPendingCancel as isPendingCancelUtil,
 	toTimestamp
 } from './better-auth-stripe-utils';
+import { getBillingNowMs } from './billing-clock';
 
 export type SubscriptionRecord = typeof schema.subscription.$inferSelect;
 
@@ -61,7 +62,7 @@ const pickCurrentSubscription = (
 export const resolveCurrentPlan = (
 	subscription: SubscriptionRecord | null | undefined,
 	entitlements: UserEntitlementRecord[] | null | undefined = [],
-	now = Date.now()
+	now = getBillingNowMs()
 ): CurrentPlan => {
 	const hasLifetimeEntitlement = hasActiveEntitlement(
 		entitlements,
@@ -117,7 +118,7 @@ export const resolveCurrentPlan = (
 export const getCurrentPlan = (
 	subscriptions: SubscriptionRecord[] | null | undefined,
 	entitlements: UserEntitlementRecord[] | null | undefined = [],
-	now = Date.now()
+	now = getBillingNowMs()
 ) => {
 	const subscription = pickCurrentSubscription(subscriptions, now);
 	const currentPlan = resolveCurrentPlan(subscription, entitlements, now);

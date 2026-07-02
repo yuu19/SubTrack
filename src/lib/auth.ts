@@ -52,6 +52,7 @@ const resolveAuthRedirectURI = (requestOrigin?: string, providerId = 'google') =
 };
 const adminUserIds = parseAdminUserIds(process.env.ADMIN_USER_IDS);
 const disableStripePlugin = process.env.E2E_AUTH_DISABLE_STRIPE === 'true';
+const createStripeCustomerOnSignUp = process.env.E2E_STRIPE_CREATE_CUSTOMER_ON_SIGNUP !== 'false';
 
 const stripeClient = disableStripePlugin
 	? null
@@ -90,7 +91,7 @@ export function createAuth(
 						stripe({
 							stripeClient,
 							stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET!,
-							createCustomerOnSignUp: true,
+							createCustomerOnSignUp: createStripeCustomerOnSignUp,
 							onEvent: async (event) => {
 								await handleStripeLifetimeCheckoutEvent(db, event);
 							},
