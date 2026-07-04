@@ -3,6 +3,7 @@ import { stripe } from '@better-auth/stripe';
 import Stripe from 'stripe';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { admin } from 'better-auth/plugins';
+import { twoFactor } from 'better-auth/plugins/two-factor';
 import type { DrizzleD1Database } from 'drizzle-orm/d1';
 import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 import { sveltekitCookies } from 'better-auth/svelte-kit';
@@ -84,7 +85,12 @@ export function createAuth(
 
 		plugins: [
 			admin({
-				adminUserIds: adminUserIds.length ? adminUserIds : undefined
+				adminUserIds: adminUserIds.length ? adminUserIds : undefined,
+				bannedUserMessage:
+					'This account is temporarily locked. Please try again later or contact another administrator.'
+			}),
+			twoFactor({
+				issuer: 'SubTrack'
 			}),
 			...(stripeClient
 				? [

@@ -2,8 +2,10 @@
 	import { base } from '$app/paths';
 	import { defaults, fieldProxy, superForm } from 'sveltekit-superforms';
 	import { zod4Client } from 'sveltekit-superforms/adapters';
-	import { subscriptionSchema } from '$lib/formSchema';
+	import { createSubscriptionSchema } from '$lib/formSchema';
+	import { subscriptionFormCopy } from '$lib/i18n-copy';
 	import { fromAction } from 'svelte/attachments';
+	import { untrack } from 'svelte';
 	import { Field, Control, Label, Description, FieldErrors } from 'formsnap';
 	import Button from '$lib/components/ui/button/button.svelte';
 	import Input from '$lib/components/ui/input/input.svelte';
@@ -74,6 +76,8 @@
 	}>();
 	const userConfig = UserConfigContext.get();
 	const currentLocale = $derived(resolveLocale(getLocale()));
+	const formCopy = $derived(subscriptionFormCopy[currentLocale]);
+	const localizedSubscriptionSchema = untrack(() => createSubscriptionSchema(currentLocale));
 	const cycleOptions = $derived([
 		{ value: 'monthly', label: getCycleLabel('monthly', currentLocale) },
 		{ value: 'quarterly', label: getCycleLabel('quarterly', currentLocale) },
@@ -86,27 +90,13 @@
 			label: getCancellationMethodLabel(value, currentLocale)
 		}))
 	);
-	const iconFieldLabel = $derived(currentLocale === 'en' ? 'Icon' : 'アイコン');
-	const iconFieldDescription = $derived(
-		currentLocale === 'en'
-			? 'Shown in subscription lists and detail views.'
-			: '一覧と詳細画面でサービスを見分けるために使います。'
-	);
+	const iconFieldLabel = $derived(formCopy.fields.icon);
+	const iconFieldDescription = $derived(formCopy.fields.iconDescription);
 	const iconOptions = $derived(subscriptionEmojiOptions);
-	const serviceUrlFieldLabel = $derived(
-		currentLocale === 'en' ? 'Official website URL' : '公式サイトURL'
-	);
-	const serviceUrlFieldDescription = $derived(
-		currentLocale === 'en'
-			? 'The icon is retrieved automatically from this official website URL.'
-			: 'この公式サイトURLからアイコンを自動取得します。'
-	);
-	const imageFieldLabel = $derived(currentLocale === 'en' ? 'Uploaded image' : 'アップロード画像');
-	const imageFieldDescription = $derived(
-		currentLocale === 'en'
-			? 'Premium users can upload PNG, JPEG, or WebP images up to 1MB.'
-			: 'Premiumでは1MBまでのPNG、JPEG、WebP画像をアップロードできます。'
-	);
+	const serviceUrlFieldLabel = $derived(formCopy.fields.officialWebsiteUrl);
+	const serviceUrlFieldDescription = $derived(formCopy.fields.officialWebsiteDescription);
+	const imageFieldLabel = $derived(formCopy.fields.uploadedImage);
+	const imageFieldDescription = $derived(formCopy.fields.uploadedImageDescription);
 	const presetIconOptions = $derived(
 		subscriptionPresetIconOptions.map((option) => ({
 			...option,
@@ -120,20 +110,12 @@
 			)
 		)
 	);
-	const currencyFieldLabel = $derived(currentLocale === 'en' ? 'Currency' : '通貨');
-	const categoryFieldLabel = $derived(currentLocale === 'en' ? 'Category' : 'カテゴリー');
-	const paymentMethodFieldLabel = $derived(
-		currentLocale === 'en' ? 'Payment method' : '支払い方法'
-	);
-	const notSetLabel = $derived(currentLocale === 'en' ? 'Not set' : '未設定');
-	const managementSummaryLabel = $derived(
-		currentLocale === 'en'
-			? 'Manage categories and payment methods'
-			: 'カテゴリー・支払い方法を管理'
-	);
-	const managementSectionTitle = $derived(
-		currentLocale === 'en' ? 'Category and payment' : 'カテゴリー・支払い方法'
-	);
+	const currencyFieldLabel = $derived(formCopy.fields.currency);
+	const categoryFieldLabel = $derived(formCopy.fields.category);
+	const paymentMethodFieldLabel = $derived(formCopy.fields.paymentMethod);
+	const notSetLabel = $derived(formCopy.fields.notSet);
+	const managementSummaryLabel = $derived(formCopy.fields.managementSummary);
+	const managementSectionTitle = $derived(formCopy.fields.managementSection);
 	const currencyOptions = $derived(SUPPORTED_CURRENCIES.map((currency) => ({ value: currency })));
 	const categoryIcon = (key: string | null) => {
 		const icons: Record<string, string> = {
@@ -219,8 +201,8 @@
 		};
 	}
 
-	const form = superForm(defaults(getInitialData(), zod4Client(subscriptionSchema)), {
-		validators: zod4Client(subscriptionSchema)
+	const form = superForm(defaults(getInitialData(), zod4Client(localizedSubscriptionSchema)), {
+		validators: zod4Client(localizedSubscriptionSchema)
 	});
 
 	const { enhance } = form;
@@ -276,14 +258,10 @@
 	const validateImageFile = (file: File) => {
 		const allowedTypes = ['image/png', 'image/jpeg', 'image/webp'];
 		if (!allowedTypes.includes(file.type)) {
-			return currentLocale === 'en'
-				? 'Please select a PNG, JPEG, or WebP image.'
-				: 'PNG、JPEG、WebP画像を選択してください。';
+			return formCopy.notices.imageTypeInvalid;
 		}
 		if (file.size > 1024 * 1024) {
-			return currentLocale === 'en'
-				? 'Image file must be 1MB or smaller.'
-				: '画像ファイルは1MB以下にしてください。';
+			return formCopy.notices.imageTooLarge;
 		}
 		return '';
 	};
@@ -294,10 +272,7 @@
 		imageUploadError = '';
 		if (!file || !subscription?.id) return;
 		if (!isPremium) {
-			imageUploadError =
-				currentLocale === 'en'
-					? 'Image uploads are available on Premium.'
-					: '画像アップロードはPremiumで利用できます。';
+			imageUploadError = formCopy.notices.imageUploadPremium;
 			input.value = '';
 			return;
 		}
@@ -328,11 +303,7 @@
 				error?: string;
 			};
 			if (!response.ok) {
-				imageUploadError =
-					result.error ??
-					(currentLocale === 'en'
-						? 'Failed to upload image.'
-						: '画像のアップロードに失敗しました。');
+				imageUploadError = result.error ?? formCopy.notices.imageUploadFailed;
 				return;
 			}
 
@@ -345,8 +316,7 @@
 			}
 		} catch (error) {
 			console.error('Failed to upload subscription icon image', error);
-			imageUploadError =
-				currentLocale === 'en' ? 'Failed to upload image.' : '画像のアップロードに失敗しました。';
+			imageUploadError = formCopy.notices.imageUploadFailed;
 		} finally {
 			isUploadingImage = false;
 			input.value = '';
@@ -511,7 +481,7 @@
 							/>
 						</span>
 						<span class="text-primary text-xs font-medium">
-							{currentLocale === 'en' ? 'Change' : '変更する'}
+							{formCopy.actions.change}
 						</span>
 					</span>
 				</summary>
@@ -523,7 +493,7 @@
 								<div class="space-y-3">
 									<div class="space-y-2">
 										<p class="text-muted-foreground text-xs">
-											{currentLocale === 'en' ? 'Recommended' : 'おすすめ'}
+											{formCopy.actions.recommended}
 										</p>
 										<div class="flex flex-wrap gap-2" role="radiogroup" aria-label={iconFieldLabel}>
 											{#each recommendedPresetIconOptions as icon (icon.value)}
@@ -551,7 +521,7 @@
 									</div>
 									<div class="space-y-2">
 										<p class="text-muted-foreground text-xs">
-											{currentLocale === 'en' ? 'Emoji' : '絵文字'}
+											{formCopy.actions.emoji}
 										</p>
 										<div class="flex flex-wrap gap-2" role="radiogroup" aria-label={iconFieldLabel}>
 											{#each iconOptions as icon (icon)}
@@ -574,7 +544,7 @@
 									</div>
 									<div class="space-y-2">
 										<p class="text-muted-foreground text-xs">
-											{currentLocale === 'en' ? 'Get from official website' : '公式サイトから取得'}
+											{formCopy.actions.getFromOfficialWebsite}
 										</p>
 										<Field {form} name="serviceUrl">
 											<Control>
@@ -595,7 +565,7 @@
 															disabled={!serviceFaviconUrl}
 															onclick={selectOfficialSiteIcon}
 														>
-															{currentLocale === 'en' ? 'Use this URL' : 'このURLから取得'}
+															{formCopy.actions.useThisUrl}
 														</Button>
 													</div>
 													<Description class="text-muted-foreground text-xs">
@@ -650,11 +620,11 @@
 													onclick={() => imageInput?.click()}
 												>
 													{#if isUploadingImage}
-														{currentLocale === 'en' ? 'Uploading...' : 'アップロード中...'}
+														{formCopy.actions.uploading}
 													{:else if hasUploadedImage}
-														{currentLocale === 'en' ? 'Replace image' : '画像を差し替え'}
+														{formCopy.actions.replaceImage}
 													{:else}
-														{currentLocale === 'en' ? 'Upload image' : '画像をアップロード'}
+														{formCopy.actions.uploadImage}
 													{/if}
 												</Button>
 											{/if}
@@ -664,9 +634,7 @@
 										>
 										{#if !isPremium}
 											<p class="text-muted-foreground text-xs">
-												{currentLocale === 'en'
-													? 'Image uploads are available on Premium.'
-													: '画像アップロードはPremiumで利用できます。'}
+												{formCopy.notices.imageUploadPremium}
 											</p>
 										{/if}
 										{#if imageUploadError}

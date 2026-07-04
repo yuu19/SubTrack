@@ -1,7 +1,8 @@
 import type { RequestHandler } from './$types';
-import { error, json } from '@sveltejs/kit';
+import { json } from '@sveltejs/kit';
 import { desc, eq } from 'drizzle-orm';
 import { createAuth } from '$lib/auth';
+import { csvImportApiCopy, resolveRequestLocale } from '$lib/i18n-copy';
 import { listActiveEntitlementsForUser } from '$lib/server/entitlements';
 import { trackedSubscriptionTable } from '$lib/server/db/schema';
 import { getCurrentPlan } from '$lib/server/plan';
@@ -10,24 +11,37 @@ import { listSubscriptionManagementItems } from '$lib/server/subscription-manage
 import { resolveTimeZone } from '$lib/time-zone';
 
 const MAX_IMPORT_BYTES = 512 * 1024;
+type CsvImportApiMessages = (typeof csvImportApiCopy)['ja'];
+type CsvTextResult = { csv: string } | { error: Response };
+type PremiumUserResult =
+	| {
+			userId: string;
+			defaultNotifyDaysBefore: number;
+			timeZone: string;
+	  }
+	| { error: Response };
 
-const getCsvText = async (request: Request) => {
+const getCsvText = async (request: Request, copy: CsvImportApiMessages): Promise<CsvTextResult> => {
 	const formData = await request.formData();
 	const file = formData.get('file');
 	if (!file || typeof file === 'string' || typeof file.text !== 'function') {
-		error(400, 'csv file required');
+		return { error: json({ message: copy.fileRequired }, { status: 400 }) };
 	}
 	if (typeof file.size === 'number' && file.size > MAX_IMPORT_BYTES) {
-		error(400, 'csv file is too large');
+		return { error: json({ message: copy.fileTooLarge }, { status: 400 }) };
 	}
-	return file.text();
+	return { csv: await file.text() };
 };
 
-const requirePremiumUser = async (db: NonNullable<App.Locals['db']>, request: Request) => {
+const requirePremiumUser = async (
+	db: NonNullable<App.Locals['db']>,
+	request: Request,
+	copy: CsvImportApiMessages
+): Promise<PremiumUserResult> => {
 	const auth = createAuth(db);
 	const session = await auth.api.getSession({ headers: request.headers });
 	const userId = session?.user.id;
-	if (!userId) error(401, 'unauthorized request');
+	if (!userId) return { error: json({ message: copy.loginRequired }, { status: 401 }) };
 
 	const [billingSubscriptions, entitlements, userRecord] = await Promise.all([
 		db.query.subscription.findMany({
@@ -40,7 +54,9 @@ const requirePremiumUser = async (db: NonNullable<App.Locals['db']>, request: Re
 		})
 	]);
 	const { currentPlan } = getCurrentPlan(billingSubscriptions, entitlements);
-	if (!currentPlan.isPremium) error(403, 'premium plan required');
+	if (!currentPlan.isPremium) {
+		return { error: json({ message: copy.premiumRequired }, { status: 403 }) };
+	}
 
 	return {
 		userId,
@@ -49,9 +65,15 @@ const requirePremiumUser = async (db: NonNullable<App.Locals['db']>, request: Re
 	};
 };
 
-export const POST: RequestHandler = async ({ request, locals: { db } }) => {
-	const { userId, defaultNotifyDaysBefore, timeZone } = await requirePremiumUser(db, request);
-	const csv = await getCsvText(request);
+export const POST: RequestHandler = async ({ request, cookies, locals: { db } }) => {
+	const locale = resolveRequestLocale(request, cookies);
+	const copy = csvImportApiCopy[locale];
+	const userResult = await requirePremiumUser(db, request, copy);
+	if ('error' in userResult) return userResult.error;
+	const { userId, defaultNotifyDaysBefore, timeZone } = userResult;
+	const csvResult = await getCsvText(request, copy);
+	if ('error' in csvResult) return csvResult.error;
+	const { csv } = csvResult;
 
 	const result = await importSubscriptionsFromCsv({
 		db,

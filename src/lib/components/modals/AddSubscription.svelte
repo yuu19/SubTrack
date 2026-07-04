@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { fieldProxy, superForm } from 'sveltekit-superforms';
 	import { zod4Client } from 'sveltekit-superforms/adapters';
-	import { subscriptionSchema } from '$lib/formSchema';
+	import { createSubscriptionSchema } from '$lib/formSchema';
+	import { subscriptionFormCopy } from '$lib/i18n-copy';
 	import { untrack } from 'svelte';
 	import { fromAction } from 'svelte/attachments';
 	import { Field, Control, Label, Description, FieldErrors } from 'formsnap';
@@ -84,6 +85,8 @@
 	}>();
 	const userConfig = UserConfigContext.get();
 	const currentLocale = $derived(resolveLocale(getLocale()));
+	const formCopy = $derived(subscriptionFormCopy[currentLocale]);
+	const localizedSubscriptionSchema = untrack(() => createSubscriptionSchema(currentLocale));
 	const cycleOptions = $derived([
 		{ value: 'monthly', label: getCycleLabel('monthly', currentLocale) },
 		{ value: 'quarterly', label: getCycleLabel('quarterly', currentLocale) },
@@ -96,21 +99,11 @@
 			label: getCancellationMethodLabel(value, currentLocale)
 		}))
 	);
-	const iconFieldLabel = $derived(currentLocale === 'en' ? 'Icon' : 'アイコン');
-	const iconFieldDescription = $derived(
-		currentLocale === 'en'
-			? 'Shown in subscription lists and detail views.'
-			: '一覧と詳細画面でサービスを見分けるために使います。'
-	);
+	const iconFieldLabel = $derived(formCopy.fields.icon);
+	const iconFieldDescription = $derived(formCopy.fields.iconDescription);
 	const iconOptions = $derived(subscriptionEmojiOptions);
-	const serviceUrlFieldLabel = $derived(
-		currentLocale === 'en' ? 'Official website URL' : '公式サイトURL'
-	);
-	const serviceUrlFieldDescription = $derived(
-		currentLocale === 'en'
-			? 'The icon is retrieved automatically from this official website URL.'
-			: 'この公式サイトURLからアイコンを自動取得します。'
-	);
+	const serviceUrlFieldLabel = $derived(formCopy.fields.officialWebsiteUrl);
+	const serviceUrlFieldDescription = $derived(formCopy.fields.officialWebsiteDescription);
 	const presetIconOptions = $derived(
 		subscriptionPresetIconOptions.map((option) => ({
 			...option,
@@ -125,20 +118,12 @@
 		)
 	);
 	const lastCurrencyStorageKey = 'subtrack:last-subscription-currency';
-	const currencyFieldLabel = $derived(currentLocale === 'en' ? 'Currency' : '通貨');
-	const categoryFieldLabel = $derived(currentLocale === 'en' ? 'Category' : 'カテゴリー');
-	const paymentMethodFieldLabel = $derived(
-		currentLocale === 'en' ? 'Payment method' : '支払い方法'
-	);
-	const notSetLabel = $derived(currentLocale === 'en' ? 'Not set' : '未設定');
-	const managementSummaryLabel = $derived(
-		currentLocale === 'en'
-			? 'Manage categories and payment methods'
-			: 'カテゴリー・支払い方法を管理'
-	);
-	const managementSectionTitle = $derived(
-		currentLocale === 'en' ? 'Category and payment' : 'カテゴリー・支払い方法'
-	);
+	const currencyFieldLabel = $derived(formCopy.fields.currency);
+	const categoryFieldLabel = $derived(formCopy.fields.category);
+	const paymentMethodFieldLabel = $derived(formCopy.fields.paymentMethod);
+	const notSetLabel = $derived(formCopy.fields.notSet);
+	const managementSummaryLabel = $derived(formCopy.fields.managementSummary);
+	const managementSectionTitle = $derived(formCopy.fields.managementSection);
 	const currencyOptions = $derived(SUPPORTED_CURRENCIES.map((currency) => ({ value: currency })));
 	const templateCategoryOptions: Array<{ value: 'all' | ServiceTemplateCategory }> = [
 		{ value: 'all' },
@@ -192,7 +177,7 @@
 	const form = superForm(
 		untrack(() => data.form),
 		{
-			validators: zod4Client(subscriptionSchema)
+			validators: zod4Client(localizedSubscriptionSchema)
 		}
 	);
 
@@ -452,7 +437,7 @@
 			/>
 			<Button type="button" variant="outline" class="h-12 w-full" onclick={enterManualForm}>
 				<Pencil class="size-4" aria-hidden="true" />
-				{currentLocale === 'en' ? 'Enter manually' : '手動で入力する'}
+				{formCopy.actions.enterManually}
 			</Button>
 			<div class="flex flex-wrap gap-2" aria-label={m.subscription_template_search_label()}>
 				{#each templateCategoryOptions as category (category.value)}
@@ -499,9 +484,7 @@
 		<div class="flex items-center gap-3">
 			<Button type="button" variant="outline" size="icon" onclick={returnToTemplateList}>
 				<ArrowLeft class="size-4" aria-hidden="true" />
-				<span class="sr-only"
-					>{currentLocale === 'en' ? 'Back to templates' : 'テンプレート一覧に戻る'}</span
-				>
+				<span class="sr-only">{formCopy.actions.backToTemplates}</span>
 			</Button>
 			<h2 class="text-2xl font-bold">{m.add_subscription_title()}</h2>
 		</div>
@@ -668,7 +651,7 @@
 							/>
 						</span>
 						<span class="text-primary text-xs font-medium">
-							{currentLocale === 'en' ? 'Change' : '変更する'}
+							{formCopy.actions.change}
 						</span>
 					</span>
 				</summary>
@@ -680,7 +663,7 @@
 								<div class="space-y-3">
 									<div class="space-y-2">
 										<p class="text-muted-foreground text-xs">
-											{currentLocale === 'en' ? 'Recommended' : 'おすすめ'}
+											{formCopy.actions.recommended}
 										</p>
 										<div class="flex flex-wrap gap-2" role="radiogroup" aria-label={iconFieldLabel}>
 											{#each recommendedPresetIconOptions as icon (icon.value)}
@@ -708,7 +691,7 @@
 									</div>
 									<div class="space-y-2">
 										<p class="text-muted-foreground text-xs">
-											{currentLocale === 'en' ? 'Emoji' : '絵文字'}
+											{formCopy.actions.emoji}
 										</p>
 										<div class="flex flex-wrap gap-2" role="radiogroup" aria-label={iconFieldLabel}>
 											{#each iconOptions as icon (icon)}
@@ -731,7 +714,7 @@
 									</div>
 									<div class="space-y-2">
 										<p class="text-muted-foreground text-xs">
-											{currentLocale === 'en' ? 'Get from official website' : '公式サイトから取得'}
+											{formCopy.actions.getFromOfficialWebsite}
 										</p>
 										<Field {form} name="serviceUrl">
 											<Control>
@@ -751,7 +734,7 @@
 															disabled={!serviceFaviconUrl}
 															onclick={selectOfficialSiteIcon}
 														>
-															{currentLocale === 'en' ? 'Use this URL' : 'このURLから取得'}
+															{formCopy.actions.useThisUrl}
 														</Button>
 													</div>
 													<Description class="text-muted-foreground text-xs">

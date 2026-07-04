@@ -1,6 +1,7 @@
 import { json, type RequestHandler } from '@sveltejs/kit';
 import { and, desc, eq } from 'drizzle-orm';
 import { createAuth } from '$lib/auth';
+import { resolveRequestLocale, subscriptionIconUploadCopy } from '$lib/i18n-copy';
 import { listActiveEntitlementsForUser } from '$lib/server/entitlements';
 import { getCurrentPlan } from '$lib/server/plan';
 import { trackedSubscriptionTable } from '$lib/server/db/schema';
@@ -91,35 +92,36 @@ export const GET: RequestHandler = async ({ locals, params, request, url }) => {
 	});
 };
 
-export const POST: RequestHandler = async ({ locals, params, request, url }) => {
+export const POST: RequestHandler = async ({ locals, params, request, url, cookies }) => {
+	const copy = subscriptionIconUploadCopy[resolveRequestLocale(request, cookies)];
 	const subscriptionId = Number(params.id);
 	if (!Number.isFinite(subscriptionId)) {
-		return json({ error: 'Invalid subscription id' }, { status: 400 });
+		return json({ error: copy.invalidSubscriptionId }, { status: 400 });
 	}
 
 	const db = locals.db;
 	const bucket = locals.bucket;
 	if (!db || !bucket) {
-		return json({ error: 'Storage is not available' }, { status: 500 });
+		return json({ error: copy.storageUnavailable }, { status: 500 });
 	}
 
 	const userId = await getSessionUserId(db, request, url.origin);
 	if (!userId) {
-		return json({ error: 'ログインしてください。' }, { status: 401 });
+		return json({ error: copy.loginRequired }, { status: 401 });
 	}
 
 	const currentPlan = await resolveCurrentPlanForUser(db, userId);
 	if (!currentPlan.isPremium) {
-		return json({ error: '画像アップロードはPremiumで利用できます。' }, { status: 403 });
+		return json({ error: copy.premiumRequired }, { status: 403 });
 	}
 
 	const subscription = await getOwnedSubscription(db, userId, subscriptionId);
 	if (!subscription) {
-		return json({ error: 'Subscription not found' }, { status: 404 });
+		return json({ error: copy.subscriptionNotFound }, { status: 404 });
 	}
 
 	const formData = await request.formData();
-	const validation = await validateSubscriptionIconImageFile(formData.get('image'));
+	const validation = await validateSubscriptionIconImageFile(formData.get('image'), copy);
 	if (!validation.ok) {
 		return json({ error: validation.message }, { status: validation.status });
 	}
@@ -161,6 +163,6 @@ export const POST: RequestHandler = async ({ locals, params, request, url }) => 
 	} catch (error) {
 		await deleteSubscriptionIconImage(bucket, newImageKey);
 		console.error('Failed to upload subscription icon image', error);
-		return json({ error: 'Failed to upload image.' }, { status: 500 });
+		return json({ error: copy.uploadFailed }, { status: 500 });
 	}
 };

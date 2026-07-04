@@ -1,11 +1,24 @@
 import * as Sentry from '@sentry/sveltekit';
 import { env as publicEnv } from '$env/dynamic/public';
+import { resolveUserFacingLocale, sentryFeedbackCopy } from '$lib/i18n-copy';
 
 const clientDsn = publicEnv.PUBLIC_SENTRY_DSN || undefined;
 const currentPathname = window.location.pathname.replace(/^\/(?:ja|en)(?=\/|$)/, '') || '/';
 const normalizedPathname =
 	currentPathname.length > 1 ? currentPathname.replace(/\/+$/, '') : currentPathname;
 const isPublicDemo = normalizedPathname === '/demo';
+const cookieLocale = document.cookie
+	.split(';')
+	.map((part) => part.trim())
+	.find((part) => part.startsWith('subtrack_locale='))
+	?.split('=')[1];
+const feedbackCopy =
+	sentryFeedbackCopy[
+		resolveUserFacingLocale({
+			cookieLocale,
+			acceptLanguage: navigator.language
+		})
+	];
 
 if (clientDsn && !isPublicDemo) {
 	Sentry.init({
@@ -15,17 +28,17 @@ if (clientDsn && !isPublicDemo) {
 		integrations: [
 			Sentry.feedbackIntegration({
 				colorScheme: 'system',
-				buttonLabel: '不具合を報告',
-				formTitle: '不具合を報告',
-				submitButtonLabel: '送信する',
-				cancelButtonLabel: 'キャンセル',
-				nameLabel: 'お名前',
-				namePlaceholder: '例：山田 太郎',
-				emailLabel: 'メールアドレス',
+				buttonLabel: feedbackCopy.buttonLabel,
+				formTitle: feedbackCopy.formTitle,
+				submitButtonLabel: feedbackCopy.submitButtonLabel,
+				cancelButtonLabel: feedbackCopy.cancelButtonLabel,
+				nameLabel: feedbackCopy.nameLabel,
+				namePlaceholder: feedbackCopy.namePlaceholder,
+				emailLabel: feedbackCopy.emailLabel,
 				emailPlaceholder: 'example@example.com',
-				messageLabel: '詳細',
-				messagePlaceholder: '発生した問題や再現手順、期待する動作を教えてください。',
-				successMessageText: 'ご報告ありがとうございます。'
+				messageLabel: feedbackCopy.messageLabel,
+				messagePlaceholder: feedbackCopy.messagePlaceholder,
+				successMessageText: feedbackCopy.successMessageText
 			})
 		],
 		enableLogs: false

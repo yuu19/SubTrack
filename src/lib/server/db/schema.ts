@@ -89,6 +89,11 @@ export const user = sqliteTable('user', {
 	banExpires: integer('ban_expires', {
 		mode: 'timestamp_ms'
 	}),
+	twoFactorEnabled: integer('two_factor_enabled', {
+		mode: 'boolean'
+	})
+		.notNull()
+		.default(false),
 	stripeCustomerId: text('stripe_customer_id')
 });
 
@@ -177,6 +182,41 @@ export const verification = sqliteTable(
 	},
 	(table) => [index('verification_identifier_idx').on(table.identifier)]
 );
+
+export const twoFactor = sqliteTable(
+	'twoFactor',
+	{
+		id: text('id').primaryKey(),
+		secret: text('secret').notNull(),
+		backupCodes: text('backupCodes').notNull(),
+		userId: text('userId')
+			.notNull()
+			.references(() => user.id, { onDelete: 'cascade' })
+	},
+	(table) => [index('twoFactor_userId_idx').on(table.userId)]
+);
+
+export const adminLoginAttemptTable = sqliteTable('admin_login_attempt', {
+	userId: text('user_id')
+		.primaryKey()
+		.references(() => user.id, { onDelete: 'cascade' }),
+	email: text('email').notNull(),
+	failedCount: integer('failed_count').notNull().default(0),
+	lockedUntil: integer('locked_until', {
+		mode: 'timestamp_ms'
+	}),
+	updatedAt: integer('updated_at', {
+		mode: 'timestamp_ms'
+	})
+		.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+		.notNull()
+		.$onUpdate(() => new Date()),
+	createdAt: integer('created_at', {
+		mode: 'timestamp_ms'
+	})
+		.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+		.notNull()
+});
 
 export const subscription = sqliteTable('subscription', {
 	id: text('id').primaryKey(),

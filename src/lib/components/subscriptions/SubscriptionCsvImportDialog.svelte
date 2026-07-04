@@ -3,6 +3,11 @@
 	import Button from '$lib/components/ui/button/button.svelte';
 	import * as Dialog from '$lib/components/ui/dialog';
 	import Input from '$lib/components/ui/input/input.svelte';
+	import {
+		csvImportDialogCopy,
+		translateCsvImportError,
+		type CsvImportError
+	} from '$lib/i18n-copy';
 	import { formatCurrency, getCycleLabel, resolveLocale } from '$lib/locale';
 	import { getLocale } from '$lib/paraglide/runtime';
 	import type {
@@ -30,7 +35,7 @@
 		status: string;
 		canceledAt: string | null;
 		cancellationMethod: string | null;
-		errors: string[];
+		errors: CsvImportError[];
 	};
 
 	type ImportPreview = {
@@ -44,7 +49,7 @@
 			newCategories: string[];
 			newPaymentMethods: string[];
 		};
-		errors: string[];
+		errors: CsvImportError[];
 	};
 
 	type ImportResult = {
@@ -66,75 +71,8 @@
 	} = $props();
 
 	const currentLocale = $derived(resolveLocale(getLocale()));
-	const copy = $derived(
-		currentLocale === 'en'
-			? {
-					title: 'Import CSV',
-					description:
-						'Upload a SubTrack CSV, review the rows, then import them as new subscriptions.',
-					fileLabel: 'CSV file',
-					fileDescription: 'Only SubTrack export/template CSV files are supported.',
-					exampleTitle: 'Input example',
-					exampleDescription:
-						'The downloaded template only includes headers. Use values like this when filling rows.',
-					preview: 'Preview',
-					previewing: 'Previewing...',
-					import: 'Import',
-					importing: 'Importing...',
-					reset: 'Reset',
-					close: 'Close',
-					summary: 'Preview summary',
-					validRows: 'valid',
-					errorRows: 'errors',
-					activeRows: 'active',
-					canceledRows: 'canceled',
-					newItems: 'New management items',
-					noNewItems: 'No new category or payment method will be created.',
-					globalErrors: 'CSV errors',
-					rowErrors: 'Row errors',
-					previewRows: 'Rows to import',
-					noFile: 'Select a CSV file first.',
-					previewFailed: 'Failed to preview CSV.',
-					importFailed: 'Failed to import CSV.',
-					importSuccess: 'Imported {count} subscriptions.',
-					premiumRequired: 'CSV import is available with Premium.',
-					allRowsMustBeValid: 'Fix all errors before importing.',
-					unsupportedFile: 'Please select a CSV file.'
-				}
-			: {
-					title: 'CSVを取り込む',
-					description:
-						'SubTrack形式のCSVをアップロードし、内容を確認してから新しいサブスクとして追加します。',
-					fileLabel: 'CSVファイル',
-					fileDescription: 'SubTrackの書き出しCSVまたはテンプレートCSVのみ対応しています。',
-					exampleTitle: '入力例',
-					exampleDescription:
-						'ダウンロードするテンプレートはヘッダーのみです。行を追加するときは次のように入力します。',
-					preview: 'プレビュー',
-					previewing: '確認中...',
-					import: '取り込む',
-					importing: '取り込み中...',
-					reset: 'リセット',
-					close: '閉じる',
-					summary: 'プレビュー結果',
-					validRows: '正常',
-					errorRows: 'エラー',
-					activeRows: '登録中',
-					canceledRows: '解約済み',
-					newItems: '新しく作成する管理項目',
-					noNewItems: '新しいカテゴリー・支払い方法は作成されません。',
-					globalErrors: 'CSVエラー',
-					rowErrors: '行ごとのエラー',
-					previewRows: '取り込み予定の行',
-					noFile: 'CSVファイルを選択してください。',
-					previewFailed: 'CSVのプレビューに失敗しました。',
-					importFailed: 'CSVの取り込みに失敗しました。',
-					importSuccess: '{count}件のサブスクを取り込みました。',
-					premiumRequired: 'CSVインポートはPremiumで利用できます。',
-					allRowsMustBeValid: 'すべてのエラーを修正してから取り込んでください。',
-					unsupportedFile: 'CSVファイルを選択してください。'
-				}
-	);
+	const copy = $derived(csvImportDialogCopy[currentLocale]);
+	const formatCsvError = (error: CsvImportError) => translateCsvImportError(error, currentLocale);
 
 	let selectedFile = $state<File | null>(null);
 	let preview = $state<ImportPreview | null>(null);
@@ -153,8 +91,8 @@
 
 	const exampleCells = $derived([
 		'Netflix',
-		currentLocale === 'en' ? 'Video' : '動画',
-		currentLocale === 'en' ? 'Credit card' : 'クレジットカード',
+		copy.exampleCategory,
+		copy.examplePaymentMethod,
 		'monthly',
 		'1490',
 		'JPY',
@@ -250,7 +188,7 @@
 				return;
 			}
 			await onImported(payload);
-			toast.success(copy.importSuccess.replace('{count}', String(payload.imported)));
+			toast.success(copy.importSuccess(payload.imported));
 			open = false;
 			resetImport();
 		} catch (error) {
@@ -332,7 +270,8 @@
 					<div class="flex flex-wrap items-center justify-between gap-3">
 						<h3 class="text-sm font-semibold">{copy.summary}</h3>
 						<span class="text-muted-foreground text-xs">
-							{preview.summary.totalRows} rows
+							{preview.summary.totalRows}
+							{copy.rowsUnit}
 						</span>
 					</div>
 					<div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -361,10 +300,10 @@
 						{:else}
 							<div class="text-muted-foreground mt-2 space-y-1 text-xs">
 								{#if preview.summary.newCategories.length > 0}
-									<p>Category: {preview.summary.newCategories.join(', ')}</p>
+									<p>{copy.categoryLabel}: {preview.summary.newCategories.join(', ')}</p>
 								{/if}
 								{#if preview.summary.newPaymentMethods.length > 0}
-									<p>Payment method: {preview.summary.newPaymentMethods.join(', ')}</p>
+									<p>{copy.paymentMethodLabel}: {preview.summary.newPaymentMethods.join(', ')}</p>
 								{/if}
 							</div>
 						{/if}
@@ -378,7 +317,7 @@
 						<h3 class="text-sm font-semibold">{copy.globalErrors}</h3>
 						<ul class="mt-2 list-disc space-y-1 pl-5 text-sm">
 							{#each preview.errors as error (error)}
-								<li>{error}</li>
+								<li>{formatCsvError(error)}</li>
 							{/each}
 						</ul>
 					</section>
@@ -390,10 +329,10 @@
 						<div class="mt-2 max-h-44 space-y-2 overflow-y-auto">
 							{#each preview.rows.filter((row) => row.errors.length > 0) as row (row.line)}
 								<div class="bg-destructive/5 rounded-md p-2 text-sm">
-									<p class="font-medium">Line {row.line}: {row.serviceName || '-'}</p>
+									<p class="font-medium">{copy.lineLabel(row.line)}: {row.serviceName || '-'}</p>
 									<ul class="text-destructive mt-1 list-disc space-y-1 pl-5 text-xs">
 										{#each row.errors as error (error)}
-											<li>{error}</li>
+											<li>{formatCsvError(error)}</li>
 										{/each}
 									</ul>
 								</div>

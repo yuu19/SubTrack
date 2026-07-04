@@ -73,7 +73,7 @@ sw.addEventListener('push', (event) => {
 	} catch {
 		payload = {};
 	}
-	const title = typeof payload.title === 'string' ? payload.title : 'サブスク通知';
+	const title = typeof payload.title === 'string' ? payload.title : 'SubTrack';
 	const options: NotificationOptions = {
 		body: typeof payload.body === 'string' ? payload.body : undefined,
 		icon: typeof payload.icon === 'string' ? payload.icon : '/favicon.png',

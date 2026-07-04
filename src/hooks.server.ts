@@ -10,6 +10,15 @@ import { createAuth } from '$lib/auth';
 import { THEMES } from '$lib/constant';
 import { isPublicDemoPathname } from '$lib/server/public-routes';
 import {
+	clearExpiredAdminLock,
+	findAdminSignInUser,
+	hasValidAdminMfaCookie,
+	isAdminLoginLocked,
+	localizedAdminSecurityPath,
+	recordAdminSignInResult,
+	requireAdminExtraAccess
+} from '$lib/server/admin-security';
+import {
 	getLocalePrefix,
 	hasLocalePrefix,
 	hasUnsupportedTwoLetterLocalePrefix,
@@ -40,8 +49,68 @@ const handleAuth: Handle = async ({ event, resolve }) => {
 	const { db } = locals;
 	const auth = createAuth(db, { requestOrigin: event.url.origin });
 	const session = await auth.api.getSession({ headers: request.headers });
+	const adminExtraAccessResponse = requireAdminExtraAccess(event, canonicalPathname);
 
-	if (canonicalPathname.startsWith('/admin') && session?.user.role !== 'admin') {
+	if (adminExtraAccessResponse) {
+		return adminExtraAccessResponse;
+	}
+
+	const isEmailPasswordSignIn =
+		canonicalPathname === '/api/auth/sign-in/email' && request.method === 'POST';
+	const adminSignInUser = isEmailPasswordSignIn
+		? await findAdminSignInUser(db, request.clone())
+		: null;
+
+	if (adminSignInUser) {
+		await clearExpiredAdminLock(db, adminSignInUser);
+		if (isAdminLoginLocked(adminSignInUser)) {
+			return new Response('Admin account is temporarily locked', { status: 403 });
+		}
+	}
+
+	if (canonicalPathname.startsWith('/api/auth/admin')) {
+		if (session?.user.role !== 'admin') {
+			return new Response('Forbidden', { status: 403 });
+		}
+
+		const adminRecord = await db.query.user.findFirst({
+			columns: {
+				twoFactorEnabled: true
+			},
+			where: (user, { eq }) => eq(user.id, session.user.id)
+		});
+
+		if (!adminRecord?.twoFactorEnabled) {
+			return new Response('Admin two-factor setup is required', { status: 403 });
+		}
+
+		const hasAdminMfa = await hasValidAdminMfaCookie(event.cookies, session.user.id);
+		if (!hasAdminMfa) {
+			return new Response('Admin two-factor verification is required', { status: 403 });
+		}
+	}
+
+	if (canonicalPathname.startsWith('/admin') && canonicalPathname !== '/admin/security') {
+		if (session?.user.role !== 'admin') {
+			redirect(303, localizedHomePath(url.pathname));
+		}
+
+		const adminRecord = await db.query.user.findFirst({
+			columns: {
+				twoFactorEnabled: true
+			},
+			where: (user, { eq }) => eq(user.id, session.user.id)
+		});
+
+		if (!adminRecord?.twoFactorEnabled) {
+			redirect(303, localizedAdminSecurityPath(url.pathname));
+		}
+
+		const hasAdminMfa = await hasValidAdminMfaCookie(event.cookies, session.user.id);
+		if (!hasAdminMfa) {
+			redirect(303, localizedAdminSecurityPath(url.pathname, true));
+		}
+	} else if (canonicalPathname.startsWith('/admin') && session && session.user.role !== 'admin') {
 		redirect(303, localizedHomePath(url.pathname));
 	}
 
@@ -53,7 +122,13 @@ const handleAuth: Handle = async ({ event, resolve }) => {
 		redirect(303, localizedHomePath(url.pathname));
 	}
 
-	return svelteKitHandler({ event, resolve, auth, building });
+	const response = await svelteKitHandler({ event, resolve, auth, building });
+
+	if (adminSignInUser) {
+		await recordAdminSignInResult(db, adminSignInUser, response.ok);
+	}
+
+	return response;
 };
 
 export const handleDb: Handle = async ({ event, resolve }) => {

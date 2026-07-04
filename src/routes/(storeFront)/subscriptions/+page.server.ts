@@ -1,7 +1,8 @@
 import type { Actions, PageServerLoad } from './$types';
 import { fail, superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
-import { subscriptionSchema } from '$lib/formSchema';
+import { createSubscriptionSchema } from '$lib/formSchema';
+import { resolveRequestLocale, subscriptionActionCopy } from '$lib/i18n-copy';
 import { pushSubscriptionTable, trackedSubscriptionTable } from '$lib/server/db/schema';
 import { and, desc, eq } from 'drizzle-orm';
 import { createAuth } from '$lib/auth';
@@ -133,8 +134,9 @@ const resolveUserNotificationConfig = async (
 	};
 };
 
-export const load: PageServerLoad = async ({ locals, request }) => {
-	const form = await superValidate(zod4(subscriptionSchema));
+export const load: PageServerLoad = async ({ locals, request, cookies }) => {
+	const locale = resolveRequestLocale(request, cookies);
+	const form = await superValidate(zod4(createSubscriptionSchema(locale)));
 	if (!form.data.select) {
 		form.data.select = 'monthly';
 	}
@@ -233,15 +235,17 @@ export const load: PageServerLoad = async ({ locals, request }) => {
 };
 
 export const actions: Actions = {
-	create: async ({ request, locals }) => {
-		const form = await superValidate(request, zod4(subscriptionSchema));
+	create: async ({ request, locals, cookies }) => {
+		const locale = resolveRequestLocale(request, cookies);
+		const copy = subscriptionActionCopy[locale];
+		const form = await superValidate(request, zod4(createSubscriptionSchema(locale)));
 		if (!form.valid) {
 			return fail(400, { form });
 		}
 
 		const db = locals.db;
 		if (!db) {
-			return fail(500, { form, error: 'Database not available' });
+			return fail(500, { form, error: copy.databaseUnavailable });
 		}
 
 		const auth = createAuth(db);
@@ -249,12 +253,12 @@ export const actions: Actions = {
 		const userId = session?.user.id;
 
 		if (!userId) {
-			return fail(401, { form, error: 'ログインしてください。' });
+			return fail(401, { form, error: copy.loginRequired });
 		}
 
 		try {
 			if (form.data.iconType === 'image') {
-				return fail(400, { form, error: '画像は作成後に編集画面から設定してください。' });
+				return fail(400, { form, error: copy.imageAfterCreate });
 			}
 
 			const { defaultNotifyDaysBefore, timeZone } = await resolveUserNotificationConfig(db, userId);
@@ -265,7 +269,7 @@ export const actions: Actions = {
 			if (!currentPlan.isPremium && (await hasReachedFreeActiveLimit(db, userId))) {
 				return fail(403, {
 					form,
-					error: '無料プランはサブスクリプションを最大5件まで登録できます。'
+					error: copy.freeLimitReached
 				});
 			}
 
@@ -306,31 +310,33 @@ export const actions: Actions = {
 				...buildCancellationValues(form.data)
 			});
 
-			form.message = { type: 'success', text: 'Subscription saved.' };
+			form.message = { type: 'success', text: copy.subscriptionSaved };
 
 			const subscriptions = await fetchSubscriptions(db, userId);
 
 			return { form, subscriptions };
 		} catch (error) {
 			console.error('Failed to save subscription', error);
-			return fail(500, { form, error: 'Failed to save subscription' });
+			return fail(500, { form, error: copy.saveFailed });
 		}
 	},
-	update: async ({ request, locals }) => {
+	update: async ({ request, locals, cookies }) => {
+		const locale = resolveRequestLocale(request, cookies);
+		const copy = subscriptionActionCopy[locale];
 		const formData = await request.formData();
-		const form = await superValidate(formData, zod4(subscriptionSchema));
+		const form = await superValidate(formData, zod4(createSubscriptionSchema(locale)));
 		if (!form.valid) {
 			return fail(400, { form });
 		}
 
 		const id = Number(formData.get('id'));
 		if (!Number.isFinite(id)) {
-			return fail(400, { form, error: 'Invalid subscription id' });
+			return fail(400, { form, error: copy.invalidSubscriptionId });
 		}
 
 		const db = locals.db;
 		if (!db) {
-			return fail(500, { form, error: 'Database not available' });
+			return fail(500, { form, error: copy.databaseUnavailable });
 		}
 
 		const auth = createAuth(db);
@@ -338,7 +344,7 @@ export const actions: Actions = {
 		const userId = session?.user.id;
 
 		if (!userId) {
-			return fail(401, { form, error: 'ログインしてください。' });
+			return fail(401, { form, error: copy.loginRequired });
 		}
 
 		try {
@@ -348,7 +354,7 @@ export const actions: Actions = {
 			});
 
 			if (!existingSubscription) {
-				return fail(404, { form, error: 'Subscription not found' });
+				return fail(404, { form, error: copy.subscriptionNotFound });
 			}
 
 			if (
@@ -356,7 +362,7 @@ export const actions: Actions = {
 				(existingSubscription.iconType !== 'image' ||
 					existingSubscription.iconValue !== form.data.iconValue)
 			) {
-				return fail(400, { form, error: '画像はアップロード操作から設定してください。' });
+				return fail(400, { form, error: copy.imageFromUploadOnly });
 			}
 
 			const { defaultNotifyDaysBefore, timeZone } = await resolveUserNotificationConfig(db, userId);
@@ -403,19 +409,20 @@ export const actions: Actions = {
 			return { form, subscriptions };
 		} catch (error) {
 			console.error('Failed to update subscription', error);
-			return fail(500, { form, error: 'Failed to update subscription' });
+			return fail(500, { form, error: copy.updateFailed });
 		}
 	},
-	cancel: async ({ request, locals }) => {
+	cancel: async ({ request, locals, cookies }) => {
+		const copy = subscriptionActionCopy[resolveRequestLocale(request, cookies)];
 		const formData = await request.formData();
 		const id = Number(formData.get('id'));
 		if (!Number.isFinite(id)) {
-			return fail(400, { error: 'Invalid subscription id' });
+			return fail(400, { error: copy.invalidSubscriptionId });
 		}
 
 		const db = locals.db;
 		if (!db) {
-			return fail(500, { error: 'Database not available' });
+			return fail(500, { error: copy.databaseUnavailable });
 		}
 
 		const auth = createAuth(db);
@@ -423,7 +430,7 @@ export const actions: Actions = {
 		const userId = session?.user.id;
 
 		if (!userId) {
-			return fail(401, { error: 'ログインしてください。' });
+			return fail(401, { error: copy.loginRequired });
 		}
 
 		try {
@@ -441,19 +448,20 @@ export const actions: Actions = {
 			return { subscriptions };
 		} catch (error) {
 			console.error('Failed to cancel subscription', error);
-			return fail(500, { error: 'Failed to cancel subscription' });
+			return fail(500, { error: copy.cancelFailed });
 		}
 	},
-	reactivate: async ({ request, locals }) => {
+	reactivate: async ({ request, locals, cookies }) => {
+		const copy = subscriptionActionCopy[resolveRequestLocale(request, cookies)];
 		const formData = await request.formData();
 		const id = Number(formData.get('id'));
 		if (!Number.isFinite(id)) {
-			return fail(400, { error: 'Invalid subscription id' });
+			return fail(400, { error: copy.invalidSubscriptionId });
 		}
 
 		const db = locals.db;
 		if (!db) {
-			return fail(500, { error: 'Database not available' });
+			return fail(500, { error: copy.databaseUnavailable });
 		}
 
 		const auth = createAuth(db);
@@ -461,14 +469,14 @@ export const actions: Actions = {
 		const userId = session?.user.id;
 
 		if (!userId) {
-			return fail(401, { error: 'ログインしてください。' });
+			return fail(401, { error: copy.loginRequired });
 		}
 
 		try {
 			const currentPlan = await resolveCurrentPlanForUser(db, userId);
 			if (!currentPlan.isPremium && (await hasReachedFreeActiveLimit(db, userId, id))) {
 				return fail(403, {
-					error: '無料プランは登録中のサブスクリプションを最大5件まで管理できます。'
+					error: copy.freeLimitReached
 				});
 			}
 
@@ -478,7 +486,7 @@ export const actions: Actions = {
 			});
 
 			if (!subscription) {
-				return fail(404, { error: 'Subscription not found' });
+				return fail(404, { error: copy.subscriptionNotFound });
 			}
 
 			const { nextBillingAt, daysUntilNextBilling } = computeNextBilling(
@@ -505,19 +513,20 @@ export const actions: Actions = {
 			return { subscriptions };
 		} catch (error) {
 			console.error('Failed to reactivate subscription', error);
-			return fail(500, { error: 'Failed to reactivate subscription' });
+			return fail(500, { error: copy.reactivateFailed });
 		}
 	},
-	delete: async ({ request, locals }) => {
+	delete: async ({ request, locals, cookies }) => {
+		const copy = subscriptionActionCopy[resolveRequestLocale(request, cookies)];
 		const formData = await request.formData();
 		const id = Number(formData.get('id'));
 		if (!Number.isFinite(id)) {
-			return fail(400, { error: 'Invalid subscription id' });
+			return fail(400, { error: copy.invalidSubscriptionId });
 		}
 
 		const db = locals.db;
 		if (!db) {
-			return fail(500, { error: 'Database not available' });
+			return fail(500, { error: copy.databaseUnavailable });
 		}
 
 		const auth = createAuth(db);
@@ -525,7 +534,7 @@ export const actions: Actions = {
 		const userId = session?.user.id;
 
 		if (!userId) {
-			return fail(401, { error: 'ログインしてください。' });
+			return fail(401, { error: copy.loginRequired });
 		}
 
 		try {
@@ -548,7 +557,7 @@ export const actions: Actions = {
 			return { subscriptions };
 		} catch (error) {
 			console.error('Failed to delete subscription', error);
-			return fail(500, { error: 'Failed to delete subscription' });
+			return fail(500, { error: copy.deleteFailed });
 		}
 	}
 };

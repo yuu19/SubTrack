@@ -21,6 +21,7 @@
 		getSubscriptionStatusLabel,
 		resolveLocale
 	} from '$lib/locale';
+	import { settingsBillingCopy, settingsPlanBillingCopy } from '$lib/i18n-copy';
 	import { localizeInternalHref } from '$lib/locale-routing';
 	import { m } from '$lib/paraglide/messages.js';
 	import { getLocale } from '$lib/paraglide/runtime';
@@ -45,6 +46,7 @@
 		page.url;
 		return resolveLocale(getLocale());
 	});
+	const settingsCopy = $derived(settingsBillingCopy[currentLocale]);
 	let pushSetupPromptKey = $state(0);
 	let pushSubscribedOverride = $state<boolean | null>(null);
 	const pushGuideHref = $derived(localizeInternalHref(resolve('/push'), currentLocale));
@@ -96,75 +98,7 @@
 		'flex flex-col gap-1 px-4 py-3 sm:px-5 md:flex-row md:items-center md:justify-between md:gap-4';
 	const planDetailValueClass = 'break-words font-medium md:text-right';
 	const responsiveButtonClass = 'h-auto min-h-9 whitespace-normal py-2 text-center leading-snug';
-	const billingCopy = $derived(
-		currentLocale === 'en'
-			? {
-					recommended: 'Recommended',
-					lifetimeTitle: 'Premium Lifetime',
-					lifetimePrice: '$19',
-					lifetimeCycle: 'One-time purchase',
-					lifetimeDescription: 'Pay once and keep Premium features without another monthly bill.',
-					lifetimeCta: 'Buy lifetime for $19',
-					monthlyTitle: 'Premium Monthly',
-					monthlyPrice: '$1.99',
-					monthlyCycle: 'per month',
-					monthlyDescription: 'Use Premium with monthly billing. Good for trying a lighter start.',
-					monthlyCta: 'Start monthly Premium',
-					trialNote: 'A 7-day free trial may apply on the first upgrade.',
-					checkoutNote: 'Local currency and final pricing may be shown at checkout.',
-					monthlyToLifetimeTitle: 'Switch to Premium Lifetime',
-					monthlyToLifetimeDescription:
-						'You can purchase Lifetime while your monthly plan is active. After purchase, open plan management and cancel the monthly plan before the next renewal.',
-					monthlyToLifetimePendingDescription:
-						'Your monthly plan is scheduled to end. Purchase Lifetime if you want to keep Premium after that date without recurring billing.',
-					lifetimeWithMonthlyTitle: 'Lifetime purchased. Monthly plan is still active.',
-					lifetimeWithMonthlyDescription:
-						'Open plan management and cancel the monthly plan before the next renewal if you do not want recurring billing to continue.',
-					manageMonthlyCta: 'Open monthly plan management',
-					featuresTitle: 'Included with Premium',
-					features: [
-						'Unlimited subscription entries',
-						'CSV export and import',
-						'Custom categories and payment methods',
-						'Subscription image uploads'
-					],
-					successToast: 'Purchase completed. Premium status is being updated.',
-					cancelToast: 'Checkout was canceled.'
-				}
-			: {
-					recommended: 'おすすめ',
-					lifetimeTitle: 'Premium 買い切り',
-					lifetimePrice: '3,000円',
-					lifetimeCycle: '一度だけのお支払い',
-					lifetimeDescription: '月額を増やさず、Premium機能をそのまま使い続けられます。',
-					lifetimeCta: '3,000円で買い切る',
-					monthlyTitle: 'Premium 月額',
-					monthlyPrice: '300円',
-					monthlyCycle: '月額',
-					monthlyDescription: '月ごとの支払いでPremiumを利用できます。まず試したい方向けです。',
-					monthlyCta: '月額Premiumを始める',
-					trialNote: '初回アップグレード時は7日間無料の場合があります。',
-					checkoutNote: '購入画面で最終金額や外貨表示が案内される場合があります。',
-					monthlyToLifetimeTitle: '買い切りに切り替える',
-					monthlyToLifetimeDescription:
-						'月額プランが有効な間でも買い切りを購入できます。購入後、次回更新前にプラン管理画面から月額プランをキャンセルしてください。',
-					monthlyToLifetimePendingDescription:
-						'月額プランは解約予定です。期限後も Premium を使う場合は、継続課金なしの買い切りを購入できます。',
-					lifetimeWithMonthlyTitle: '買い切り購入済みです。月額プランはまだ有効です。',
-					lifetimeWithMonthlyDescription:
-						'月額課金を続けない場合は、次回更新前に管理画面から月額プランをキャンセルしてください。',
-					manageMonthlyCta: '月額プランの管理を開く',
-					featuresTitle: 'Premiumで使えること',
-					features: [
-						'サブスク登録数の上限解除',
-						'CSVの書き出し・取り込み',
-						'カスタムカテゴリー・支払い方法',
-						'サブスク画像のアップロード'
-					],
-					successToast: '購入が完了しました。Premium状態を更新しています。',
-					cancelToast: '購入手続きがキャンセルされました。'
-				}
-	);
+	const billingCopy = $derived(settingsPlanBillingCopy[currentLocale]);
 
 	let isPremiumModalOpen = $state(false);
 	let isUpgrading = $state(false);
@@ -177,12 +111,8 @@
 		paymentMethods = page.data.paymentMethods ?? [];
 	});
 
-	const managementTitle = $derived(currentLocale === 'en' ? 'Management items' : '管理項目');
-	const managementDescription = $derived(
-		currentLocale === 'en'
-			? 'Manage categories and payment methods used by subscriptions.'
-			: 'サブスクに紐付けるカテゴリーと支払い方法を管理します。'
-	);
+	const managementTitle = $derived(settingsCopy.managementTitle);
+	const managementDescription = $derived(settingsCopy.managementDescription);
 
 	const handleManagementItemsChange = (items: {
 		categories: Category[];
@@ -753,7 +683,7 @@
 							class="text-muted-foreground h-auto p-0 text-xs underline-offset-4"
 							href={localizeInternalHref(resolve('/commercial-transactions'), currentLocale)}
 						>
-							特定商取引法に基づく表記
+							{settingsCopy.commerceLink}
 						</Button>
 						<Button
 							variant="link"

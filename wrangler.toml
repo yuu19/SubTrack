@@ -6,7 +6,12 @@ compatibility_flags = ["nodejs_compat"]
 assets = { binding = "ASSETS", directory = ".svelte-kit/cloudflare" }
 
 [vars]
+BETTER_AUTH_URL = "https://subtracknotify.com"
 RESEND_FROM = "SubTrack <no-reply@subtracknotify.com>"
+VAPID_SUBJECT = "mailto:no-reply@subtracknotify.com"
+ADMIN_ALLOWED_IPS = ""
+ADMIN_LOGIN_LOCK_MINUTES = "60"
+ADMIN_MFA_MAX_AGE_MINUTES = "720"
 
 [triggers]
 # Cron format is UTC.

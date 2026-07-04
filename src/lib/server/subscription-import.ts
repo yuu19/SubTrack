@@ -19,6 +19,7 @@ import { computeNextBilling } from '$lib/server/subscriptions';
 import { SUBSCRIPTION_EXPORT_HEADERS } from '$lib/server/subscription-export';
 import { getFallbackSubscriptionColor } from '$lib/subscription-colors';
 import { defaultSubscriptionIconType, defaultSubscriptionIconValue } from '$lib/subscription-icons';
+import type { CsvImportError } from '$lib/i18n-copy';
 
 type Db = NonNullable<App.Locals['db']>;
 
@@ -39,7 +40,7 @@ export type SubscriptionImportPreviewRow = {
 	status: TrackedSubscriptionStatus | '';
 	canceledAt: string | null;
 	cancellationMethod: CancellationMethod | null;
-	errors: string[];
+	errors: CsvImportError[];
 };
 
 export type SubscriptionImportPreview = {
@@ -54,7 +55,7 @@ export type SubscriptionImportPreview = {
 		newCategories: string[];
 		newPaymentMethods: string[];
 	};
-	errors: string[];
+	errors: CsvImportError[];
 };
 
 export type ParsedSubscriptionImportRow = SubscriptionImportPreviewRow & {
@@ -71,7 +72,7 @@ type CsvParseResult = {
 		line: number;
 		cells: string[];
 	}[];
-	errors: string[];
+	errors: CsvImportError[];
 };
 
 const HEADER_SET = new Set<string>(SUBSCRIPTION_EXPORT_HEADERS);
@@ -84,7 +85,7 @@ const normalizeCell = (value: string | undefined) => (value ?? '').trim();
 const parseCsv = (input: string): CsvParseResult => {
 	const text = input.replace(/^\uFEFF/, '');
 	const rows: string[][] = [];
-	const errors: string[] = [];
+	const errors: CsvImportError[] = [];
 	let current = '';
 	let row: string[] = [];
 	let inQuotes = false;
@@ -127,7 +128,7 @@ const parseCsv = (input: string): CsvParseResult => {
 	}
 
 	if (inQuotes) {
-		errors.push('CSVの引用符が閉じられていません。');
+		errors.push({ code: 'csv_unclosed_quote' });
 	}
 
 	if (current.length > 0 || row.length > 0) {
@@ -146,26 +147,29 @@ const parseCsv = (input: string): CsvParseResult => {
 };
 
 const validateHeaders = (headers: string[]) => {
-	const errors: string[] = [];
+	const errors: CsvImportError[] = [];
 	const expected = [...SUBSCRIPTION_EXPORT_HEADERS];
 
 	if (headers.length === 0) {
-		return ['CSVヘッダーがありません。'];
+		return [{ code: 'csv_missing_header' }] satisfies CsvImportError[];
 	}
 
 	if (headers.length !== expected.length) {
-		errors.push(`CSVヘッダーの列数が違います。${expected.length}列にしてください。`);
+		errors.push({ code: 'csv_header_count', params: { expected: expected.length } });
 	}
 
 	for (const [index, expectedHeader] of expected.entries()) {
 		if (headers[index] !== expectedHeader) {
-			errors.push(`列${index + 1}は ${expectedHeader} にしてください。`);
+			errors.push({
+				code: 'csv_header_mismatch',
+				params: { index: index + 1, expected: expectedHeader }
+			});
 		}
 	}
 
 	const unknownHeaders = headers.filter((header) => !HEADER_SET.has(header));
 	if (unknownHeaders.length > 0) {
-		errors.push(`未対応の列があります: ${unknownHeaders.join(', ')}`);
+		errors.push({ code: 'csv_unknown_headers', params: { headers: unknownHeaders } });
 	}
 
 	return errors;
@@ -177,41 +181,45 @@ const isDateOnly = (value: string) => {
 	return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
 };
 
-const normalizeCanceledAt = (value: string, errors: string[]) => {
+const normalizeCanceledAt = (value: string, errors: CsvImportError[]) => {
 	if (!value) return null;
 	const normalized = isDateOnly(value) ? `${value}T00:00:00.000Z` : value;
 	const date = new Date(normalized);
 	if (Number.isNaN(date.getTime())) {
-		errors.push('canceled_at は有効な日付にしてください。');
+		errors.push({ code: 'canceled_at_invalid' });
 		return null;
 	}
 	return date.toISOString();
 };
 
-const parseAmount = (value: string, errors: string[]) => {
+const parseAmount = (value: string, errors: CsvImportError[]) => {
 	if (!value) {
-		errors.push('amount は必須です。');
+		errors.push({ code: 'amount_required' });
 		return null;
 	}
 	const amount = Number(value);
 	if (!Number.isFinite(amount)) {
-		errors.push('amount は数値で入力してください。');
+		errors.push({ code: 'amount_invalid_number' });
 		return null;
 	}
 	if (amount < 0 || amount > 1_000_000) {
-		errors.push('amount は0以上1000000以下にしてください。');
+		errors.push({ code: 'amount_out_of_range' });
 	}
 	if (!hasAtMostTwoDecimalPlaces(amount)) {
-		errors.push('amount は小数2桁までにしてください。');
+		errors.push({ code: 'amount_too_many_decimals' });
 	}
 	return amount;
 };
 
-const parseNotifyDays = (value: string, defaultNotifyDaysBefore: number, errors: string[]) => {
+const parseNotifyDays = (
+	value: string,
+	defaultNotifyDaysBefore: number,
+	errors: CsvImportError[]
+) => {
 	if (!value) return defaultNotifyDaysBefore;
 	const parsed = Number(value);
 	if (!Number.isInteger(parsed) || parsed < 0 || parsed > 365) {
-		errors.push('notify_days_before は0から365の整数にしてください。');
+		errors.push({ code: 'notify_days_invalid' });
 		return null;
 	}
 	return parsed;
@@ -224,10 +232,10 @@ const parseRow = (
 	defaultNotifyDaysBefore: number
 ): SubscriptionImportPreviewRow => {
 	const values = new Map<string, string>();
-	const rowErrors: string[] = [];
+	const rowErrors: CsvImportError[] = [];
 
 	if (cells.length !== headers.length) {
-		rowErrors.push(`列数が違います。${headers.length}列にしてください。`);
+		rowErrors.push({ code: 'row_column_count', params: { expected: headers.length } });
 	}
 
 	for (const [index, header] of headers.entries()) {
@@ -235,23 +243,22 @@ const parseRow = (
 	}
 
 	const serviceName = values.get('service_name') ?? '';
-	if (!serviceName) rowErrors.push('service_name は必須です。');
-	if (serviceName.length > 120) rowErrors.push('service_name は120文字以内にしてください。');
+	if (!serviceName) rowErrors.push({ code: 'service_name_required' });
+	if (serviceName.length > 120) rowErrors.push({ code: 'service_name_too_long' });
 
 	const categoryName = values.get('category') ?? '';
-	if (categoryName.length > 40) rowErrors.push('category は40文字以内にしてください。');
+	if (categoryName.length > 40) rowErrors.push({ code: 'category_too_long' });
 
 	const paymentMethodName = values.get('payment_method') ?? '';
 	if (paymentMethodName.length > 40) {
-		rowErrors.push('payment_method は40文字以内にしてください。');
+		rowErrors.push({ code: 'payment_method_too_long' });
 	}
 
 	const cycleValue = values.get('billing_cycle') ?? '';
 	const cycle = IMPORT_CYCLES.includes(cycleValue as ImportCycle)
 		? (cycleValue as ImportCycle)
 		: '';
-	if (!cycle)
-		rowErrors.push('billing_cycle は monthly / quarterly / yearly のいずれかにしてください。');
+	if (!cycle) rowErrors.push({ code: 'billing_cycle_invalid' });
 
 	const amount = parseAmount(values.get('amount') ?? '', rowErrors);
 
@@ -259,13 +266,13 @@ const parseRow = (
 	const currency = SUPPORTED_CURRENCIES.includes(currencyValue as SubscriptionCurrency)
 		? (currencyValue as SubscriptionCurrency)
 		: '';
-	if (!currency) rowErrors.push('currency は JPY / USD / EUR / GBP のいずれかにしてください。');
+	if (!currency) rowErrors.push({ code: 'currency_invalid' });
 
 	const firstPaymentDate = values.get('first_payment_date') ?? '';
 	if (!firstPaymentDate) {
-		rowErrors.push('first_payment_date は必須です。');
+		rowErrors.push({ code: 'first_payment_date_required' });
 	} else if (!isDateOnly(firstPaymentDate)) {
-		rowErrors.push('first_payment_date は YYYY-MM-DD 形式にしてください。');
+		rowErrors.push({ code: 'first_payment_date_invalid' });
 	}
 
 	const notifyDaysBefore = parseNotifyDays(
@@ -278,7 +285,7 @@ const parseRow = (
 	const status = TRACKED_SUBSCRIPTION_STATUSES.includes(statusValue as TrackedSubscriptionStatus)
 		? (statusValue as TrackedSubscriptionStatus)
 		: '';
-	if (!status) rowErrors.push('status は active / canceled のいずれかにしてください。');
+	if (!status) rowErrors.push({ code: 'status_invalid' });
 
 	const canceledAt = normalizeCanceledAt(values.get('canceled_at') ?? '', rowErrors);
 	const cancellationMethodValue = values.get('cancellation_method') ?? '';
@@ -288,7 +295,7 @@ const parseRow = (
 		? (cancellationMethodValue as CancellationMethod)
 		: null;
 	if (cancellationMethodValue && !cancellationMethod) {
-		rowErrors.push('cancellation_method が未対応です。');
+		rowErrors.push({ code: 'cancellation_method_invalid' });
 	}
 
 	return {
@@ -333,7 +340,7 @@ export const parseSubscriptionImportCsv = (
 			: [];
 
 	if (rows.length === 0 && allErrors.length === 0) {
-		allErrors.push('取り込む行がありません。');
+		allErrors.push({ code: 'no_rows' });
 	}
 
 	const validRows = rows.filter(isParsedRow);

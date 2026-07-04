@@ -1,5 +1,7 @@
 import { Resend } from 'resend';
 import { dev } from '$app/environment';
+import { DEFAULT_LOCALE, type AppLocale } from '$lib/constant';
+import { subscriptionEmailCopy } from '$lib/i18n-copy';
 
 const resendApiKey = process.env.RESEND_API_KEY;
 const configuredFrom = process.env.RESEND_FROM?.trim();
@@ -46,6 +48,7 @@ export type SendTrialEndingInput = {
 	endDate: string;
 	manageUrl: string;
 	planName?: string | null;
+	locale?: AppLocale;
 };
 
 export type SendSubscriptionReminderInput = {
@@ -54,6 +57,7 @@ export type SendSubscriptionReminderInput = {
 	notifyDays: number;
 	billingDate: string;
 	manageUrl?: string | null;
+	locale?: AppLocale;
 };
 
 export async function sendVerificationEmail({ user, url }: SendVerificationInput) {
@@ -127,7 +131,8 @@ export async function sendTrialEndingEmail({
 	user,
 	endDate,
 	manageUrl,
-	planName
+	planName,
+	locale = DEFAULT_LOCALE
 }: SendTrialEndingInput) {
 	if (!resend) {
 		console.warn('[email] RESEND_API_KEY is not set; skipping trial ending email');
@@ -135,22 +140,16 @@ export async function sendTrialEndingEmail({
 	}
 
 	const recipientName = user.name ?? user.email.split('@')[0];
-	const serviceName = planName ?? 'ご利用中のプラン';
+	const copy = subscriptionEmailCopy[locale];
+	const serviceName = planName ?? copy.trialPlanFallback;
 	const envelope = resolveEnvelope(user.email);
+	const messageInput = { recipientName, serviceName, endDate, manageUrl };
 
 	await resend.emails.send({
 		...envelope,
-		subject: `【重要】${serviceName} 自動課金のご案内（3日後）`,
-		html: `
-			<p>${recipientName} 様</p>
-			<p>${serviceName}をご利用いただきありがとうございます。</p>
-			<p>${endDate} より、ご登録プランの自動課金が開始されます。</p>
-			<p>課金を希望されない場合は、終了日までにプランの変更・解約をお願いいたします。</p>
-			<p>▼ プラン管理</p>
-			<p><a href="${manageUrl}">${manageUrl}</a></p>
-			<p>※ 本メールと行き違いで手続き済みの場合はご了承ください。</p>
-		`,
-		text: `${recipientName} 様\n\n${serviceName}をご利用いただきありがとうございます。\n\n${endDate} より、\nご登録プランの自動課金が開始されます。\n\n課金を希望されない場合は、\n終了日までにプランの変更・解約をお願いいたします。\n\n▼ プラン管理\n${manageUrl}\n\n※ 本メールと行き違いで手続き済みの場合はご了承ください。`
+		subject: copy.trialSubject(serviceName),
+		html: copy.trialHtml(messageInput),
+		text: copy.trialText(messageInput)
 	});
 }
 
@@ -159,7 +158,8 @@ export async function sendSubscriptionReminderEmail({
 	serviceName,
 	notifyDays,
 	billingDate,
-	manageUrl
+	manageUrl,
+	locale = DEFAULT_LOCALE
 }: SendSubscriptionReminderInput) {
 	if (!resend) {
 		console.warn('[email] RESEND_API_KEY is not set; skipping subscription reminder email');
@@ -167,28 +167,29 @@ export async function sendSubscriptionReminderEmail({
 	}
 
 	const recipientName = user.name ?? user.email.split('@')[0];
-	const when =
-		notifyDays === 0 ? '本日が支払い日です。' : `支払いまであと${notifyDays}日です。`;
+	const copy = subscriptionEmailCopy[locale];
+	const when = copy.reminderWhen(notifyDays);
 	const envelope = resolveEnvelope(user.email);
-	const subject =
-		notifyDays === 0
-			? `【支払い当日】${serviceName}のサブスク通知`
-			: `【支払い通知】${serviceName}の支払いまであと${notifyDays}日`;
+	const subject = copy.reminderSubject(serviceName, notifyDays);
 
 	const manageLine = manageUrl
-		? `<p>▼ サブスク一覧</p><p><a href="${manageUrl}">${manageUrl}</a></p>`
+		? `<p>${copy.reminderListLabel}</p><p><a href="${manageUrl}">${manageUrl}</a></p>`
 		: '';
 
 	await resend.emails.send({
 		...envelope,
 		subject,
 		html: `
-			<p>${recipientName} 様</p>
-			<p>${serviceName}の支払いについてのお知らせです。</p>
+			<p>${locale === 'ja' ? `${recipientName} 様` : `Hi ${recipientName},`}</p>
+			<p>${copy.reminderIntro(serviceName)}</p>
 			<p>${when}</p>
-			<p>支払日: ${billingDate}</p>
+			<p>${copy.reminderDateLabel}: ${billingDate}</p>
 			${manageLine}
 		`,
-		text: `${recipientName} 様\n\n${serviceName}の支払いについてのお知らせです。\n${when}\n支払日: ${billingDate}\n${manageUrl ? `\\n▼ サブスク一覧\\n${manageUrl}` : ''}`
+		text: `${locale === 'ja' ? `${recipientName} 様` : `Hi ${recipientName},`}\n\n${copy.reminderIntro(
+			serviceName
+		)}\n${when}\n${copy.reminderDateLabel}: ${billingDate}\n${
+			manageUrl ? `\n${copy.reminderListLabel}\n${manageUrl}` : ''
+		}`
 	});
 }

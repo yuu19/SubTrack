@@ -4,16 +4,22 @@
 	import { resolveLocale } from '$lib/locale';
 	import { localizeInternalHref } from '$lib/locale-routing';
 	import { getLocale } from '$lib/paraglide/runtime';
-	import { Home, User } from 'lucide-svelte';
+	import { Home, ShieldCheck, User } from 'lucide-svelte';
 	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
 
 	const currentLocale = $derived(resolveLocale(getLocale()));
-	const localizedHref = (href: string) => localizeInternalHref(resolve(href), currentLocale);
+	type AdminRoute = '/admin/users' | '/admin/security' | '/subscriptions';
+	const localizedHref = (href: AdminRoute) => localizeInternalHref(resolve(href), currentLocale);
 	const items = $derived([
 		{
 			title: 'Team',
 			href: localizedHref('/admin/users'),
 			icon: User
+		},
+		{
+			title: 'Security',
+			href: localizedHref('/admin/security'),
+			icon: ShieldCheck
 		},
 		{
 			title: 'Customer Portal',

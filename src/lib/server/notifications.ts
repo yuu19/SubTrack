@@ -12,7 +12,8 @@ import { sendWebPush } from '$lib/server/push';
 import { sendSubscriptionReminderEmail, sendTrialEndingEmail } from '$lib/server/email';
 import { createBillingPortalUrl } from '$lib/server/stripe';
 import { DEFAULT_LOCALE, type AppLocale } from '$lib/constant';
-import { isAppLocale, localizePathname } from '$lib/locale-routing';
+import { isAppLocale, localizePathname, PUBLIC_SITE_ORIGIN } from '$lib/locale-routing';
+import { subscriptionNotificationCopy } from '$lib/i18n-copy';
 import {
 	getLocalDateString,
 	hasLocalTimeReached,
@@ -39,10 +40,11 @@ const buildPayload = (
 	targetDate: string
 ) => {
 	const notifyDays = subscription.notifyDaysBefore ?? 0;
-	const when = notifyDays === 0 ? '今日が支払い日です。' : `支払いまであと${notifyDays}日です。`;
+	const copy = subscriptionNotificationCopy[locale];
+	const when = copy.when(notifyDays);
 
 	return {
-		title: 'サブスクの支払い通知',
+		title: copy.title,
 		body: `${subscription.serviceName}：${when}`,
 		icon: '/favicon.png',
 		tag: `subscription-${subscription.id}-${targetDate}`,
@@ -55,35 +57,22 @@ const buildPayload = (
 	};
 };
 
-const formatBillingDate = (value: string | null | undefined) => {
-	if (!value) return '未設定';
+const formatBillingDate = (value: string | null | undefined, locale: AppLocale) => {
+	if (!value) return subscriptionNotificationCopy[locale].notSet;
 	const normalized = normalizeDateString(value);
 	return /^\d{4}-\d{2}-\d{2}$/.test(normalized) ? normalized : value;
 };
 
+const buildPublicUrl = (path: string) => new URL(path, PUBLIC_SITE_ORIGIN).toString();
+
 const resolveSubscriptionUrl = (locale: AppLocale, subscriptionId?: number | string) => {
-	const directBase =
-		process.env.BETTER_AUTH_URL ?? process.env.PUBLIC_BETTER_AUTH_URL ?? process.env.APP_ORIGIN;
 	const subscriptionsPath = localizePathname('/subscriptions', locale);
 	const pathWithDetail =
 		subscriptionId === undefined
 			? subscriptionsPath
 			: `${subscriptionsPath}?subscription=${encodeURIComponent(String(subscriptionId))}`;
 
-	if (directBase) {
-		return new URL(pathWithDetail, directBase).toString();
-	}
-
-	if (process.env.PUSH_CRON_URL) {
-		try {
-			const origin = new URL(process.env.PUSH_CRON_URL).origin;
-			return new URL(pathWithDetail, origin).toString();
-		} catch {
-			return null;
-		}
-	}
-
-	return null;
+	return buildPublicUrl(pathWithDetail);
 };
 
 export const dispatchSubscriptionNotifications = async (
@@ -245,24 +234,20 @@ export const dispatchSubscriptionNotifications = async (
 
 		if (shouldEmail && user.email && emailEnabled) {
 			const subscriptionUrl = resolveSubscriptionUrl(userLocale, sub.id);
-			if (!subscriptionUrl) {
-				console.error('[subscription-notify] APP_ORIGIN is not configured');
+			attempted = true;
+			try {
+				await sendSubscriptionReminderEmail({
+					user: { email: user.email, name: user.name },
+					serviceName: sub.serviceName,
+					notifyDays: Number(sub.notifyDaysBefore ?? 0),
+					billingDate: formatBillingDate(sub.nextBillingAt, userLocale),
+					manageUrl: subscriptionUrl,
+					locale: userLocale
+				});
+				sent += 1;
+			} catch (error) {
+				console.error('[subscription-notify] failed to send email', error);
 				failed += 1;
-			} else {
-				attempted = true;
-				try {
-					await sendSubscriptionReminderEmail({
-						user: { email: user.email, name: user.name },
-						serviceName: sub.serviceName,
-						notifyDays: Number(sub.notifyDaysBefore ?? 0),
-						billingDate: formatBillingDate(sub.nextBillingAt),
-						manageUrl: subscriptionUrl
-					});
-					sent += 1;
-				} catch (error) {
-					console.error('[subscription-notify] failed to send email', error);
-					failed += 1;
-				}
 			}
 		}
 
@@ -293,24 +278,9 @@ export type TrialEndingDispatchResult = {
 };
 
 const resolveReturnUrl = (locale: AppLocale) => {
-	const directBase =
-		process.env.BETTER_AUTH_URL ?? process.env.PUBLIC_BETTER_AUTH_URL ?? process.env.APP_ORIGIN;
 	const settingsPath = localizePathname('/me/settings', locale);
 
-	if (directBase) {
-		return new URL(settingsPath, directBase).toString();
-	}
-
-	if (process.env.PUSH_CRON_URL) {
-		try {
-			const origin = new URL(process.env.PUSH_CRON_URL).origin;
-			return new URL(settingsPath, origin).toString();
-		} catch {
-			return null;
-		}
-	}
-
-	return null;
+	return buildPublicUrl(settingsPath);
 };
 
 export const dispatchTrialEndingEmails = async (
@@ -368,12 +338,6 @@ export const dispatchTrialEndingEmails = async (
 			continue;
 		}
 
-		if (!returnUrl) {
-			console.error('[trial-ending] BETTER_AUTH_URL is not configured');
-			failed += 1;
-			continue;
-		}
-
 		const customerId = sub.stripeCustomerId ?? user.stripeCustomerId;
 		if (!customerId) {
 			console.error('[trial-ending] stripe customer id is missing', sub.id);
@@ -392,7 +356,8 @@ export const dispatchTrialEndingEmails = async (
 				user: { email: user.email, name: user.name },
 				endDate: dayjs(sub.trialEnd ?? targetStart).format('YYYY-MM-DD'),
 				manageUrl,
-				planName: sub.plan
+				planName: sub.plan,
+				locale: resolveUserLocale(user.locale)
 			});
 
 			await db.insert(verificationTable).values({

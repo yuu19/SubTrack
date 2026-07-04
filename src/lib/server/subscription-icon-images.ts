@@ -24,6 +24,22 @@ export type SubscriptionIconImageValidationResult =
 			message: string;
 	  };
 
+export type SubscriptionIconImageValidationMessages = {
+	imageRequired: string;
+	imageEmpty: string;
+	imageTooLarge: string;
+	imageInvalidType: string;
+	imageContentMismatch: string;
+};
+
+const defaultValidationMessages: SubscriptionIconImageValidationMessages = {
+	imageRequired: 'Image file is required.',
+	imageEmpty: 'Image file is empty.',
+	imageTooLarge: 'Image file must be 1MB or smaller.',
+	imageInvalidType: 'Image file must be PNG, JPEG, or WebP.',
+	imageContentMismatch: 'Image file content does not match its type.'
+};
+
 export const createSubscriptionIconImageKey = (
 	userId: string,
 	subscriptionId: number,
@@ -33,14 +49,14 @@ export const createSubscriptionIconImageKey = (
 	return `subscription-icons/${userId}/${subscriptionId}/${crypto.randomUUID()}.${extension}`;
 };
 
-export const isSubscriptionIconImageKey = (value: unknown) =>
+export const isSubscriptionIconImageKey = (value: unknown): value is string =>
 	typeof value === 'string' && value.startsWith('subscription-icons/');
 
 export const isOwnedSubscriptionIconImageKey = (
 	value: unknown,
 	userId: string,
 	subscriptionId: number
-) =>
+): value is string =>
 	typeof value === 'string' && value.startsWith(`subscription-icons/${userId}/${subscriptionId}/`);
 
 export const deleteSubscriptionIconImage = async (bucket: R2Bucket | undefined, key: unknown) => {
@@ -84,22 +100,23 @@ const matchesContentType = (bytes: Uint8Array, contentType: SubscriptionIconImag
 };
 
 export const validateSubscriptionIconImageFile = async (
-	value: FormDataEntryValue | null
+	value: FormDataEntryValue | null,
+	messages: SubscriptionIconImageValidationMessages = defaultValidationMessages
 ): Promise<SubscriptionIconImageValidationResult> => {
 	if (!(value instanceof File)) {
-		return { ok: false, status: 400, message: 'Image file is required.' };
+		return { ok: false, status: 400, message: messages.imageRequired };
 	}
 	if (value.size <= 0) {
-		return { ok: false, status: 400, message: 'Image file is empty.' };
+		return { ok: false, status: 400, message: messages.imageEmpty };
 	}
 	if (value.size > SUBSCRIPTION_ICON_IMAGE_MAX_BYTES) {
-		return { ok: false, status: 413, message: 'Image file must be 1MB or smaller.' };
+		return { ok: false, status: 413, message: messages.imageTooLarge };
 	}
 	if (!subscriptionIconImageContentTypes.includes(value.type as SubscriptionIconImageContentType)) {
 		return {
 			ok: false,
 			status: 415,
-			message: 'Image file must be PNG, JPEG, or WebP.'
+			message: messages.imageInvalidType
 		};
 	}
 
@@ -109,7 +126,7 @@ export const validateSubscriptionIconImageFile = async (
 		return {
 			ok: false,
 			status: 415,
-			message: 'Image file content does not match its type.'
+			message: messages.imageContentMismatch
 		};
 	}
 

@@ -1,6 +1,11 @@
 // src/routes/api/r2/[...file]/+server.ts
 import { dev } from '$app/environment';
 
+const publicDebugObjectKeyPattern = /^template-icons\/[a-z0-9-]+\.png$/;
+
+const isPublicDebugObjectKey = (value: string | undefined): value is string =>
+	typeof value === 'string' && publicDebugObjectKeyPattern.test(value);
+
 export const GET = async ({ locals, params }) => {
 	if (!dev) {
 		return new Response('Not Found', { status: 404 });
@@ -8,6 +13,9 @@ export const GET = async ({ locals, params }) => {
 
 	const { bucket } = locals;
 	const fileName = params.file;
+	if (!isPublicDebugObjectKey(fileName)) {
+		return new Response('Not Found', { status: 404 });
+	}
 
 	try {
 		const object = await bucket.get(fileName);
