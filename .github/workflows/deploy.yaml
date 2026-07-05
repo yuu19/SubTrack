@@ -58,9 +58,6 @@ jobs:
       - name: Build SvelteKit (Cloudflare target)
         run: pnpm run build
 
-      - name: Apply D1 migrations (remote)
-        run: pnpm exec wrangler d1 migrations apply $CLOUDFLARE_DATABASE_NAME --remote --config wrangler.toml
-
       - name: Build & Deploy Worker
         uses: cloudflare/wrangler-action@v3
         with:
