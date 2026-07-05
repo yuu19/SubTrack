@@ -69,8 +69,6 @@ jobs:
             RESEND_API_KEY
             BETTER_AUTH_SECRET
             ADMIN_USER_IDS
-            ADMIN_BASIC_AUTH_USER
-            ADMIN_BASIC_AUTH_PASSWORD
             GOOGLE_CLIENT_ID
             GOOGLE_CLIENT_SECRET
             SENTRY_DSN
