@@ -106,9 +106,23 @@ describe('serviceTemplates', () => {
 				?.plans.find((plan) => plan.id === 'team-1-user-monthly')
 				?.prices.find((price) => price.currency === 'USD')?.amount
 		).toBe(4);
-		expect(serviceTemplates.find((template) => template.id === 'chatgpt')?.plans[0].prices).toEqual(
-			[]
-		);
+		expect(
+			serviceTemplates
+				.find((template) => template.id === 'chatgpt')
+				?.plans.find((plan) => plan.id === 'plus')
+				?.prices.find((price) => price.currency === 'USD')?.amount
+		).toBe(20);
+		expect(
+			serviceTemplates
+				.find((template) => template.id === 'chatgpt')
+				?.plans.find((plan) => plan.id === 'pro')
+				?.prices.find((price) => price.currency === 'USD')?.amount
+		).toBe(200);
+		expect(
+			serviceTemplates
+				.find((template) => template.id === 'chatgpt')
+				?.plans.find((plan) => plan.id === 'plus')?.prices[0].verifiedAt
+		).toBe('2026-07-05');
 	});
 
 	it('has a checked-in template icon asset for each service template', () => {

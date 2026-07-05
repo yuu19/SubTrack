@@ -55,6 +55,7 @@ export type ServiceTemplate = {
 const verifiedAt = '2026-06-23';
 const foreignPriceVerifiedAt = '2026-06-28';
 const serviceExpansionVerifiedAt = '2026-06-29';
+const chatGptPriceVerifiedAt = '2026-07-05';
 
 const templatePrice = (
 	amount: number,
@@ -92,6 +93,11 @@ const perUserPriceNote: LocalizedText = {
 const dynamicPriceNote: LocalizedText = {
 	ja: '公式ページで地域別の通常価格を安定して確認できなかったため、実際の請求額を入力してください。',
 	en: 'Enter the actual charge because the official regional recurring price was not stable in the source checked.'
+};
+
+const usdReferencePriceNote: LocalizedText = {
+	ja: 'USDの参考価格です。実際の請求額、税、通貨はアカウントの表示に合わせて確認してください。',
+	en: 'Reference price in USD. Confirm the actual charge, tax, and currency shown in your account.'
 };
 
 export const serviceTemplates: ServiceTemplate[] = [
@@ -1121,27 +1127,37 @@ export const serviceTemplates: ServiceTemplate[] = [
 			en: ['AI', 'Work']
 		},
 		sourceUrl: 'https://openai.com/chatgpt/pricing/',
-		lastVerifiedAt: verifiedAt,
+		lastVerifiedAt: chatGptPriceVerifiedAt,
 		plans: [
 			{
 				id: 'plus',
 				name: { ja: 'Plus', en: 'Plus' },
-				prices: [],
+				prices: [
+					templatePrice(
+						20,
+						'USD',
+						'US',
+						'https://openai.com/index/chatgpt-plus/',
+						chatGptPriceVerifiedAt
+					)
+				],
 				cycle: 'monthly',
-				note: {
-					ja: '請求額と通貨はアカウントの表示に合わせて入力してください。',
-					en: 'Enter the amount and currency shown in your account.'
-				}
+				note: usdReferencePriceNote
 			},
 			{
 				id: 'pro',
 				name: { ja: 'Pro', en: 'Pro' },
-				prices: [],
+				prices: [
+					templatePrice(
+						200,
+						'USD',
+						'US',
+						'https://openai.com/index/introducing-chatgpt-pro/',
+						chatGptPriceVerifiedAt
+					)
+				],
 				cycle: 'monthly',
-				note: {
-					ja: '請求額と通貨はアカウントの表示に合わせて入力してください。',
-					en: 'Enter the amount and currency shown in your account.'
-				}
+				note: usdReferencePriceNote
 			}
 		],
 		cancellation: {

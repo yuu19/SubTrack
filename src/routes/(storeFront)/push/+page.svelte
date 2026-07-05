@@ -61,7 +61,7 @@
 				title: '支払い日前に、通知で確認しやすく。',
 				description:
 					'SubTrackのPush通知を有効にすると、登録した支払い日と通知設定に基づいてリマインドを受け取れます。通知は見直しを補助する機能であり、到達や到達時刻を保証するものではありません。',
-				openSettings: '通知設定を開く',
+				openSettings: 'サブスク管理を開く',
 				login: 'ログインして設定する'
 			},
 			setup: {
@@ -106,12 +106,12 @@
 				{
 					question: '通知はいつでも解除できますか？',
 					answer:
-						'いつでも解除できます。サブスク管理画面の「プッシュ通知を無効にする」ボタン、またはブラウザのサイト設定から解除可能です。'
+						'いつでも解除できます。アプリ内の「プッシュ通知を無効にする」を使うと、ブラウザ購読を解除し、SubTrack側の登録情報も削除します。ブラウザのサイト設定で通知をブロックすることもできますが、その場合はSubTrack側の登録情報が即時削除されない場合があります。'
 				},
 				{
 					question: 'どこで通知設定を変更できますか？',
 					answer:
-						'Push通知の端末登録はサブスク管理ページで「プッシュ通知を有効にする / 無効にする」から切り替えられます。通知方法や既定の通知日は設定ページで変更できます。'
+						'Push通知の端末登録は、サブスク管理ページまたは設定ページの「プッシュ通知を有効にする / 無効にする」から切り替えられます。通知方法、既定の通知日、通知時刻は設定ページで変更できます。'
 				},
 				{
 					question: '通知が届かないときは？',
@@ -174,7 +174,7 @@
 				title: 'Get reminders before billing dates.',
 				description:
 					'When push notifications are enabled, SubTrack sends reminders based on the billing dates and reminder settings you register. Notifications are a supporting feature and delivery or delivery timing is not guaranteed.',
-				openSettings: 'Open notification settings',
+				openSettings: 'Open subscriptions',
 				login: 'Log in to configure'
 			},
 			setup: {
@@ -219,12 +219,12 @@
 				{
 					question: 'Can I disable notifications later?',
 					answer:
-						'Yes. You can disable them at any time from the subscriptions page or from your browser site settings.'
+						'Yes. Use Disable push notifications in the app to unsubscribe in the browser and remove the saved registration from SubTrack. You can also block notifications from your browser site settings, but that may not immediately remove the saved registration in SubTrack.'
 				},
 				{
 					question: 'Where can I change notification settings?',
 					answer:
-						'Device registration for push notifications can be switched on or off from Enable push notifications or Disable push notifications on the subscriptions page. Notification method and default reminder timing can be changed from the settings page.'
+						'Device registration for push notifications can be switched on or off from Enable push notifications or Disable push notifications on the subscriptions page or settings page. Notification method, default reminder timing, and reminder time can be changed from the settings page.'
 				},
 				{
 					question: 'What should I check if notifications do not arrive?',

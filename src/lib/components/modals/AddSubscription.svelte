@@ -227,6 +227,10 @@
 		currency: string | null | undefined
 	): ServiceTemplatePlanPrice | null =>
 		plan?.prices.find((price) => price.currency === currency) ?? null;
+	const resolveAutofillPlanPrice = (
+		plan: ServiceTemplatePlan | null | undefined,
+		currency: string | null | undefined
+	): ServiceTemplatePlanPrice | null => resolvePlanPrice(plan, currency) ?? plan?.prices[0] ?? null;
 	const formatSelectedCurrencyPlanPrice = (plan: ServiceTemplatePlan) => {
 		const price = resolvePlanPrice(plan, $currencyField);
 		return price ? ` - ${formatCurrency(price.amount, price.currency, currentLocale)}` : '';
@@ -313,7 +317,13 @@
 			$iconValueField = template.id;
 		}
 		$selectField = plan.cycle;
-		$numberField = resolvePlanPrice(plan, $currencyField)?.amount ?? 0;
+		const price = resolveAutofillPlanPrice(plan, $currencyField);
+		if (price) {
+			$currencyField = price.currency;
+			$numberField = price.amount;
+		} else {
+			$numberField = 0;
+		}
 		$cancellationUrlField = template.cancellation.url ?? '';
 		$cancellationMethodField = template.cancellation.method;
 		$cancellationMemoField = template.cancellation.memo[currentLocale];
@@ -407,7 +417,15 @@
 
 	$effect(() => {
 		if (!selectedPlan || $priceEditedByUserField) return;
-		$numberField = selectedPlanPrice?.amount ?? 0;
+		const price = resolveAutofillPlanPrice(selectedPlan, $currencyField);
+		if (price) {
+			if (!selectedPlanPrice) {
+				$currencyField = price.currency;
+			}
+			$numberField = price.amount;
+		} else {
+			$numberField = 0;
+		}
 	});
 
 	$effect(() => {
