@@ -304,6 +304,8 @@
 	"subscription_offline_banner": "オフライン中のためキャッシュを表示しています。",
 	"subscription_pending_sync_banner": "未同期のデータが {count} 件あります。",
 	"subscription_empty_state": "まだ登録されたサブスクがありません。",
+	"subscription_empty_description": "実アカウントは空の状態から始まります。まず1件追加するか、保存されないデモで操作感を確認できます。",
+	"subscription_empty_demo_button": "デモを見る",
 	"subscription_active_empty_state": "登録中のサブスクはありません。",
 	"subscription_canceled_section_summary": "解約済み {count} 件",
 	"subscription_canceled_section_description": "解約済みの履歴です。再開や完全削除はここから行えます。",

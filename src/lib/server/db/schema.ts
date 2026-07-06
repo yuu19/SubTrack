@@ -72,11 +72,6 @@ export const user = sqliteTable('user', {
 	})
 		.notNull()
 		.default(false),
-	sampleDataSeeded: integer('sample_data_seeded', {
-		mode: 'boolean'
-	})
-		.notNull()
-		.default(false),
 	subscriptionManagementItemsSeeded: integer('subscription_management_items_seeded', {
 		mode: 'boolean'
 	})
@@ -343,7 +338,6 @@ export const trackedSubscriptionTable = sqliteTable('tracked_subscription', {
 	cancellationMemo: text('cancellation_memo'),
 	cancellationDeadlineMemo: text('cancellation_deadline_memo'),
 	tags: array<string>('tags').notNull(),
-	isSample: integer('is_sample', { mode: 'boolean' }).notNull().default(false),
 	...timestamps
 });
 

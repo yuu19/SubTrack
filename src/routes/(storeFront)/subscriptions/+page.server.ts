@@ -99,15 +99,10 @@ const hasReachedFreeActiveLimit = async (
 		},
 		where: (trackedSubscription, { and, eq, ne }) =>
 			excludeId === undefined
-				? and(
-						eq(trackedSubscription.userId, userId),
-						eq(trackedSubscription.status, 'active'),
-						eq(trackedSubscription.isSample, false)
-					)
+				? and(eq(trackedSubscription.userId, userId), eq(trackedSubscription.status, 'active'))
 				: and(
 						eq(trackedSubscription.userId, userId),
 						eq(trackedSubscription.status, 'active'),
-						eq(trackedSubscription.isSample, false),
 						ne(trackedSubscription.id, excludeId)
 					),
 		limit: 5
@@ -272,15 +267,6 @@ export const actions: Actions = {
 					error: copy.freeLimitReached
 				});
 			}
-
-			await db
-				.delete(trackedSubscriptionTable)
-				.where(
-					and(
-						eq(trackedSubscriptionTable.userId, userId),
-						eq(trackedSubscriptionTable.isSample, true)
-					)
-				);
 
 			const { nextBillingAt, daysUntilNextBilling } = computeNextBilling(
 				form.data.datepicker,

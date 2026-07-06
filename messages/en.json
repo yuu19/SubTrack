@@ -304,6 +304,8 @@
 	"subscription_offline_banner": "You are offline, so cached data is being shown.",
 	"subscription_pending_sync_banner": "{count} pending item(s) have not synced yet.",
 	"subscription_empty_state": "No subscriptions have been added yet.",
+	"subscription_empty_description": "Real accounts start empty. Add your first subscription, or try the no-save demo to review the flow first.",
+	"subscription_empty_demo_button": "View demo",
 	"subscription_active_empty_state": "No active subscriptions.",
 	"subscription_canceled_section_summary": "{count} canceled subscription(s)",
 	"subscription_canceled_section_description": "Canceled history. Reactivate or permanently delete records from here.",

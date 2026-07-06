@@ -425,12 +425,6 @@ export const importSubscriptionsFromCsv = async ({
 	let createdCategories = 0;
 	let createdPaymentMethods = 0;
 
-	await db
-		.delete(trackedSubscriptionTable)
-		.where(
-			and(eq(trackedSubscriptionTable.userId, userId), eq(trackedSubscriptionTable.isSample, true))
-		);
-
 	for (const row of rows) {
 		if (row.categoryName && !categoryByName.has(row.categoryName)) {
 			await db.insert(subscriptionCategoryTable).values({
@@ -500,8 +494,7 @@ export const importSubscriptionsFromCsv = async ({
 			cancellationMethod: row.cancellationMethod,
 			cancellationMemo: null,
 			cancellationDeadlineMemo: null,
-			tags: [],
-			isSample: false
+			tags: []
 		});
 		imported += 1;
 	}

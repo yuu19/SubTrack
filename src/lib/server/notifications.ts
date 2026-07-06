@@ -91,12 +91,7 @@ export const dispatchSubscriptionNotifications = async (
 	const subscriptions = await db
 		.select()
 		.from(trackedSubscriptionTable)
-		.where(
-			and(
-				eq(trackedSubscriptionTable.isSample, false),
-				eq(trackedSubscriptionTable.status, 'active')
-			)
-		);
+		.where(eq(trackedSubscriptionTable.status, 'active'));
 	let updated = 0;
 	const userIds = Array.from(
 		new Set(subscriptions.map((sub) => sub.userId).filter(Boolean))

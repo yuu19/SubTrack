@@ -45,7 +45,15 @@
 	import { fromAction } from 'svelte/attachments';
 	import { onMount, untrack } from 'svelte';
 	import { toast } from 'svelte-sonner';
-	import { ChevronDown, Download, FileDown, FileUp, FileSpreadsheet } from 'lucide-svelte';
+	import {
+		ChevronDown,
+		Download,
+		FileDown,
+		FileUp,
+		FileSpreadsheet,
+		Play,
+		Plus
+	} from 'lucide-svelte';
 	import type {
 		subscriptionCategoryTable,
 		subscriptionPaymentMethodTable,
@@ -108,6 +116,7 @@
 		localizeInternalHref(`${resolve('/me/settings')}#plan-info`, currentLocale)
 	);
 	const pushGuideHref = $derived(localizeInternalHref(resolve('/push'), currentLocale));
+	const demoHref = $derived(localizeInternalHref(resolve('/demo'), currentLocale));
 	const activeSubscriptionParam = $derived(page.url.searchParams.get('subscription')?.trim() ?? '');
 	const categoryById = $derived(new Map(categories.map((category) => [category.id, category])));
 	const paymentMethodById = $derived(
@@ -537,11 +546,30 @@
 	{/if}
 
 	{#if filteredSubscriptions.length === 0}
-		<div class="text-muted-foreground rounded-lg border border-dashed p-6">
+		<div class="text-muted-foreground flex flex-col gap-4 rounded-lg border border-dashed p-6">
 			{#if canceledSubscriptions.length > 0}
-				{m.subscription_active_empty_state()}
+				<p>{m.subscription_active_empty_state()}</p>
+				<div>
+					<Button onclick={() => (addSubscriptionOpen = true)}>
+						<Plus class="size-4" />
+						{m.subscription_page_add_button()}
+					</Button>
+				</div>
 			{:else}
-				{m.subscription_empty_state()}
+				<div class="space-y-1">
+					<p class="text-foreground font-medium">{m.subscription_empty_state()}</p>
+					<p class="max-w-2xl text-sm">{m.subscription_empty_description()}</p>
+				</div>
+				<div class="flex flex-wrap gap-2">
+					<Button onclick={() => (addSubscriptionOpen = true)}>
+						<Plus class="size-4" />
+						{m.subscription_page_add_button()}
+					</Button>
+					<Button href={demoHref} variant="outline">
+						<Play class="size-4" />
+						{m.subscription_empty_demo_button()}
+					</Button>
+				</div>
 			{/if}
 		</div>
 	{:else}

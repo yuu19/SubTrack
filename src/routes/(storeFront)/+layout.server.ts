@@ -7,17 +7,12 @@ import {
 } from '$lib/constant';
 import { createAuth } from '$lib/auth.js';
 import { userConfigSchema } from '$lib/states/userConfig.svelte';
-import { trackedSubscriptionTable, user as userTable } from '$lib/server/db/schema';
-import { computeNextBilling } from '$lib/server/subscriptions';
+import { user as userTable } from '$lib/server/db/schema';
 import { isAdminUser, parseAdminUserIds } from '$lib/server/admin';
 import { listActiveEntitlementsForUser } from '$lib/server/entitlements';
 import { getCurrentPlan } from '$lib/server/plan';
 import { isPublicDemoPathname } from '$lib/server/public-routes';
-import {
-	listSubscriptionManagementItems,
-	seedDefaultSubscriptionManagementItems
-} from '$lib/server/subscription-management-items';
-import { subscriptionColors } from '$lib/subscription-colors';
+import { seedDefaultSubscriptionManagementItems } from '$lib/server/subscription-management-items';
 import { eq } from 'drizzle-orm';
 
 export const load = async ({ request, locals, url }) => {
@@ -68,92 +63,6 @@ export const load = async ({ request, locals, url }) => {
 		}
 	}
 
-	if (user && !user.sampleDataSeeded) {
-		const { categories, paymentMethods } = await listSubscriptionManagementItems(db, user.id);
-		const categoryByKey = new Map(categories.map((category) => [category.key, category.id]));
-		const paymentMethodByType = new Map(
-			paymentMethods.map((paymentMethod) => [paymentMethod.type, paymentMethod.id])
-		);
-		const existing = await db.query.trackedSubscriptionTable.findFirst({
-			columns: {
-				id: true
-			},
-			where: (trackedSubscription, { eq }) => eq(trackedSubscription.userId, user.id)
-		});
-
-		if (!existing) {
-			const today = new Date();
-			const dateSeed = today.toISOString().slice(0, 10);
-			const samples = [
-				{
-					serviceName: 'Netflix',
-					color: subscriptionColors[0],
-					serviceUrl: 'https://www.netflix.com/',
-					iconValue: 'video',
-					cycle: 'monthly',
-					amount: 1490,
-					firstPaymentDate: dateSeed,
-					notifyDaysBefore: 3,
-					categoryId: categoryByKey.get('video') ?? null,
-					paymentMethodId: paymentMethodByType.get('credit_card') ?? null,
-					tags: []
-				},
-				{
-					serviceName: 'Spotify',
-					color: subscriptionColors[1],
-					serviceUrl: 'https://www.spotify.com/',
-					iconValue: 'music',
-					cycle: 'monthly',
-					amount: 980,
-					firstPaymentDate: dateSeed,
-					notifyDaysBefore: 3,
-					categoryId: categoryByKey.get('music') ?? null,
-					paymentMethodId: paymentMethodByType.get('app_store') ?? null,
-					tags: []
-				},
-				{
-					serviceName: 'Notion',
-					color: subscriptionColors[2],
-					serviceUrl: 'https://www.notion.com/',
-					iconValue: 'work',
-					cycle: 'yearly',
-					amount: 12000,
-					firstPaymentDate: dateSeed,
-					notifyDaysBefore: 7,
-					categoryId: categoryByKey.get('tools') ?? null,
-					paymentMethodId: paymentMethodByType.get('credit_card') ?? null,
-					tags: []
-				}
-			];
-
-			for (const sample of samples) {
-				const billing = computeNextBilling(sample.firstPaymentDate, sample.cycle, {
-					timeZone: user.timeZone ?? DEFAULT_TIME_ZONE
-				});
-				await db.insert(trackedSubscriptionTable).values({
-					userId: user.id,
-					serviceName: sample.serviceName,
-					categoryId: sample.categoryId,
-					paymentMethodId: sample.paymentMethodId,
-					color: sample.color,
-					serviceUrl: sample.serviceUrl,
-					iconType: 'preset',
-					iconValue: sample.iconValue,
-					cycle: sample.cycle,
-					amount: sample.amount,
-					firstPaymentDate: sample.firstPaymentDate,
-					nextBillingAt: billing.nextBillingAt,
-					daysUntilNextBilling: billing.daysUntilNextBilling,
-					notifyDaysBefore: sample.notifyDaysBefore,
-					tags: sample.tags,
-					isSample: true
-				});
-			}
-		}
-
-		await db.update(userTable).set({ sampleDataSeeded: true }).where(eq(userTable.id, user.id));
-		user.sampleDataSeeded = true;
-	}
 	const parsedConfig = userConfigSchema.safeParse({
 		locale: (user?.locale as AppLocale | null | undefined) ?? DEFAULT_LOCALE,
 		timeZone: user?.timeZone ?? DEFAULT_TIME_ZONE,
