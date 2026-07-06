@@ -25,6 +25,9 @@
 		categories: Category[];
 		paymentMethods: PaymentMethod[];
 	};
+	type CreatedManagementItem =
+		| { type: 'category'; item: Category }
+		| { type: 'paymentMethod'; item: PaymentMethod };
 
 	let {
 		categories = [],
@@ -32,14 +35,18 @@
 		isPremium = false,
 		isOnline = true,
 		compact = false,
-		onItemsChange
+		mode = 'manage',
+		onItemsChange,
+		onItemCreated
 	}: {
 		categories?: Category[];
 		paymentMethods?: PaymentMethod[];
 		isPremium?: boolean;
 		isOnline?: boolean;
 		compact?: boolean;
+		mode?: 'manage' | 'add';
 		onItemsChange?: (items: ManagementItems) => void;
+		onItemCreated?: (item: CreatedManagementItem) => void;
 	} = $props();
 
 	let localCategories = $state<Category[]>([]);
@@ -54,9 +61,10 @@
 	let busy = $state(false);
 
 	const locale = $derived(resolveLocale(getLocale()));
+	const addOnly = $derived(mode === 'add');
 	const paymentLimitReached = $derived(!isPremium && localPaymentMethods.length >= 3);
-	const rootClass = $derived(compact ? 'space-y-4' : 'grid gap-8 lg:grid-cols-2');
-	const sectionClass = $derived(compact ? 'min-w-0 space-y-2' : 'min-w-0 space-y-4');
+	const rootClass = $derived(compact || addOnly ? 'space-y-4' : 'grid gap-8 lg:grid-cols-2');
+	const sectionClass = $derived(compact || addOnly ? 'min-w-0 space-y-2' : 'min-w-0 space-y-4');
 	const listItemClass = $derived(
 		compact
 			? 'bg-background flex min-w-0 flex-wrap items-center gap-2 rounded-md px-2.5 py-1.5 text-sm ring-1 ring-border/60'
@@ -110,6 +118,22 @@
 		onItemsChange?.(items);
 	};
 
+	const findCreatedCategory = (items: ManagementItems, previousIds: Set<number>, name: string) =>
+		items.categories.find((category) => !previousIds.has(category.id) && category.name === name) ??
+		items.categories.find((category) => !previousIds.has(category.id)) ??
+		null;
+
+	const findCreatedPaymentMethod = (
+		items: ManagementItems,
+		previousIds: Set<number>,
+		name: string
+	) =>
+		items.paymentMethods.find(
+			(paymentMethod) => !previousIds.has(paymentMethod.id) && paymentMethod.name === name
+		) ??
+		items.paymentMethods.find((paymentMethod) => !previousIds.has(paymentMethod.id)) ??
+		null;
+
 	const requestJson = async (endpoint: string, init: RequestInit) => {
 		busy = true;
 		try {
@@ -150,11 +174,14 @@
 			toast.error(copy.categoryPremiumRequired);
 			return;
 		}
+		const previousIds = new Set(localCategories.map((category) => category.id));
 		const result = await requestJson('/api/subscription-categories', {
 			method: 'POST',
 			body: JSON.stringify({ name, color: newCategoryColor })
 		});
 		if (result) {
+			const created = findCreatedCategory(result, previousIds, name);
+			if (created) onItemCreated?.({ type: 'category', item: created });
 			newCategoryName = '';
 			newCategoryColor = 'blue';
 		}
@@ -163,11 +190,14 @@
 	const createPaymentMethod = async () => {
 		const name = newPaymentMethodName.trim();
 		if (!name || !isOnline || busy) return;
+		const previousIds = new Set(localPaymentMethods.map((paymentMethod) => paymentMethod.id));
 		const result = await requestJson('/api/subscription-payment-methods', {
 			method: 'POST',
 			body: JSON.stringify({ name, type: newPaymentMethodType })
 		});
 		if (result) {
+			const created = findCreatedPaymentMethod(result, previousIds, name);
+			if (created) onItemCreated?.({ type: 'paymentMethod', item: created });
 			newPaymentMethodName = '';
 			newPaymentMethodType = 'credit_card';
 		}
@@ -267,34 +297,36 @@
 				{copy.offline}
 			</p>
 		{/if}
-		<div class="space-y-2">
-			{#if !compact && localCategories.length === 0}
-				<p class="text-muted-foreground bg-muted/30 rounded-md px-3 py-2 text-sm">
-					{copy.emptyCategories}
-				</p>
-			{/if}
-			<div class="flex min-w-0 flex-wrap gap-2">
-				{#each localCategories as category (category.id)}
-					<div
-						class="bg-background text-foreground ring-border/70 inline-flex max-w-full min-w-0 items-center gap-2 rounded-full px-3 py-2 text-sm font-medium shadow-sm ring-1"
-					>
-						{#if category.key}
-							<span class="text-base leading-none" aria-hidden="true">
-								{categoryIcon(category.key)}
-							</span>
-						{:else}
-							<span
-								class="size-2.5 shrink-0 rounded-full"
-								style:background-color={getSubscriptionColorStyle(
-									category.color as SubscriptionColor
-								)}
-							></span>
-						{/if}
-						<span class="min-w-0 truncate">{category.name}</span>
-					</div>
-				{/each}
+		{#if !addOnly}
+			<div class="space-y-2">
+				{#if !compact && localCategories.length === 0}
+					<p class="text-muted-foreground bg-muted/30 rounded-md px-3 py-2 text-sm">
+						{copy.emptyCategories}
+					</p>
+				{/if}
+				<div class="flex min-w-0 flex-wrap gap-2">
+					{#each localCategories as category (category.id)}
+						<div
+							class="bg-background text-foreground ring-border/70 inline-flex max-w-full min-w-0 items-center gap-2 rounded-full px-3 py-2 text-sm font-medium shadow-sm ring-1"
+						>
+							{#if category.key}
+								<span class="text-base leading-none" aria-hidden="true">
+									{categoryIcon(category.key)}
+								</span>
+							{:else}
+								<span
+									class="size-2.5 shrink-0 rounded-full"
+									style:background-color={getSubscriptionColorStyle(
+										category.color as SubscriptionColor
+									)}
+								></span>
+							{/if}
+							<span class="min-w-0 truncate">{category.name}</span>
+						</div>
+					{/each}
+				</div>
 			</div>
-		</div>
+		{/if}
 		{#if isPremium}
 			<div class="space-y-2">
 				<div class="space-y-0.5">
@@ -341,67 +373,71 @@
 				<p class="text-muted-foreground text-xs">{copy.paymentDescription}</p>
 			{/if}
 		</div>
-		<div class="space-y-2">
-			{#if !compact && localPaymentMethods.length === 0}
-				<p class="text-muted-foreground bg-muted/30 rounded-md px-3 py-2 text-sm">
-					{copy.emptyPaymentMethods}
-				</p>
-			{/if}
-			{#each localPaymentMethods as paymentMethod (paymentMethod.id)}
-				<div class={listItemClass}>
-					{#if editingPaymentMethodId === paymentMethod.id}
-						<Input bind:value={editingPaymentMethodName} placeholder={copy.namePlaceholder} />
-						<select
-							class="border-input bg-background h-9 rounded-md border px-2 text-sm"
-							bind:value={editingPaymentMethodType}
-						>
-							{#each PAYMENT_METHOD_TYPES as type (type)}
-								<option value={type}>{paymentTypeLabel(type)}</option>
-							{/each}
-						</select>
-						<Button
-							type="button"
-							size="icon-sm"
-							disabled={!isOnline || busy}
-							onclick={updatePaymentMethod}
-						>
-							{#if busy}<Loader2 class="size-4 animate-spin" />{:else}<Check class="size-4" />{/if}
-						</Button>
-						<Button
-							type="button"
-							size="icon-sm"
-							variant="outline"
-							onclick={cancelPaymentMethodEdit}
-						>
-							<X class="size-4" />
-						</Button>
-					{:else}
-						<span class="min-w-0 flex-1 truncate">{paymentMethod.name}</span>
-						<span class="text-muted-foreground hidden text-xs sm:inline">
-							{paymentTypeLabel(paymentMethod.type)}
-						</span>
-						<Button
-							type="button"
-							size="icon-sm"
-							variant="ghost"
-							disabled={!isOnline || busy}
-							onclick={() => startPaymentMethodEdit(paymentMethod)}
-						>
-							<Pencil class="size-4" />
-						</Button>
-						<Button
-							type="button"
-							size="icon-sm"
-							variant="ghost"
-							disabled={!isOnline || busy}
-							onclick={() => deletePaymentMethod(paymentMethod.id)}
-						>
-							<Trash2 class="size-4" />
-						</Button>
-					{/if}
-				</div>
-			{/each}
-		</div>
+		{#if !addOnly}
+			<div class="space-y-2">
+				{#if !compact && localPaymentMethods.length === 0}
+					<p class="text-muted-foreground bg-muted/30 rounded-md px-3 py-2 text-sm">
+						{copy.emptyPaymentMethods}
+					</p>
+				{/if}
+				{#each localPaymentMethods as paymentMethod (paymentMethod.id)}
+					<div class={listItemClass}>
+						{#if editingPaymentMethodId === paymentMethod.id}
+							<Input bind:value={editingPaymentMethodName} placeholder={copy.namePlaceholder} />
+							<select
+								class="border-input bg-background h-9 rounded-md border px-2 text-sm"
+								bind:value={editingPaymentMethodType}
+							>
+								{#each PAYMENT_METHOD_TYPES as type (type)}
+									<option value={type}>{paymentTypeLabel(type)}</option>
+								{/each}
+							</select>
+							<Button
+								type="button"
+								size="icon-sm"
+								disabled={!isOnline || busy}
+								onclick={updatePaymentMethod}
+							>
+								{#if busy}<Loader2 class="size-4 animate-spin" />{:else}<Check
+										class="size-4"
+									/>{/if}
+							</Button>
+							<Button
+								type="button"
+								size="icon-sm"
+								variant="outline"
+								onclick={cancelPaymentMethodEdit}
+							>
+								<X class="size-4" />
+							</Button>
+						{:else}
+							<span class="min-w-0 flex-1 truncate">{paymentMethod.name}</span>
+							<span class="text-muted-foreground hidden text-xs sm:inline">
+								{paymentTypeLabel(paymentMethod.type)}
+							</span>
+							<Button
+								type="button"
+								size="icon-sm"
+								variant="ghost"
+								disabled={!isOnline || busy}
+								onclick={() => startPaymentMethodEdit(paymentMethod)}
+							>
+								<Pencil class="size-4" />
+							</Button>
+							<Button
+								type="button"
+								size="icon-sm"
+								variant="ghost"
+								disabled={!isOnline || busy}
+								onclick={() => deletePaymentMethod(paymentMethod.id)}
+							>
+								<Trash2 class="size-4" />
+							</Button>
+						{/if}
+					</div>
+				{/each}
+			</div>
+		{/if}
 		<div class={addRowClass}>
 			<Input
 				bind:value={newPaymentMethodName}

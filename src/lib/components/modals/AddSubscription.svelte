@@ -56,6 +56,9 @@
 
 	type Category = typeof subscriptionCategoryTable.$inferSelect;
 	type PaymentMethod = typeof subscriptionPaymentMethodTable.$inferSelect;
+	type CreatedManagementItem =
+		| { type: 'category'; item: Category }
+		| { type: 'paymentMethod'; item: PaymentMethod };
 
 	let {
 		data,
@@ -122,7 +125,7 @@
 	const categoryFieldLabel = $derived(formCopy.fields.category);
 	const paymentMethodFieldLabel = $derived(formCopy.fields.paymentMethod);
 	const notSetLabel = $derived(formCopy.fields.notSet);
-	const managementSummaryLabel = $derived(formCopy.fields.managementSummary);
+	const managementSummaryLabel = $derived(formCopy.fields.managementAddSummary);
 	const managementSectionTitle = $derived(formCopy.fields.managementSection);
 	const currencyOptions = $derived(SUPPORTED_CURRENCIES.map((currency) => ({ value: currency })));
 	const templateCategoryOptions: Array<{ value: 'all' | ServiceTemplateCategory }> = [
@@ -367,6 +370,14 @@
 	const selectIcon = (iconType: SubscriptionIconType, iconValue: string) => {
 		$iconTypeField = iconType;
 		$iconValueField = iconValue;
+	};
+
+	const handleManagementItemCreated = (created: CreatedManagementItem) => {
+		if (created.type === 'category') {
+			$categoryIdField = created.item.id;
+			return;
+		}
+		$paymentMethodIdField = created.item.id;
 	};
 	const serviceFaviconUrl = $derived(resolveFaviconUrl($serviceUrlField));
 	const selectOfficialSiteIcon = () => {
@@ -647,7 +658,9 @@
 							{isPremium}
 							{isOnline}
 							compact
+							mode="add"
 							onItemsChange={onManagementItemsChange}
+							onItemCreated={handleManagementItemCreated}
 						/>
 					</div>
 				</details>

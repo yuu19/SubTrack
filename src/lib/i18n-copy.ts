@@ -196,6 +196,7 @@ export const subscriptionFormCopy = {
 			paymentMethod: '支払い方法',
 			notSet: '未設定',
 			managementSummary: 'カテゴリー・支払い方法を管理',
+			managementAddSummary: 'カテゴリー・支払い方法を追加',
 			managementSection: 'カテゴリー・支払い方法'
 		},
 		actions: {
@@ -245,6 +246,7 @@ export const subscriptionFormCopy = {
 			paymentMethod: 'Payment method',
 			notSet: 'Not set',
 			managementSummary: 'Manage categories and payment methods',
+			managementAddSummary: 'Add category or payment method',
 			managementSection: 'Category and payment'
 		},
 		actions: {
@@ -294,6 +296,7 @@ export const subscriptionFormCopy = {
 		| 'paymentMethod'
 		| 'notSet'
 		| 'managementSummary'
+		| 'managementAddSummary'
 		| 'managementSection',
 		string
 	>;
