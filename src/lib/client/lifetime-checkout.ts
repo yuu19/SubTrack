@@ -1,8 +1,10 @@
 import { invalidateAll } from '$app/navigation';
+import type { AppLocale } from '$lib/constant';
 import { toast } from 'svelte-sonner';
 
 type StartLifetimeCheckoutOptions = {
 	returnPath: string;
+	locale: AppLocale;
 	errorMessage: string;
 	purchasedMessage: string;
 };
@@ -14,6 +16,7 @@ type LifetimeCheckoutResponse = {
 
 export async function startLifetimeCheckout({
 	returnPath,
+	locale,
 	errorMessage,
 	purchasedMessage
 }: StartLifetimeCheckoutOptions) {
@@ -22,7 +25,7 @@ export async function startLifetimeCheckout({
 		headers: {
 			'content-type': 'application/json'
 		},
-		body: JSON.stringify({ returnPath })
+		body: JSON.stringify({ returnPath, locale })
 	});
 
 	const payload = (await response.json().catch(() => null)) as LifetimeCheckoutResponse;

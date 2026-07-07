@@ -2,7 +2,9 @@ import Stripe from 'stripe';
 import {
 	PREMIUM_LIFETIME_LOOKUP_KEY,
 	PREMIUM_LIFETIME_PRICE_AMOUNT,
-	PREMIUM_LIFETIME_PRICE_CURRENCY
+	PREMIUM_LIFETIME_PRICE_CURRENCY,
+	PREMIUM_LIFETIME_USD_PRICE_AMOUNT,
+	PREMIUM_LIFETIME_USD_PRICE_CURRENCY
 } from './stripe-products';
 
 export { PREMIUM_LIFETIME_LOOKUP_KEY, PREMIUM_LIFETIME_PRICE_AMOUNT } from './stripe-products';
@@ -21,6 +23,7 @@ type ExpectedStripePrice = {
 	unitAmount?: number;
 	currency?: string;
 	recurring?: boolean;
+	currencyOptions?: Record<string, { unitAmount: number }>;
 };
 
 type OneTimeCheckoutSessionParams = {
@@ -32,6 +35,8 @@ type OneTimeCheckoutSessionParams = {
 	cancelUrl: string;
 	entitlementKey: string;
 	lookupKey: string;
+	locale?: Stripe.Checkout.SessionCreateParams.Locale;
+	currency?: string;
 };
 
 export function getStripeClient() {
@@ -53,6 +58,21 @@ export function getStripePriceMismatch(price: Stripe.Price, expected: ExpectedSt
 	if (expected.recurring !== undefined && Boolean(price.recurring) !== expected.recurring) {
 		mismatches.push(`recurring=${price.recurring ? price.recurring.interval : 'none'}`);
 	}
+	if (expected.currencyOptions) {
+		const currencyOptions = price.currency_options ?? {};
+		for (const [currency, option] of Object.entries(expected.currencyOptions)) {
+			const existing = currencyOptions[currency.toLowerCase()];
+			if (!existing) {
+				mismatches.push(`currency_options.${currency}=missing`);
+				continue;
+			}
+			if (existing.unit_amount !== option.unitAmount) {
+				mismatches.push(
+					`currency_options.${currency}.unit_amount=${existing.unit_amount ?? 'null'}`
+				);
+			}
+		}
+	}
 
 	return mismatches;
 }
@@ -66,7 +86,8 @@ export async function getPriceByLookupKey(lookupKey: string) {
 	const list = await stripeClient.prices.list({
 		lookup_keys: [lookupKey],
 		active: true,
-		limit: 1
+		limit: 1,
+		expand: ['data.currency_options']
 	});
 	const price = list.data[0] ?? null;
 	if (price) {
@@ -122,13 +143,17 @@ function buildOneTimeCheckoutSessionParams({
 	successUrl,
 	cancelUrl,
 	entitlementKey,
-	lookupKey
+	lookupKey,
+	locale,
+	currency
 }: OneTimeCheckoutSessionParams): Stripe.Checkout.SessionCreateParams {
 	return {
 		mode: 'payment',
 		line_items: [{ price: priceId, quantity: 1 }],
 		success_url: successUrl,
 		cancel_url: cancelUrl,
+		locale,
+		currency,
 		client_reference_id: userId,
 		customer: customerId ?? undefined,
 		customer_email: customerId ? undefined : (customerEmail ?? undefined),
@@ -173,7 +198,9 @@ export async function createOneTimeCheckoutUrl({
 	customerEmail,
 	successUrl,
 	cancelUrl,
-	entitlementKey
+	entitlementKey,
+	locale,
+	currency
 }: {
 	lookupKey: string;
 	userId: string;
@@ -182,6 +209,8 @@ export async function createOneTimeCheckoutUrl({
 	successUrl: string;
 	cancelUrl: string;
 	entitlementKey: string;
+	locale?: Stripe.Checkout.SessionCreateParams.Locale;
+	currency?: string;
 }) {
 	if (!stripeClient) {
 		console.warn('[stripe] SECRET_STRIPE_KEY is not set; skipping checkout');
@@ -191,7 +220,12 @@ export async function createOneTimeCheckoutUrl({
 	const priceId = await getPriceIdByLookupKey(lookupKey, {
 		unitAmount: PREMIUM_LIFETIME_PRICE_AMOUNT,
 		currency: PREMIUM_LIFETIME_PRICE_CURRENCY,
-		recurring: false
+		recurring: false,
+		currencyOptions: {
+			[PREMIUM_LIFETIME_USD_PRICE_CURRENCY]: {
+				unitAmount: PREMIUM_LIFETIME_USD_PRICE_AMOUNT
+			}
+		}
 	});
 	if (!priceId) {
 		console.error('[stripe] failed to resolve price by lookup key', lookupKey);
@@ -207,7 +241,9 @@ export async function createOneTimeCheckoutUrl({
 			successUrl,
 			cancelUrl,
 			entitlementKey,
-			lookupKey
+			lookupKey,
+			locale,
+			currency
 		});
 
 		return session.url ?? null;

@@ -14,6 +14,11 @@ const price = (overrides: Partial<Stripe.Price> = {}): Stripe.Price =>
 		currency: 'jpy',
 		unit_amount: 3000,
 		recurring: null,
+		currency_options: {
+			usd: {
+				unit_amount: 1900
+			}
+		},
 		...overrides
 	}) as Stripe.Price;
 
@@ -24,6 +29,19 @@ describe('getStripePriceMismatch', () => {
 				unitAmount: 3000,
 				currency: 'jpy',
 				recurring: false
+			})
+		).toEqual([]);
+	});
+
+	it('accepts a matching multi-currency option', () => {
+		expect(
+			getStripePriceMismatch(price(), {
+				unitAmount: 3000,
+				currency: 'jpy',
+				recurring: false,
+				currencyOptions: {
+					usd: { unitAmount: 1900 }
+				}
 			})
 		).toEqual([]);
 	});
@@ -43,6 +61,30 @@ describe('getStripePriceMismatch', () => {
 				}
 			)
 		).toEqual(['unit_amount=5000', 'currency=usd', 'recurring=month']);
+	});
+
+	it('reports missing or mismatched multi-currency options', () => {
+		expect(
+			getStripePriceMismatch(price({ currency_options: {} }), {
+				currencyOptions: {
+					usd: { unitAmount: 1900 }
+				}
+			})
+		).toEqual(['currency_options.usd=missing']);
+		expect(
+			getStripePriceMismatch(
+				price({
+					currency_options: {
+						usd: { unit_amount: 2000 } as Stripe.Price.CurrencyOptions
+					}
+				}),
+				{
+					currencyOptions: {
+						usd: { unitAmount: 1900 }
+					}
+				}
+			)
+		).toEqual(['currency_options.usd.unit_amount=2000']);
 	});
 });
 
@@ -104,7 +146,9 @@ describe('createOneTimeCheckoutSession', () => {
 				successUrl: 'https://example.com/success',
 				cancelUrl: 'https://example.com/cancel',
 				entitlementKey: 'premium_lifetime',
-				lookupKey: 'premium_lifetime_3000'
+				lookupKey: 'premium_lifetime_3000',
+				locale: 'en',
+				currency: 'usd'
 			})
 		).resolves.toBe(session);
 
@@ -114,7 +158,9 @@ describe('createOneTimeCheckoutSession', () => {
 			expect.objectContaining({
 				customer: 'cus_deleted',
 				customer_email: undefined,
-				customer_creation: undefined
+				customer_creation: undefined,
+				locale: 'en',
+				currency: 'usd'
 			})
 		);
 		expect(create).toHaveBeenNthCalledWith(
@@ -122,7 +168,9 @@ describe('createOneTimeCheckoutSession', () => {
 			expect.objectContaining({
 				customer: undefined,
 				customer_email: 'user@example.com',
-				customer_creation: 'always'
+				customer_creation: 'always',
+				locale: 'en',
+				currency: 'usd'
 			})
 		);
 	});

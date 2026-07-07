@@ -161,6 +161,7 @@
 		try {
 			const { error } = await authClient.subscription.upgrade({
 				plan: premiumPlanName,
+				locale: currentLocale,
 				successUrl: page.url.pathname,
 				cancelUrl: page.url.pathname,
 				returnUrl: page.url.pathname
@@ -178,6 +179,7 @@
 		isUpgrading = true;
 		try {
 			const { data, error } = await authClient.subscription.billingPortal({
+				locale: currentLocale,
 				returnUrl: page.url.pathname,
 				disableRedirect: true
 			});
@@ -204,6 +206,7 @@
 		try {
 			await startLifetimeCheckout({
 				returnPath: page.url.pathname,
+				locale: currentLocale,
 				errorMessage: m.settings_lifetime_checkout_error(),
 				purchasedMessage: m.settings_plan_lifetime_purchased()
 			});

@@ -1,11 +1,21 @@
 import type { RequestHandler } from './$types';
 import { error, json } from '@sveltejs/kit';
 import { createAuth } from '$lib/auth';
+import { DEFAULT_LOCALE, type AppLocale } from '$lib/constant';
+import { isAppLocale } from '$lib/locale-routing';
 import {
 	listActiveEntitlementsForUser,
 	PREMIUM_LIFETIME_ENTITLEMENT_KEY
 } from '$lib/server/entitlements';
 import { createOneTimeCheckoutUrl, PREMIUM_LIFETIME_LOOKUP_KEY } from '$lib/server/stripe';
+import {
+	PREMIUM_LIFETIME_PRICE_CURRENCY,
+	PREMIUM_LIFETIME_USD_PRICE_CURRENCY
+} from '$lib/server/stripe-products';
+
+const resolveStripeLocale = (locale: AppLocale) => (locale === 'en' ? 'en' : 'ja');
+const resolveLifetimeCheckoutCurrency = (locale: AppLocale) =>
+	locale === 'en' ? PREMIUM_LIFETIME_USD_PRICE_CURRENCY : PREMIUM_LIFETIME_PRICE_CURRENCY;
 
 export const POST: RequestHandler = async ({ request, locals, url }) => {
 	const db = locals.db;
@@ -26,7 +36,10 @@ export const POST: RequestHandler = async ({ request, locals, url }) => {
 		return json({ url: null, alreadyPurchased: true });
 	}
 
-	const body = (await request.json().catch(() => ({}))) as { returnPath?: string };
+	const body = (await request.json().catch(() => ({}))) as {
+		returnPath?: string;
+		locale?: string;
+	};
 	const returnPath =
 		typeof body.returnPath === 'string' && body.returnPath.startsWith('/')
 			? body.returnPath
@@ -36,9 +49,14 @@ export const POST: RequestHandler = async ({ request, locals, url }) => {
 	const cancelUrl = new URL(returnPath, url.origin);
 	cancelUrl.searchParams.set('checkout', 'cancel');
 	const userRecord = await db.query.user.findFirst({
-		columns: { stripeCustomerId: true },
+		columns: { locale: true, stripeCustomerId: true },
 		where: (user, { eq }) => eq(user.id, userId)
 	});
+	const checkoutLocale = isAppLocale(body.locale)
+		? body.locale
+		: isAppLocale(userRecord?.locale)
+			? userRecord.locale
+			: DEFAULT_LOCALE;
 
 	const checkoutUrl = await createOneTimeCheckoutUrl({
 		lookupKey: PREMIUM_LIFETIME_LOOKUP_KEY,
@@ -47,7 +65,9 @@ export const POST: RequestHandler = async ({ request, locals, url }) => {
 		customerEmail: session.user.email,
 		successUrl: successUrl.toString(),
 		cancelUrl: cancelUrl.toString(),
-		entitlementKey: PREMIUM_LIFETIME_ENTITLEMENT_KEY
+		entitlementKey: PREMIUM_LIFETIME_ENTITLEMENT_KEY,
+		locale: resolveStripeLocale(checkoutLocale),
+		currency: resolveLifetimeCheckoutCurrency(checkoutLocale)
 	});
 
 	if (!checkoutUrl) {

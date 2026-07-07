@@ -203,6 +203,7 @@
 		try {
 			await startLifetimeCheckout({
 				returnPath: page.url.pathname,
+				locale: currentLocale,
 				errorMessage: m.settings_lifetime_checkout_error(),
 				purchasedMessage: m.settings_plan_lifetime_purchased()
 			});
