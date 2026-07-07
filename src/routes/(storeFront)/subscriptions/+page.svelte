@@ -492,9 +492,11 @@
 					{csvCopy.upgrade}
 				</Button>
 			{/if}
-			<Button onclick={() => (addSubscriptionOpen = true)}
-				>{m.subscription_page_add_button()}</Button
-			>
+			{#if filteredSubscriptions.length > 0}
+				<Button onclick={() => (addSubscriptionOpen = true)}
+					>{m.subscription_page_add_button()}</Button
+				>
+			{/if}
 		</div>
 	</header>
 	<PushNotificationControl
