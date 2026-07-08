@@ -2,6 +2,7 @@ import { defineConfig, devices } from '@playwright/test';
 
 const e2eDbPath = process.env.E2E_DB_PATH ?? '.tmp/e2e/subtrack-e2e.sqlite';
 const authFile = 'e2e/.auth/user.json';
+const authLocaleFile = 'e2e/.auth/user-en.json';
 
 export default defineConfig({
 	testDir: './e2e',
@@ -28,12 +29,26 @@ export default defineConfig({
 			use: { ...devices['Desktop Chrome'] }
 		},
 		{
+			name: 'auth.locale.setup',
+			testMatch: /auth-locale\.setup\.ts/,
+			use: { ...devices['Desktop Chrome'] }
+		},
+		{
 			name: 'auth',
 			dependencies: ['auth.setup'],
 			testMatch: /auth\/.*\.test\.ts/,
 			use: {
 				...devices['Desktop Chrome'],
 				storageState: authFile
+			}
+		},
+		{
+			name: 'auth-locale',
+			dependencies: ['auth.locale.setup'],
+			testMatch: /auth-locale\/.*\.test\.ts/,
+			use: {
+				...devices['Desktop Chrome'],
+				storageState: authLocaleFile
 			}
 		}
 	],

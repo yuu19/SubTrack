@@ -9,6 +9,7 @@ pnpm run test:e2e
 pnpm run test:e2e:list
 pnpm run test:e2e:public
 pnpm run test:e2e:auth
+pnpm run test:e2e:auth-locale
 pnpm run test:e2e:billing
 pnpm run test:e2e:headed
 pnpm run test:e2e:ui
@@ -25,13 +26,17 @@ pnpm exec playwright test e2e/public/home.test.ts --project=public
 
 - `public/`: 認証不要の公開ページ向け spec。
 - `auth/`: 認証が必要な主要導線向け spec。
+- `auth-locale/`: 初期 locale を指定した認証状態の spec。
 - `pages/`: Page Object。spec から低レベルな locator 操作を分離する。
 - `auth.setup.ts`: Better Auth の email/password API でテストユーザーを作成し、`storageState` を保存する。
+- `auth-locale.setup.ts`: `subtrack_locale=en` を付けてテストユーザーを作成し、英語初期 locale の `storageState` を保存する。
 - `global-setup.ts`: `E2E_DB_PATH` の SQLite を毎回作り直し、Drizzle schema を反映する。
 
 ## 認証付き E2E
 
 `auth` project は `E2E_DB_PATH=.tmp/e2e/subtrack-e2e.sqlite` を使います。`global-setup.ts` が `drizzle-kit push --force` で schema を反映し、`auth.setup.ts` が `/api/auth/sign-up/email` を通してテストユーザーとセッションを作成し、`e2e/.auth/user.json` を保存します。
+
+`auth-locale` project は既存の auth 状態とは分けて、`subtrack_locale=en` 付きの新規ユーザーを `e2e/.auth/user-en.json` に保存します。locale-less な保護ルートでも保存済みの英語 locale に従って `/en/...` へ進むことを確認します。
 
 E2E 中は `E2E_AUTH_DISABLE_STRIPE=true` を設定し、Better Auth の Stripe plugin によるサインアップ時の Stripe 顧客作成を止めます。
 

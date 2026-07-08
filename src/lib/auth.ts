@@ -22,7 +22,13 @@ const authBaseUrl =
 const authBasePath = '/api/auth';
 type CreateAuthOptions = {
 	requestOrigin?: string;
+	initialLocale?: string | null;
 };
+type AuthHookContext = {
+	headers?: Headers;
+	request?: Request;
+	getCookie?: (name: string) => string | null | undefined | Promise<string | null | undefined>;
+} | null;
 
 const getRequestOrigin = (): string | undefined => {
 	try {
@@ -54,7 +60,34 @@ const resolveAuthRedirectURI = (requestOrigin?: string, providerId = 'google') =
 	return new URL(`${authBasePath}/callback/${providerId}`, origin).toString();
 };
 
-const resolveInitialUserLocale = () => {
+const getLocaleFromCookieHeader = (cookieHeader: string | null | undefined) => {
+	if (!cookieHeader) return null;
+
+	for (const cookie of cookieHeader.split(';')) {
+		const [rawName, ...rawValue] = cookie.trim().split('=');
+		if (rawName !== SUBTRACK_LOCALE_COOKIE) continue;
+
+		const value = decodeURIComponent(rawValue.join('='));
+		return isAppLocale(value) ? value : null;
+	}
+
+	return null;
+};
+
+const resolveInitialUserLocale = async (
+	initialLocale: string | null | undefined,
+	context?: AuthHookContext
+) => {
+	if (isAppLocale(initialLocale)) return initialLocale;
+
+	const contextCookieLocale = await context?.getCookie?.(SUBTRACK_LOCALE_COOKIE);
+	if (isAppLocale(contextCookieLocale)) return contextCookieLocale;
+
+	const cookieLocale = getLocaleFromCookieHeader(
+		context?.headers?.get('cookie') ?? context?.request?.headers.get('cookie')
+	);
+	if (cookieLocale) return cookieLocale;
+
 	try {
 		const locale = getRequestEvent()?.cookies.get(SUBTRACK_LOCALE_COOKIE);
 		return isAppLocale(locale) ? locale : DEFAULT_LOCALE;
@@ -85,13 +118,23 @@ export function createAuth(
 		emailAndPassword: {
 			enabled: true
 		},
+		user: {
+			additionalFields: {
+				locale: {
+					type: 'string',
+					required: false,
+					input: false,
+					defaultValue: DEFAULT_LOCALE
+				}
+			}
+		},
 		databaseHooks: {
 			user: {
 				create: {
-					before: async (user) => ({
+					before: async (user, context) => ({
 						data: {
 							...user,
-							locale: resolveInitialUserLocale()
+							locale: await resolveInitialUserLocale(options.initialLocale, context)
 						}
 					})
 				}

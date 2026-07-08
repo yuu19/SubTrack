@@ -47,7 +47,10 @@ const handleAuth: Handle = async ({ event, resolve }) => {
 	}
 
 	const { db } = locals;
-	const auth = createAuth(db, { requestOrigin: event.url.origin });
+	const auth = createAuth(db, {
+		requestOrigin: event.url.origin,
+		initialLocale: event.cookies.get(SUBTRACK_LOCALE_COOKIE)
+	});
 	const session = await auth.api.getSession({ headers: request.headers });
 	const adminExtraAccessResponse = requireAdminExtraAccess(event, canonicalPathname);
 
