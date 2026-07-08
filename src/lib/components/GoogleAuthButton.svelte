@@ -1,16 +1,29 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages.js';
+	import { getLocale } from '$lib/paraglide/runtime';
 	import { authClient } from '$lib/auth-client';
+	import { resolveLocale } from '$lib/locale';
+	import {
+		localizeInternalHref,
+		SUBTRACK_LOCALE_COOKIE,
+		SUBTRACK_LOCALE_COOKIE_MAX_AGE
+	} from '$lib/locale-routing';
 	import { toast } from 'svelte-sonner';
-	import { base } from '$app/paths';
+	import { resolve } from '$app/paths';
 
 	let { label = m.google_auth_button_label(), disabled = false } = $props<{
 		label?: string;
 		disabled?: boolean;
 	}>();
 
+	const persistLoginLocale = (locale: string) => {
+		document.cookie = `${SUBTRACK_LOCALE_COOKIE}=${encodeURIComponent(locale)}; Path=/; Max-Age=${SUBTRACK_LOCALE_COOKIE_MAX_AGE}; SameSite=Lax`;
+	};
+
 	const handleClick = async () => {
-		const callbackURL = `${base}/subscriptions`;
+		const currentLocale = resolveLocale(getLocale());
+		persistLoginLocale(currentLocale);
+		const callbackURL = localizeInternalHref(resolve('/subscriptions'), currentLocale);
 		const { error } = await authClient.signIn.social({
 			provider: 'google',
 			callbackURL,

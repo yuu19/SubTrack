@@ -8,6 +8,8 @@ import type { DrizzleD1Database } from 'drizzle-orm/d1';
 import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 import { sveltekitCookies } from 'better-auth/svelte-kit';
 import { getRequestEvent } from '$app/server';
+import { DEFAULT_LOCALE } from '$lib/constant';
+import { isAppLocale, SUBTRACK_LOCALE_COOKIE } from '$lib/locale-routing';
 import { parseAdminUserIds } from '$lib/server/admin';
 import { handleStripeLifetimeCheckoutEvent } from '$lib/server/stripe-lifetime';
 import { PREMIUM_MONTHLY_LOOKUP_KEY, TEST_DAILY_LOOKUP_KEY } from '$lib/server/stripe-products';
@@ -51,6 +53,15 @@ const resolveAuthRedirectURI = (requestOrigin?: string, providerId = 'google') =
 
 	return new URL(`${authBasePath}/callback/${providerId}`, origin).toString();
 };
+
+const resolveInitialUserLocale = () => {
+	try {
+		const locale = getRequestEvent()?.cookies.get(SUBTRACK_LOCALE_COOKIE);
+		return isAppLocale(locale) ? locale : DEFAULT_LOCALE;
+	} catch {
+		return DEFAULT_LOCALE;
+	}
+};
 const adminUserIds = parseAdminUserIds(process.env.ADMIN_USER_IDS);
 const disableStripePlugin = process.env.E2E_AUTH_DISABLE_STRIPE === 'true';
 const createStripeCustomerOnSignUp = process.env.E2E_STRIPE_CREATE_CUSTOMER_ON_SIGNUP !== 'false';
@@ -73,6 +84,18 @@ export function createAuth(
 		baseURL: resolveAuthBaseUrl(options.requestOrigin),
 		emailAndPassword: {
 			enabled: true
+		},
+		databaseHooks: {
+			user: {
+				create: {
+					before: async (user) => ({
+						data: {
+							...user,
+							locale: resolveInitialUserLocale()
+						}
+					})
+				}
+			}
 		},
 		socialProviders: {
 			google: {
