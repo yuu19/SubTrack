@@ -36,6 +36,7 @@
 		iconType?: string | null;
 		iconValue?: string | null;
 		amount: number;
+		currency?: string | null;
 		cycle: string;
 		nextBillingAt?: string | null;
 		daysUntilNextBilling?: number | null;

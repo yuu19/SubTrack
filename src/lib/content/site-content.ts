@@ -1,4 +1,4 @@
-import type { AppLocale } from '$lib/constant';
+import type { AppLocale, SubscriptionCurrency } from '$lib/constant';
 import privacyPolicySource from '../../../docs/プライバシーポリシー.md?raw';
 import privacyPolicySourceEn from '../../../docs/privacy-policy.en.md?raw';
 import termsOfServiceSource from '../../../docs/利用規約.md?raw';
@@ -110,6 +110,7 @@ export type DemoSubscriptionSample = {
 	color: string;
 	cycle: DemoSubscriptionCycle;
 	amount: number;
+	currency: SubscriptionCurrency;
 	firstPaymentDate: string;
 	nextBillingAt: string;
 	daysUntilNextBilling: number;
@@ -796,13 +797,13 @@ export const landingPageCopy: Record<AppLocale, LandingPageCopy> = {
 					'Demo of the SubTrack dashboard showing monthly total, next billing, and reminder status',
 				windowTitle: 'SubTrack dashboard',
 				totalLabel: 'Monthly recurring cost',
-				totalBefore: 'JPY 8,480',
-				totalAfter: 'JPY 7,280',
+				totalBefore: '$84.80',
+				totalAfter: '$72.80',
 				totalHint: 'After reviewing one inactive service',
 				nextBillLabel: 'Next billing',
 				nextBillService: 'Cloud storage',
 				nextBillDate: 'Jun 18',
-				nextBillAmount: 'JPY 1,200',
+				nextBillAmount: '$12.00',
 				notificationTitle: 'Reminder 3 days before',
 				notificationBody: 'Review the annual video plan renewal',
 				calendarTitle: 'This week',
@@ -816,14 +817,14 @@ export const landingPageCopy: Record<AppLocale, LandingPageCopy> = {
 				serviceLabel: 'Service',
 				serviceName: 'Video service',
 				amountLabel: 'Amount',
-				amount: 'JPY 1,200',
+				amount: '$12.00',
 				cycleLabel: 'Billing cycle',
 				cycle: 'Monthly',
 				button: 'Add',
 				addedLabel: 'Added to your list',
 				totalLabel: 'Monthly total',
-				totalBefore: 'JPY 6,080',
-				totalAfter: 'JPY 7,280'
+				totalBefore: '$60.80',
+				totalAfter: '$72.80'
 			},
 			notification: {
 				ariaLabel: 'Demo of renewal reminders arriving before payment dates',
@@ -853,12 +854,12 @@ export const landingPageCopy: Record<AppLocale, LandingPageCopy> = {
 				title: 'Spending breakdown',
 				subtitle: 'Converted to monthly cost',
 				totalLabel: 'Total',
-				total: 'JPY 7,280',
+				total: '$72.80',
 				reviewLabel: 'Review candidate',
 				items: [
-					{ label: 'Work', amount: 'JPY 3,200', share: 44 },
-					{ label: 'Video and music', amount: 'JPY 2,180', share: 30 },
-					{ label: 'Cloud', amount: 'JPY 1,900', share: 26 }
+					{ label: 'Work', amount: '$32.00', share: 44 },
+					{ label: 'Video and music', amount: '$21.80', share: 30 },
+					{ label: 'Cloud', amount: '$19.00', share: 26 }
 				]
 			},
 			ticker: {
@@ -901,7 +902,7 @@ export const landingPageCopy: Record<AppLocale, LandingPageCopy> = {
 					title: 'Add a subscription',
 					description: 'Enter the service name, amount, billing cycle, and first payment date.',
 					image: {
-						src: '/images/onboarding/subscriptions-real.png',
+						src: '/images/onboarding/subscriptions-real-en.png',
 						alt: 'SubTrack list of registered subscriptions'
 					}
 				},
@@ -973,7 +974,7 @@ export const landingPageCopy: Record<AppLocale, LandingPageCopy> = {
 			plans: [
 				{
 					name: 'Free',
-					price: 'JPY 0',
+					price: '$0',
 					cycle: 'For getting started',
 					description: 'Track up to 5 subscriptions.',
 					bullets: ['Subscription list', 'Renewal date review', 'Basic calendar and analytics']
@@ -1147,7 +1148,8 @@ export const demoPageCopy: Record<AppLocale, DemoPageCopy> = {
 					serviceName: 'Netflix',
 					color: 'red',
 					cycle: 'monthly',
-					amount: 1490,
+					amount: 15.49,
+					currency: 'USD',
 					firstPaymentDate: '2026-06-15',
 					nextBillingAt: '2026-06-15',
 					daysUntilNextBilling: 2,
@@ -1161,7 +1163,8 @@ export const demoPageCopy: Record<AppLocale, DemoPageCopy> = {
 					serviceName: 'Spotify',
 					color: 'green',
 					cycle: 'monthly',
-					amount: 980,
+					amount: 11.99,
+					currency: 'USD',
 					firstPaymentDate: '2026-06-21',
 					nextBillingAt: '2026-06-21',
 					daysUntilNextBilling: 8,
@@ -1175,7 +1178,8 @@ export const demoPageCopy: Record<AppLocale, DemoPageCopy> = {
 					serviceName: 'Notion',
 					color: 'purple',
 					cycle: 'yearly',
-					amount: 12000,
+					amount: 120,
+					currency: 'USD',
 					firstPaymentDate: '2026-06-28',
 					nextBillingAt: '2026-06-28',
 					daysUntilNextBilling: 15,
@@ -1189,7 +1193,8 @@ export const demoPageCopy: Record<AppLocale, DemoPageCopy> = {
 					serviceName: 'Adobe Creative Cloud',
 					color: 'orange',
 					cycle: 'monthly',
-					amount: 3280,
+					amount: 59.99,
+					currency: 'USD',
 					firstPaymentDate: '2026-06-20',
 					nextBillingAt: '2026-06-20',
 					daysUntilNextBilling: 7,
@@ -1203,7 +1208,8 @@ export const demoPageCopy: Record<AppLocale, DemoPageCopy> = {
 					serviceName: 'Figma',
 					color: 'yellow',
 					cycle: 'quarterly',
-					amount: 4500,
+					amount: 45,
+					currency: 'USD',
 					firstPaymentDate: '2026-06-18',
 					nextBillingAt: '2026-06-18',
 					daysUntilNextBilling: 5,
@@ -1218,7 +1224,8 @@ export const demoPageCopy: Record<AppLocale, DemoPageCopy> = {
 				serviceName: 'Google One',
 				color: 'blue',
 				cycle: 'monthly',
-				amount: 250,
+				amount: 2.99,
+				currency: 'USD',
 				firstPaymentDate: '2026-06-24',
 				nextBillingAt: '2026-06-24',
 				daysUntilNextBilling: 11,
@@ -1325,6 +1332,7 @@ export const demoPageCopy: Record<AppLocale, DemoPageCopy> = {
 					color: 'red',
 					cycle: 'monthly',
 					amount: 1490,
+					currency: 'JPY',
 					firstPaymentDate: '2026-06-15',
 					nextBillingAt: '2026-06-15',
 					daysUntilNextBilling: 2,
@@ -1339,6 +1347,7 @@ export const demoPageCopy: Record<AppLocale, DemoPageCopy> = {
 					color: 'green',
 					cycle: 'monthly',
 					amount: 980,
+					currency: 'JPY',
 					firstPaymentDate: '2026-06-21',
 					nextBillingAt: '2026-06-21',
 					daysUntilNextBilling: 8,
@@ -1353,6 +1362,7 @@ export const demoPageCopy: Record<AppLocale, DemoPageCopy> = {
 					color: 'purple',
 					cycle: 'yearly',
 					amount: 12000,
+					currency: 'JPY',
 					firstPaymentDate: '2026-06-28',
 					nextBillingAt: '2026-06-28',
 					daysUntilNextBilling: 15,
@@ -1367,6 +1377,7 @@ export const demoPageCopy: Record<AppLocale, DemoPageCopy> = {
 					color: 'orange',
 					cycle: 'monthly',
 					amount: 3280,
+					currency: 'JPY',
 					firstPaymentDate: '2026-06-20',
 					nextBillingAt: '2026-06-20',
 					daysUntilNextBilling: 7,
@@ -1381,6 +1392,7 @@ export const demoPageCopy: Record<AppLocale, DemoPageCopy> = {
 					color: 'yellow',
 					cycle: 'quarterly',
 					amount: 4500,
+					currency: 'JPY',
 					firstPaymentDate: '2026-06-18',
 					nextBillingAt: '2026-06-18',
 					daysUntilNextBilling: 5,
@@ -1396,6 +1408,7 @@ export const demoPageCopy: Record<AppLocale, DemoPageCopy> = {
 				color: 'blue',
 				cycle: 'monthly',
 				amount: 250,
+				currency: 'JPY',
 				firstPaymentDate: '2026-06-24',
 				nextBillingAt: '2026-06-24',
 				daysUntilNextBilling: 11,

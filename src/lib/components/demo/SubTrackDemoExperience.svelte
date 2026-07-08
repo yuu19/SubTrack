@@ -17,14 +17,14 @@
 	} from '$lib/components/ui/card';
 	import Input from '$lib/components/ui/input/input.svelte';
 	import * as Dialog from '$lib/components/ui/dialog';
-	import type { AppLocale } from '$lib/constant';
+	import type { AppLocale, SubscriptionCurrency } from '$lib/constant';
 	import type {
 		DemoPageCopy,
 		DemoSubscriptionCycle,
 		DemoSubscriptionSample
 	} from '$lib/content/site-content';
 	import {
-		formatCurrencyYen,
+		formatCurrency,
 		formatLongDate,
 		formatNotifyDays,
 		getCycleLabel,
@@ -61,6 +61,7 @@
 		title: string;
 		date: string;
 		amount: number;
+		currency: SubscriptionCurrency;
 		color: SubscriptionColor;
 		description?: string | null;
 	};
@@ -71,6 +72,7 @@
 		cycle: DemoSubscriptionCycle;
 		notifyDaysBefore: number;
 		amount: number;
+		currency: SubscriptionCurrency;
 		firstPaymentDate: string;
 	};
 
@@ -132,6 +134,7 @@
 		cycle: subscription.cycle,
 		notifyDaysBefore: subscription.notifyDaysBefore,
 		amount: subscription.amount,
+		currency: subscription.currency,
 		firstPaymentDate: subscription.firstPaymentDate
 	});
 
@@ -167,6 +170,7 @@
 	const selectedSubscription = $derived(
 		subscriptions.find((subscription) => subscription.id === selectedSubscriptionId) ?? null
 	);
+	const demoCurrency = $derived(copy.samples.addCandidate.currency);
 	const monthlyTotal = $derived(calculateTotal(subscriptions, 'monthly'));
 	const yearlyTotal = $derived(calculateTotal(subscriptions, 'yearly'));
 	const calendarEvents = $derived.by(() => {
@@ -192,22 +196,36 @@
 	);
 	const activeViewTitle = $derived(copy.tabs[activeTab]);
 
+	function roundDemoAmount(amount: number, currency: SubscriptionCurrency) {
+		const factor = currency === 'JPY' ? 1 : 100;
+		return Math.round((amount + Number.EPSILON) * factor) / factor;
+	}
+
 	function normalizeAmount(subscription: DemoSubscription, period: AnalyticsPeriod) {
 		if (!Number.isFinite(subscription.amount) || subscription.amount <= 0) return 0;
 
 		if (period === 'monthly') {
-			if (subscription.cycle === 'yearly') return Math.round(subscription.amount / 12);
-			if (subscription.cycle === 'quarterly') return Math.round(subscription.amount / 3);
-			return Math.round(subscription.amount);
+			if (subscription.cycle === 'yearly') {
+				return roundDemoAmount(subscription.amount / 12, subscription.currency);
+			}
+			if (subscription.cycle === 'quarterly') {
+				return roundDemoAmount(subscription.amount / 3, subscription.currency);
+			}
+			return roundDemoAmount(subscription.amount, subscription.currency);
 		}
 
-		if (subscription.cycle === 'yearly') return Math.round(subscription.amount);
-		if (subscription.cycle === 'quarterly') return Math.round(subscription.amount * 4);
-		return Math.round(subscription.amount * 12);
+		if (subscription.cycle === 'yearly') return roundDemoAmount(subscription.amount, subscription.currency);
+		if (subscription.cycle === 'quarterly') {
+			return roundDemoAmount(subscription.amount * 4, subscription.currency);
+		}
+		return roundDemoAmount(subscription.amount * 12, subscription.currency);
 	}
 
 	function calculateTotal(items: DemoSubscription[], period: AnalyticsPeriod) {
-		return items.reduce((total, subscription) => total + normalizeAmount(subscription, period), 0);
+		return roundDemoAmount(
+			items.reduce((total, subscription) => total + normalizeAmount(subscription, period), 0),
+			demoCurrency
+		);
 	}
 
 	function buildAnalyticsSummary(
@@ -232,7 +250,10 @@
 			});
 		}
 
-		const total = Array.from(grouped.values()).reduce((sum, item) => sum + item.amount, 0);
+		const total = roundDemoAmount(
+			Array.from(grouped.values()).reduce((sum, item) => sum + item.amount, 0),
+			demoCurrency
+		);
 		const analyticsItems = Array.from(grouped.entries())
 			.map(([serviceName, item]) => ({
 				serviceName,
@@ -250,8 +271,8 @@
 		};
 	}
 
-	function formatAmount(amount: number) {
-		return formatCurrencyYen(amount, locale);
+	function formatAmount(amount: number, currency: SubscriptionCurrency = demoCurrency) {
+		return formatCurrency(amount, currency, locale);
 	}
 
 	function formatBillingDate(value?: string | null) {
@@ -310,6 +331,7 @@
 					title: subscription.serviceName,
 					date: occurrence.format('YYYY-MM-DD'),
 					amount: Number(subscription.amount ?? 0),
+					currency: subscription.currency,
 					color,
 					description: ''
 				});
@@ -331,7 +353,8 @@
 			serviceName: addForm.serviceName.trim() || copy.samples.addCandidate.serviceName,
 			color: addForm.color,
 			cycle: addForm.cycle,
-			amount: Math.max(0, Math.round(Number(addForm.amount) || 0)),
+			amount: roundDemoAmount(Math.max(0, Number(addForm.amount) || 0), addForm.currency),
+			currency: addForm.currency,
 			firstPaymentDate: firstPayment,
 			nextBillingAt: nextBilling.format('YYYY-MM-DD'),
 			daysUntilNextBilling: Math.max(0, nextBilling.diff(demoToday, 'day')),
@@ -579,7 +602,7 @@
 									</div>
 									<div class="shrink-0 text-right">
 										<div class="text-base font-semibold">
-											{formatAmount(sub.amount)}
+											{formatAmount(sub.amount, sub.currency)}
 											<span class="text-muted-foreground text-xs">
 												/ {getCycleUnitLabel(sub.cycle, locale)}
 											</span>
@@ -892,7 +915,7 @@
 							id="demo-amount"
 							type="number"
 							min="0"
-							step="1"
+							step={addForm.currency === 'JPY' ? '1' : '0.01'}
 							required
 							bind:value={addForm.amount}
 						/>
