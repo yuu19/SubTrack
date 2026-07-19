@@ -3,6 +3,7 @@ import { createAuthClient } from 'better-auth/svelte'; // make sure to import fr
 import { stripeClient } from '@better-auth/stripe/client';
 import { toast } from 'svelte-sonner';
 import { authClientCopy, resolveUserFacingLocale } from '$lib/i18n-copy';
+import { getLocalePrefix, localizeInternalHref } from '$lib/locale-routing';
 
 const getBrowserLocale = () => {
 	const cookieLocale = document.cookie
@@ -22,7 +23,8 @@ export const authClient = createAuthClient({
 		adminClient(),
 		twoFactorClient({
 			onTwoFactorRedirect() {
-				window.location.href = '/admin/security?verify=1';
+				const locale = getLocalePrefix(window.location.pathname) ?? getBrowserLocale();
+				window.location.href = localizeInternalHref('/admin/security?verify=1', locale);
 			}
 		}),
 		stripeClient({

@@ -4,6 +4,9 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
 	import { authClient } from '$lib/auth-client';
+	import { localizeInternalHref } from '$lib/locale-routing';
+	import { getLocale } from '$lib/paraglide/runtime';
+	import { resolveLocale } from '$lib/locale';
 	import { CheckCircle2, Copy, KeyRound, ShieldCheck } from 'lucide-svelte';
 	import { toast } from 'svelte-sonner';
 
@@ -16,7 +19,8 @@
 	let backupCodes = $state<string[]>([]);
 	let isSubmitting = $state(false);
 
-	const adminHref = resolve('/admin');
+	const currentLocale = $derived(resolveLocale(getLocale()));
+	const adminHref = $derived(localizeInternalHref(resolve('/admin'), currentLocale));
 
 	const setPassword = async () => {
 		if (newPassword.length < 8) {

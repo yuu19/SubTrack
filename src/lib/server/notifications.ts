@@ -186,12 +186,11 @@ export const dispatchSubscriptionNotifications = async (
 		const method = user.notificationMethod ?? 'email';
 		const shouldPush = method === 'push' || method === 'both';
 		const shouldEmail = method === 'email' || method === 'both';
-		let attempted = false;
+		let delivered = false;
 
 		if (shouldPush && pushEnabled) {
 			const userPushSubscriptions = pushByUser.get(userId) ?? [];
 			if (userPushSubscriptions.length > 0) {
-				attempted = true;
 				const payload = buildPayload(sub, userLocale, due.targetDate);
 
 				for (const pushSub of userPushSubscriptions) {
@@ -216,6 +215,7 @@ export const dispatchSubscriptionNotifications = async (
 
 						if (response.ok) {
 							sent += 1;
+							delivered = true;
 						} else {
 							failed += 1;
 						}
@@ -229,7 +229,6 @@ export const dispatchSubscriptionNotifications = async (
 
 		if (shouldEmail && user.email && emailEnabled) {
 			const subscriptionUrl = resolveSubscriptionUrl(userLocale, sub.id);
-			attempted = true;
 			try {
 				await sendSubscriptionReminderEmail({
 					user: { email: user.email, name: user.name },
@@ -240,13 +239,14 @@ export const dispatchSubscriptionNotifications = async (
 					locale: userLocale
 				});
 				sent += 1;
+				delivered = true;
 			} catch (error) {
 				console.error('[subscription-notify] failed to send email', error);
 				failed += 1;
 			}
 		}
 
-		if (attempted) {
+		if (delivered) {
 			await db
 				.update(trackedSubscriptionTable)
 				.set({ lastNotifiedAt: now, lastNotifiedDate: due.targetDate })

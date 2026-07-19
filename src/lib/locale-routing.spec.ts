@@ -37,6 +37,7 @@ describe('locale routing helpers', () => {
 		expect(isHtmlLocaleRedirectExcludedPath('/service-worker.js')).toBe(true);
 		expect(isHtmlLocaleRedirectExcludedPath('/images/logo.png')).toBe(true);
 		expect(isHtmlLocaleRedirectExcludedPath('/subscriptions/export')).toBe(true);
+		expect(isHtmlLocaleRedirectExcludedPath('/subscriptions/import-template')).toBe(true);
 		expect(isHtmlLocaleRedirectExcludedPath('/faq')).toBe(false);
 	});
 
@@ -77,6 +78,9 @@ describe('locale routing helpers', () => {
 		expect(localizeInternalHref('/me/settings#plan-info', 'en')).toBe('/en/me/settings#plan-info');
 		expect(localizeInternalHref('/api/locale', 'en')).toBe('/api/locale');
 		expect(localizeInternalHref('/subscriptions/export', 'en')).toBe('/subscriptions/export');
+		expect(localizeInternalHref('/subscriptions/import-template', 'en')).toBe(
+			'/subscriptions/import-template'
+		);
 		expect(localizeInternalHref('#pricing', 'en')).toBe('#pricing');
 		expect(localizeInternalHref('https://example.com/faq', 'en')).toBe('https://example.com/faq');
 	});

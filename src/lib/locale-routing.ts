@@ -23,7 +23,8 @@ const staticAssetPaths = new Set([
 	'/robots.txt',
 	'/service-worker.js',
 	'/sitemap.xml',
-	'/subscriptions/export'
+	'/subscriptions/export',
+	'/subscriptions/import-template'
 ]);
 const fileExtensionPattern = /\/[^/]+\.[a-zA-Z0-9]{1,12}$/;
 

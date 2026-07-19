@@ -9,6 +9,7 @@
 	import { DEFAULT_TIME_ZONE } from '$lib/constant';
 	import { stripLocalePrefix } from '$lib/locale-routing';
 	import { isValidTimeZone } from '$lib/time-zone';
+	import { onMount } from 'svelte';
 
 	const props = $props();
 	// todo: この部分について修正する必要があるか確認する
@@ -22,20 +23,27 @@
 			setTheme(userConfig.current.activeTheme);
 		}
 	);
-	$effect(() => {
+	onMount(() => {
 		if (!props.data.user || typeof window === 'undefined') return;
 		const storageKey = `subtrack_timezone_initialized:${props.data.user.id}`;
 		if (window.localStorage.getItem(storageKey) === '1') return;
 
 		const detectedTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-		window.localStorage.setItem(storageKey, '1');
-		if (
+		const shouldPersistDetectedTimeZone =
 			isValidTimeZone(detectedTimeZone) &&
 			userConfig.current.timeZone === DEFAULT_TIME_ZONE &&
-			detectedTimeZone !== DEFAULT_TIME_ZONE
-		) {
-			void userConfig.updateConfig({ timeZone: detectedTimeZone });
+			detectedTimeZone !== DEFAULT_TIME_ZONE;
+
+		if (!shouldPersistDetectedTimeZone) {
+			window.localStorage.setItem(storageKey, '1');
+			return;
 		}
+
+		void userConfig.updateConfig({ timeZone: detectedTimeZone }).then((persisted) => {
+			if (persisted) {
+				window.localStorage.setItem(storageKey, '1');
+			}
+		});
 	});
 	const themeColors = { light: '#ffffff', dark: '#09090b' };
 </script>
