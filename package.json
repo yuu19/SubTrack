@@ -51,7 +51,7 @@
 		"better-sqlite3": "^12.5.0",
 		"bits-ui": "2.14.4",
 		"clsx": "^2.1.1",
-		"drizzle-kit": "^0.31.7",
+		"drizzle-kit": "^0.31.10",
 		"embla-carousel-svelte": "^8.6.0",
 		"eslint": "^9.39.1",
 		"eslint-config-prettier": "^10.1.8",
