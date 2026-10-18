@@ -7,7 +7,7 @@ import { sentrySvelteKit } from '@sentry/sveltekit';
 
 export default defineConfig({
 	plugins: [
-		sentrySvelteKit(),
+		sentrySvelteKit({ telemetry: false }),
 		tailwindcss(),
 		sveltekit(),
 		paraglideVitePlugin({
