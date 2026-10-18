@@ -22,6 +22,7 @@
 		"fetch:template-icons": "node scripts/fetch-template-icons.mjs",
 		"sync:template-icons": "node scripts/sync-template-icons.mjs",
 		"test:unit": "vitest",
+		"test:auth": "vitest run --config vitest.auth.config.ts",
 		"test": "npm run test:unit -- --run && npm run test:e2e",
 		"test:e2e": "playwright test",
 		"test:e2e:list": "playwright test --list",
@@ -82,10 +83,10 @@
 		"vitest": "^4.0.10",
 		"vitest-browser-svelte": "^2.0.1",
 		"wrangler": "^4.53.0",
-		"zod": "^4.1.13"
+		"zod": "^4.3.6"
 	},
 	"dependencies": {
-		"@better-auth/stripe": "1.5.5",
+		"@better-auth/stripe": "1.6.22",
 		"@oslojs/crypto": "^1.0.1",
 		"@oslojs/encoding": "^1.1.0",
 		"@sentry/sveltekit": "^10.29.0",
@@ -94,7 +95,7 @@
 		"@types/nprogress": "^0.2.3",
 		"better-auth": "1.6.22",
 		"dayjs": "^1.11.19",
-		"drizzle-orm": "^0.45.0",
+		"drizzle-orm": "^0.45.4",
 		"drizzle-zod": "^0.8.3",
 		"embla-carousel-autoplay": "^8.6.0",
 		"embla-carousel-fade": "^8.6.0",

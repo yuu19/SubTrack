@@ -1,0 +1,35 @@
+name: Auth and billing regression
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  auth-billing:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.28.2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test:auth
+      - name: Build Cloudflare bundle with synthetic configuration
+        run: pnpm run build
+        env:
+          BETTER_AUTH_URL: http://localhost:3000
+          BETTER_AUTH_SECRET: isolated-build-secret-0123456789abcdef
+          SECRET_STRIPE_KEY: sk_test_isolated_build
+          STRIPE_WEBHOOK_SECRET: whsec_isolated_build
+          GOOGLE_CLIENT_ID: isolated-google-client
+          GOOGLE_CLIENT_SECRET: isolated-google-secret
+          RESEND_API_KEY: re_isolated_build
+          WRANGLER_SEND_METRICS: 'false'
