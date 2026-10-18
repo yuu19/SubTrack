@@ -22,7 +22,7 @@
 		"fetch:template-icons": "node scripts/fetch-template-icons.mjs",
 		"sync:template-icons": "node scripts/sync-template-icons.mjs",
 		"test:unit": "vitest",
-		"test:auth": "vitest run --config vitest.auth.config.ts",
+		"test:auth": "svelte-kit sync && vitest run --config vitest.auth.config.ts",
 		"test": "npm run test:unit -- --run && npm run test:e2e",
 		"test:e2e": "playwright test",
 		"test:e2e:list": "playwright test --list",
