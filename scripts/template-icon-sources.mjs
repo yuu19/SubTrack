@@ -22,5 +22,14 @@ export const templateIconSources = [
 	{ id: 'slack', sourceUrl: 'https://slack.com/intl/ja-jp/pricing' },
 	{ id: 'zoom', sourceUrl: 'https://www.zoom.com/pricing' },
 	{ id: 'github', sourceUrl: 'https://github.com/pricing' },
-	{ id: 'chatgpt', sourceUrl: 'https://openai.com/chatgpt/pricing/' }
+	{ id: 'chatgpt', sourceUrl: 'https://openai.com/chatgpt/pricing/' },
+	{ id: 'hulu', sourceUrl: 'https://www.hulu.jp/static/legal/act/' },
+	{ id: 'dmm-tv', sourceUrl: 'https://premium.dmm.com/about/' },
+	{
+		id: 'd-anime-store',
+		sourceUrl: 'https://animestore.docomo.ne.jp/animestore/CF/specified_commercial_transactions'
+	},
+	{ id: 'apple-tv', sourceUrl: 'https://www.apple.com/jp/apple-tv-app/' },
+	{ id: 'claude', sourceUrl: 'https://claude.com/pricing' },
+	{ id: 'github-copilot', sourceUrl: 'https://github.com/features/copilot/plans' }
 ];

@@ -20,8 +20,8 @@ const supportedTemplateCategories = [
 ];
 
 describe('serviceTemplates', () => {
-	it('contains the initial MVP templates with unique ids', () => {
-		expect(serviceTemplates).toHaveLength(20);
+	it('contains the expanded service catalog with unique ids', () => {
+		expect(serviceTemplates).toHaveLength(26);
 		expect(new Set(serviceTemplates.map((template) => template.id)).size).toBe(
 			serviceTemplates.length
 		);
@@ -37,6 +37,9 @@ describe('serviceTemplates', () => {
 			if (template.cancellation.url) {
 				expect(new URL(template.cancellation.url).protocol).toBe('https:');
 			}
+
+			expect(template.plans.length).toBeGreaterThan(0);
+			expect(new Set(template.plans.map((plan) => plan.id)).size).toBe(template.plans.length);
 
 			for (const plan of template.plans) {
 				expect(plan.name.ja.trim()).not.toBe('');
@@ -70,7 +73,7 @@ describe('serviceTemplates', () => {
 			icloud?.plans
 				.find((plan) => plan.id === '50gb')
 				?.prices.find((price) => price.currency === 'JPY')?.amount
-		).toBe(150);
+		).toBe(180);
 		expect(
 			spotify?.plans
 				.find((plan) => plan.id === 'standard')
@@ -123,6 +126,52 @@ describe('serviceTemplates', () => {
 				.find((template) => template.id === 'chatgpt')
 				?.plans.find((plan) => plan.id === 'plus')?.prices[0].verifiedAt
 		).toBe('2026-07-05');
+	});
+
+	it.each([
+		['youtube-premium', 'individual-yearly', 'JPY', 12800],
+		['amazon-prime', 'yearly', 'JPY', 5900],
+		['amazon-prime', 'student-yearly', 'JPY', 2950],
+		['claude', 'pro-yearly', 'USD', 200]
+	])('keeps the full annual charge for %s / %s', (serviceId, planId, currency, annualAmount) => {
+		const plan = serviceTemplates
+			.find((template) => template.id === serviceId)
+			?.plans.find((plan) => plan.id === planId);
+		expect(plan?.cycle).toBe('yearly');
+		expect(plan?.prices.find((price) => price.currency === currency)?.amount).toBe(annualAmount);
+	});
+
+	it.each([
+		['hulu', 'monthly-web', 1320, 'monthly-partner', 1026],
+		['dmm-tv', 'premium-web', 550, 'premium-app', 650],
+		['u-next', 'monthly-web', 2189, 'monthly-app', 2400]
+	])(
+		'keeps billing-provider prices separate for %s',
+		(serviceId, firstPlanId, firstPrice, secondPlanId, secondPrice) => {
+			const template = serviceTemplates.find((template) => template.id === serviceId);
+			const getJpyPrice = (id: string | number) =>
+				template?.plans
+					.find((plan) => plan.id === id)
+					?.prices.find((price) => price.currency === 'JPY');
+			expect(getJpyPrice(firstPlanId)?.amount).toBe(firstPrice);
+			expect(getJpyPrice(secondPlanId)?.amount).toBe(secondPrice);
+			expect(getJpyPrice(firstPlanId)?.verifiedAt).toBe('2026-10-27');
+		}
+	);
+
+	it('keeps USD-only AI plans in USD without invented JPY conversions', () => {
+		for (const id of ['claude', 'github-copilot']) {
+			const template = serviceTemplates.find((template) => template.id === id);
+			expect(template).toBeDefined();
+			for (const plan of template!.plans.filter((plan) => plan.id !== 'custom')) {
+				expect(plan.prices).toHaveLength(1);
+				expect(plan.prices[0]).toMatchObject({
+					currency: 'USD',
+					region: 'US',
+					verifiedAt: '2026-10-27'
+				});
+			}
+		}
 	});
 
 	it('has a checked-in template icon asset for each service template', () => {

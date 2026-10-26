@@ -56,6 +56,7 @@ const verifiedAt = '2026-06-23';
 const foreignPriceVerifiedAt = '2026-06-28';
 const serviceExpansionVerifiedAt = '2026-06-29';
 const chatGptPriceVerifiedAt = '2026-07-05';
+const catalogExpansionVerifiedAt = '2026-10-27';
 
 const templatePrice = (
 	amount: number,
@@ -73,6 +74,17 @@ const templatePrice = (
 
 const jpyPrice = (amount: number, sourceUrl: string): ServiceTemplatePlanPrice =>
 	templatePrice(amount, 'JPY', 'JP', sourceUrl, verifiedAt);
+
+const catalogPrice = (
+	amount: number,
+	currency: SubscriptionCurrency,
+	region: ServiceTemplatePriceRegion,
+	sourceUrl: string
+): ServiceTemplatePlanPrice =>
+	templatePrice(amount, currency, region, sourceUrl, catalogExpansionVerifiedAt);
+
+const catalogJpyPrice = (amount: number, sourceUrl: string): ServiceTemplatePlanPrice =>
+	catalogPrice(amount, 'JPY', 'JP', sourceUrl);
 
 const expandedPrice = (
 	amount: number,
@@ -111,13 +123,13 @@ export const serviceTemplates: ServiceTemplate[] = [
 			en: ['Video', 'Entertainment']
 		},
 		sourceUrl: 'https://www.netflix.com/jp/',
-		lastVerifiedAt: verifiedAt,
+		lastVerifiedAt: catalogExpansionVerifiedAt,
 		plans: [
 			{
 				id: 'standard-with-ads',
 				name: { ja: '広告つきプラン', en: 'Ad-supported plan' },
 				prices: [
-					jpyPrice(890, 'https://www.netflix.com/jp/'),
+					catalogJpyPrice(890, 'https://www.netflix.com/jp-ja/browse/genre/839338'),
 					templatePrice(4.99, 'EUR', 'DE', 'https://www.netflix.com/de-en/'),
 					templatePrice(5.99, 'GBP', 'GB', 'https://www.netflix.com/gb/')
 				],
@@ -126,6 +138,18 @@ export const serviceTemplates: ServiceTemplate[] = [
 					ja: '公式ページで確認できる最低価格です。',
 					en: 'Lowest price shown on the official page.'
 				}
+			},
+			{
+				id: 'standard',
+				name: { ja: 'スタンダード', en: 'Standard' },
+				prices: [catalogJpyPrice(1590, 'https://www.netflix.com/jp-ja/browse/genre/839338')],
+				cycle: 'monthly'
+			},
+			{
+				id: 'premium',
+				name: { ja: 'プレミアム', en: 'Premium' },
+				prices: [catalogJpyPrice(2290, 'https://www.netflix.com/jp-ja/browse/genre/839338')],
+				cycle: 'monthly'
 			},
 			{
 				id: 'custom',
@@ -153,8 +177,40 @@ export const serviceTemplates: ServiceTemplate[] = [
 			en: ['Video', 'Music']
 		},
 		sourceUrl: 'https://www.youtube.com/premium?gl=JP&hl=ja',
-		lastVerifiedAt: verifiedAt,
+		lastVerifiedAt: catalogExpansionVerifiedAt,
 		plans: [
+			{
+				id: 'individual-monthly',
+				name: { ja: '個人（月払い・Web/Android）', en: 'Individual (monthly, web/Android)' },
+				prices: [
+					catalogJpyPrice(1280, 'https://store.google.com/jp/magazine/youtube-premium-trial?hl=ja')
+				],
+				cycle: 'monthly'
+			},
+			{
+				id: 'individual-yearly',
+				name: { ja: '個人（年払い）', en: 'Individual (annual)' },
+				prices: [
+					catalogJpyPrice(12800, 'https://store.google.com/jp/magazine/youtube-premium-trial?hl=ja')
+				],
+				cycle: 'yearly'
+			},
+			{
+				id: 'family-monthly',
+				name: { ja: 'ファミリー（月払い）', en: 'Family (monthly)' },
+				prices: [
+					catalogJpyPrice(2280, 'https://store.google.com/jp/magazine/youtube-premium-trial?hl=ja')
+				],
+				cycle: 'monthly'
+			},
+			{
+				id: 'student-monthly',
+				name: { ja: '学割（月払い）', en: 'Student (monthly)' },
+				prices: [
+					catalogJpyPrice(780, 'https://store.google.com/jp/magazine/youtube-premium-trial?hl=ja')
+				],
+				cycle: 'monthly'
+			},
 			{
 				id: 'custom',
 				name: { ja: '自分で入力', en: 'Enter manually' },
@@ -185,8 +241,52 @@ export const serviceTemplates: ServiceTemplate[] = [
 			en: ['Shopping', 'Video']
 		},
 		sourceUrl: 'https://www.amazon.co.jp/amazonprime',
-		lastVerifiedAt: verifiedAt,
+		lastVerifiedAt: catalogExpansionVerifiedAt,
 		plans: [
+			{
+				id: 'monthly',
+				name: { ja: '通常会員（月払い）', en: 'Prime (monthly)' },
+				prices: [
+					catalogJpyPrice(
+						600,
+						'https://www.aboutamazon.jp/news/amazon-prime/prime-membership-seven-benefits'
+					)
+				],
+				cycle: 'monthly'
+			},
+			{
+				id: 'yearly',
+				name: { ja: '通常会員（年払い）', en: 'Prime (annual)' },
+				prices: [
+					catalogJpyPrice(
+						5900,
+						'https://www.aboutamazon.jp/news/amazon-prime/prime-membership-seven-benefits'
+					)
+				],
+				cycle: 'yearly'
+			},
+			{
+				id: 'student-monthly',
+				name: { ja: 'Prime Student（月払い）', en: 'Prime Student (monthly)' },
+				prices: [
+					catalogJpyPrice(
+						300,
+						'https://www.aboutamazon.jp/news/amazon-prime/what-are-the-benefits-of-amazon-prime-student'
+					)
+				],
+				cycle: 'monthly'
+			},
+			{
+				id: 'student-yearly',
+				name: { ja: 'Prime Student（年払い）', en: 'Prime Student (annual)' },
+				prices: [
+					catalogJpyPrice(
+						2950,
+						'https://www.aboutamazon.jp/news/amazon-prime/what-are-the-benefits-of-amazon-prime-student'
+					)
+				],
+				cycle: 'yearly'
+			},
 			{
 				id: 'custom',
 				name: { ja: '自分で入力', en: 'Enter manually' },
@@ -279,13 +379,13 @@ export const serviceTemplates: ServiceTemplate[] = [
 			en: ['Music']
 		},
 		sourceUrl: 'https://www.apple.com/jp/apple-music/',
-		lastVerifiedAt: verifiedAt,
+		lastVerifiedAt: catalogExpansionVerifiedAt,
 		plans: [
 			{
 				id: 'individual',
 				name: { ja: '個人', en: 'Individual' },
 				prices: [
-					jpyPrice(1080, 'https://www.apple.com/jp/apple-music/'),
+					catalogJpyPrice(1180, 'https://www.apple.com/jp/apple-music/'),
 					templatePrice(10.99, 'USD', 'US', 'https://www.apple.com/apple-music/'),
 					templatePrice(10.99, 'EUR', 'DE', 'https://www.apple.com/de/apple-music/'),
 					templatePrice(10.99, 'GBP', 'GB', 'https://www.apple.com/uk/apple-music/')
@@ -296,7 +396,7 @@ export const serviceTemplates: ServiceTemplate[] = [
 				id: 'family',
 				name: { ja: 'ファミリー', en: 'Family' },
 				prices: [
-					jpyPrice(1680, 'https://www.apple.com/jp/apple-music/'),
+					catalogJpyPrice(1980, 'https://www.apple.com/jp/apple-music/'),
 					templatePrice(16.99, 'USD', 'US', 'https://www.apple.com/apple-music/'),
 					templatePrice(16.99, 'EUR', 'DE', 'https://www.apple.com/de/apple-music/'),
 					templatePrice(16.99, 'GBP', 'GB', 'https://www.apple.com/uk/apple-music/')
@@ -307,7 +407,7 @@ export const serviceTemplates: ServiceTemplate[] = [
 				id: 'student',
 				name: { ja: '学生', en: 'Student' },
 				prices: [
-					jpyPrice(580, 'https://www.apple.com/jp/apple-music/'),
+					catalogJpyPrice(680, 'https://www.apple.com/jp/apple-music/'),
 					templatePrice(5.99, 'USD', 'US', 'https://www.apple.com/apple-music/'),
 					templatePrice(5.99, 'EUR', 'DE', 'https://www.apple.com/de/apple-music/'),
 					templatePrice(5.99, 'GBP', 'GB', 'https://www.apple.com/uk/apple-music/')
@@ -414,8 +514,20 @@ export const serviceTemplates: ServiceTemplate[] = [
 			en: ['Video']
 		},
 		sourceUrl: 'https://video.unext.jp/',
-		lastVerifiedAt: verifiedAt,
+		lastVerifiedAt: catalogExpansionVerifiedAt,
 		plans: [
+			{
+				id: 'monthly-web',
+				name: { ja: '月額プラン（Web登録）', en: 'Monthly plan (web)' },
+				prices: [catalogJpyPrice(2189, 'https://help.unext.jp/guide/detail/price-description')],
+				cycle: 'monthly'
+			},
+			{
+				id: 'monthly-app',
+				name: { ja: '月額プラン（アプリ登録）', en: 'Monthly plan (in-app)' },
+				prices: [catalogJpyPrice(2400, 'https://help.unext.jp/guide/detail/types-of-service-plan')],
+				cycle: 'monthly'
+			},
 			{
 				id: 'custom',
 				name: { ja: '自分で入力', en: 'Enter manually' },
@@ -442,13 +554,13 @@ export const serviceTemplates: ServiceTemplate[] = [
 			en: ['Cloud']
 		},
 		sourceUrl: 'https://support.apple.com/ja-jp/108047',
-		lastVerifiedAt: verifiedAt,
+		lastVerifiedAt: catalogExpansionVerifiedAt,
 		plans: [
 			{
 				id: '50gb',
 				name: { ja: '50GB', en: '50GB' },
 				prices: [
-					jpyPrice(150, 'https://support.apple.com/ja-jp/108047'),
+					catalogJpyPrice(180, 'https://support.apple.com/ja-jp/108047'),
 					templatePrice(0.99, 'USD', 'US', 'https://support.apple.com/en-us/108047'),
 					templatePrice(0.99, 'EUR', 'DE', 'https://support.apple.com/de-de/108047'),
 					templatePrice(0.99, 'GBP', 'GB', 'https://support.apple.com/en-gb/108047')
@@ -459,7 +571,7 @@ export const serviceTemplates: ServiceTemplate[] = [
 				id: '200gb',
 				name: { ja: '200GB', en: '200GB' },
 				prices: [
-					jpyPrice(450, 'https://support.apple.com/ja-jp/108047'),
+					catalogJpyPrice(540, 'https://support.apple.com/ja-jp/108047'),
 					templatePrice(2.99, 'USD', 'US', 'https://support.apple.com/en-us/108047'),
 					templatePrice(2.99, 'EUR', 'DE', 'https://support.apple.com/de-de/108047'),
 					templatePrice(2.99, 'GBP', 'GB', 'https://support.apple.com/en-gb/108047')
@@ -470,7 +582,7 @@ export const serviceTemplates: ServiceTemplate[] = [
 				id: '2tb',
 				name: { ja: '2TB', en: '2TB' },
 				prices: [
-					jpyPrice(1500, 'https://support.apple.com/ja-jp/108047'),
+					catalogJpyPrice(1800, 'https://support.apple.com/ja-jp/108047'),
 					templatePrice(9.99, 'USD', 'US', 'https://support.apple.com/en-us/108047'),
 					templatePrice(9.99, 'EUR', 'DE', 'https://support.apple.com/de-de/108047'),
 					templatePrice(8.99, 'GBP', 'GB', 'https://support.apple.com/en-gb/108047')
@@ -481,7 +593,7 @@ export const serviceTemplates: ServiceTemplate[] = [
 				id: '6tb',
 				name: { ja: '6TB', en: '6TB' },
 				prices: [
-					jpyPrice(4500, 'https://support.apple.com/ja-jp/108047'),
+					catalogJpyPrice(5500, 'https://support.apple.com/ja-jp/108047'),
 					templatePrice(29.99, 'USD', 'US', 'https://support.apple.com/en-us/108047'),
 					templatePrice(29.99, 'EUR', 'DE', 'https://support.apple.com/de-de/108047'),
 					templatePrice(26.99, 'GBP', 'GB', 'https://support.apple.com/en-gb/108047')
@@ -492,7 +604,7 @@ export const serviceTemplates: ServiceTemplate[] = [
 				id: '12tb',
 				name: { ja: '12TB', en: '12TB' },
 				prices: [
-					jpyPrice(9000, 'https://support.apple.com/ja-jp/108047'),
+					catalogJpyPrice(11000, 'https://support.apple.com/ja-jp/108047'),
 					templatePrice(59.99, 'USD', 'US', 'https://support.apple.com/en-us/108047'),
 					templatePrice(59.99, 'EUR', 'DE', 'https://support.apple.com/de-de/108047'),
 					templatePrice(54.99, 'GBP', 'GB', 'https://support.apple.com/en-gb/108047')
@@ -1166,6 +1278,366 @@ export const serviceTemplates: ServiceTemplate[] = [
 			memo: {
 				ja: 'ChatGPTの設定からサブスクリプションを確認します。チームや外部経由の契約は管理者または請求元で確認してください。',
 				en: 'Open ChatGPT settings and review the subscription. For team or externally billed plans, check with the admin or billing provider.'
+			}
+		}
+	},
+	{
+		id: 'hulu',
+		name: 'Hulu',
+		category: 'video',
+		color: 'green',
+		tags: {
+			ja: ['動画'],
+			en: ['Video']
+		},
+		sourceUrl: 'https://www.hulu.jp/static/legal/act/',
+		lastVerifiedAt: catalogExpansionVerifiedAt,
+		plans: [
+			{
+				id: 'monthly-web',
+				name: {
+					ja: '見放題（Web等・ポイント付き）',
+					en: 'Streaming (web, with points)'
+				},
+				prices: [catalogJpyPrice(1320, 'https://www.hulu.jp/static/legal/act/')],
+				cycle: 'monthly'
+			},
+			{
+				id: 'monthly-app',
+				name: {
+					ja: '見放題（アプリ内課金・改定後）',
+					en: 'Streaming (in-app, revised price)'
+				},
+				prices: [catalogJpyPrice(1450, 'https://www.hulu.jp/static/legal/act/')],
+				cycle: 'monthly',
+				note: {
+					ja: '2026年10月の料金改定後の参考価格です。既存契約への適用日は請求元によって異なります。',
+					en: 'Reference price after the October 2026 revision. Effective dates for existing subscriptions vary by billing provider.'
+				}
+			},
+			{
+				id: 'monthly-partner',
+				name: {
+					ja: '見放題（Huluチケット・対象事業者経由）',
+					en: 'Streaming (Hulu ticket/eligible partner)'
+				},
+				prices: [catalogJpyPrice(1026, 'https://www.hulu.jp/static/legal/act/')],
+				cycle: 'monthly'
+			},
+			{
+				id: 'custom',
+				name: {
+					ja: '自分で入力',
+					en: 'Enter manually'
+				},
+				prices: [],
+				cycle: 'monthly'
+			}
+		],
+		cancellation: {
+			method: 'web',
+			memo: {
+				ja: 'Huluのアカウントページで契約と請求元を確認します。アプリやパートナー経由の契約は、その請求元で解約してください。',
+				en: 'Review your subscription and billing provider in your Hulu account. For app or partner billing, cancel with that provider.'
+			},
+			url: 'https://id.hulu.jp/account'
+		}
+	},
+	{
+		id: 'dmm-tv',
+		name: 'DMM TV',
+		category: 'video',
+		color: 'blue',
+		tags: {
+			ja: ['動画'],
+			en: ['Video']
+		},
+		sourceUrl: 'https://premium.dmm.com/about/',
+		lastVerifiedAt: catalogExpansionVerifiedAt,
+		plans: [
+			{
+				id: 'premium-web',
+				name: {
+					ja: 'DMMプレミアム（Web登録）',
+					en: 'DMM Premium (web)'
+				},
+				prices: [catalogJpyPrice(550, 'https://premium.dmm.com/about/')],
+				cycle: 'monthly'
+			},
+			{
+				id: 'premium-app',
+				name: {
+					ja: 'DMMプレミアム（App Store/Google Play）',
+					en: 'DMM Premium (App Store/Google Play)'
+				},
+				prices: [catalogJpyPrice(650, 'https://premium.dmm.com/about/')],
+				cycle: 'monthly'
+			},
+			{
+				id: 'custom',
+				name: {
+					ja: '自分で入力',
+					en: 'Enter manually'
+				},
+				prices: [],
+				cycle: 'monthly'
+			}
+		],
+		cancellation: {
+			method: 'web',
+			memo: {
+				ja: 'DMMプレミアム利用状況からプランの解約に進みます。アプリ内課金の場合はApp StoreやGoogle Playなどの請求元で解約してください。',
+				en: 'Open DMM Premium membership settings to cancel. For in-app purchases, cancel through the billing provider such as the App Store or Google Play.'
+			},
+			url: 'https://accounts.premium.dmm.com/settings/'
+		}
+	},
+	{
+		id: 'd-anime-store',
+		name: 'dアニメストア',
+		category: 'video',
+		color: 'orange',
+		tags: {
+			ja: ['動画'],
+			en: ['Video']
+		},
+		sourceUrl: 'https://animestore.docomo.ne.jp/animestore/CF/specified_commercial_transactions',
+		lastVerifiedAt: catalogExpansionVerifiedAt,
+		plans: [
+			{
+				id: 'monthly-web',
+				name: {
+					ja: '見放題（Web登録）',
+					en: 'Streaming (web)'
+				},
+				prices: [
+					catalogJpyPrice(
+						660,
+						'https://animestore.docomo.ne.jp/animestore/CF/specified_commercial_transactions'
+					)
+				],
+				cycle: 'monthly'
+			},
+			{
+				id: 'custom',
+				name: {
+					ja: '自分で入力',
+					en: 'Enter manually'
+				},
+				prices: [],
+				cycle: 'monthly'
+			}
+		],
+		cancellation: {
+			method: 'web',
+			memo: {
+				ja: 'dアニメストアの「メニュー」から「ユーザー設定」を開き、解約へ進みます。アプリ内課金や他社経由の場合は、その請求元で確認してください。',
+				en: 'Open User Settings from the d Anime Store menu to cancel. For in-app or partner billing, check with the billing provider.'
+			}
+		}
+	},
+	{
+		id: 'apple-tv',
+		name: 'Apple TV',
+		category: 'video',
+		color: 'purple',
+		tags: {
+			ja: ['動画'],
+			en: ['Video']
+		},
+		sourceUrl: 'https://www.apple.com/jp/apple-tv-app/',
+		lastVerifiedAt: catalogExpansionVerifiedAt,
+		plans: [
+			{
+				id: 'monthly',
+				name: {
+					ja: '月額プラン',
+					en: 'Monthly'
+				},
+				prices: [catalogJpyPrice(1200, 'https://www.apple.com/jp/apple-tv-app/')],
+				cycle: 'monthly'
+			},
+			{
+				id: 'custom',
+				name: {
+					ja: '自分で入力',
+					en: 'Enter manually'
+				},
+				prices: [],
+				cycle: 'monthly'
+			}
+		],
+		cancellation: {
+			method: 'app_store',
+			memo: {
+				ja: 'Apple Accountのサブスクリプション管理でApple TVを確認します。Apple Oneなどのセット契約は、契約中のプランを確認してください。',
+				en: 'Review Apple TV in Apple Account subscriptions. For bundles such as Apple One, review the subscribed bundle.'
+			},
+			url: 'https://apps.apple.com/account/subscriptions'
+		}
+	},
+	{
+		id: 'claude',
+		name: 'Claude',
+		category: 'ai',
+		color: 'orange',
+		tags: {
+			ja: ['AI', '開発'],
+			en: ['AI', 'Development']
+		},
+		sourceUrl: 'https://claude.com/pricing',
+		lastVerifiedAt: catalogExpansionVerifiedAt,
+		plans: [
+			{
+				id: 'pro-monthly',
+				name: {
+					ja: 'Pro（月払い）',
+					en: 'Pro (monthly)'
+				},
+				prices: [catalogPrice(20, 'USD', 'US', 'https://claude.com/pricing')],
+				cycle: 'monthly',
+				note: {
+					ja: '米国向けのUSD参考価格です。税や追加利用料、実際の請求通貨は契約画面で確認してください。',
+					en: 'US reference price in USD. Check tax, additional usage fees, and billing currency in your account.'
+				}
+			},
+			{
+				id: 'pro-yearly',
+				name: {
+					ja: 'Pro（年払い）',
+					en: 'Pro (annual)'
+				},
+				prices: [catalogPrice(200, 'USD', 'US', 'https://claude.com/pricing')],
+				cycle: 'yearly',
+				note: {
+					ja: '米国向けのUSD参考価格です。税や追加利用料、実際の請求通貨は契約画面で確認してください。',
+					en: 'US reference price in USD. Check tax, additional usage fees, and billing currency in your account.'
+				}
+			},
+			{
+				id: 'max-5x',
+				name: {
+					ja: 'Max 5x',
+					en: 'Max 5x'
+				},
+				prices: [
+					catalogPrice(
+						100,
+						'USD',
+						'US',
+						'https://support.claude.com/en/articles/11049741-what-is-the-max-plan?subjects=product'
+					)
+				],
+				cycle: 'monthly',
+				note: {
+					ja: '米国向けのUSD参考価格です。税や追加利用料、実際の請求通貨は契約画面で確認してください。',
+					en: 'US reference price in USD. Check tax, additional usage fees, and billing currency in your account.'
+				}
+			},
+			{
+				id: 'max-20x',
+				name: {
+					ja: 'Max 20x',
+					en: 'Max 20x'
+				},
+				prices: [
+					catalogPrice(
+						200,
+						'USD',
+						'US',
+						'https://support.claude.com/en/articles/11049741-what-is-the-max-plan?subjects=product'
+					)
+				],
+				cycle: 'monthly',
+				note: {
+					ja: '米国向けのUSD参考価格です。税や追加利用料、実際の請求通貨は契約画面で確認してください。',
+					en: 'US reference price in USD. Check tax, additional usage fees, and billing currency in your account.'
+				}
+			},
+			{
+				id: 'custom',
+				name: {
+					ja: '自分で入力',
+					en: 'Enter manually'
+				},
+				prices: [],
+				cycle: 'monthly'
+			}
+		],
+		cancellation: {
+			method: 'web',
+			memo: {
+				ja: 'Claudeの設定から「Billing」を開き、契約を確認します。App StoreやGoogle Play経由の場合は、その請求元で解約してください。',
+				en: 'Open Billing in Claude settings to review your subscription. For App Store or Google Play billing, cancel with that provider.'
+			}
+		}
+	},
+	{
+		id: 'github-copilot',
+		name: 'GitHub Copilot',
+		category: 'development',
+		color: 'purple',
+		tags: {
+			ja: ['AI', '開発'],
+			en: ['AI', 'Development']
+		},
+		sourceUrl: 'https://github.com/features/copilot/plans',
+		lastVerifiedAt: catalogExpansionVerifiedAt,
+		plans: [
+			{
+				id: 'pro-monthly',
+				name: {
+					ja: 'Pro（月払い）',
+					en: 'Pro (monthly)'
+				},
+				prices: [catalogPrice(10, 'USD', 'US', 'https://github.com/features/copilot/plans')],
+				cycle: 'monthly',
+				note: {
+					ja: '米国向けのUSD参考価格です。税や追加利用料、実際の請求通貨は契約画面で確認してください。',
+					en: 'US reference price in USD. Check tax, additional usage fees, and billing currency in your account.'
+				}
+			},
+			{
+				id: 'pro-plus-monthly',
+				name: {
+					ja: 'Pro+（月払い）',
+					en: 'Pro+ (monthly)'
+				},
+				prices: [catalogPrice(39, 'USD', 'US', 'https://github.com/features/copilot/plans')],
+				cycle: 'monthly',
+				note: {
+					ja: '米国向けのUSD参考価格です。税や追加利用料、実際の請求通貨は契約画面で確認してください。',
+					en: 'US reference price in USD. Check tax, additional usage fees, and billing currency in your account.'
+				}
+			},
+			{
+				id: 'max-monthly',
+				name: {
+					ja: 'Max（月払い）',
+					en: 'Max (monthly)'
+				},
+				prices: [catalogPrice(100, 'USD', 'US', 'https://github.com/features/copilot/plans')],
+				cycle: 'monthly',
+				note: {
+					ja: '米国向けのUSD参考価格です。税や追加利用料、実際の請求通貨は契約画面で確認してください。',
+					en: 'US reference price in USD. Check tax, additional usage fees, and billing currency in your account.'
+				}
+			},
+			{
+				id: 'custom',
+				name: {
+					ja: '自分で入力',
+					en: 'Enter manually'
+				},
+				prices: [],
+				cycle: 'monthly'
+			}
+		],
+		cancellation: {
+			method: 'web',
+			memo: {
+				ja: 'GitHubの設定で「Billing and licensing」から契約を確認し、Copilotのサブスクリプションを管理します。追加利用料がある場合は、実際の請求額へ修正してください。',
+				en: 'Review Copilot under Billing and licensing in GitHub settings. Adjust the amount for any additional usage charges.'
 			}
 		}
 	}
