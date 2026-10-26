@@ -40,3 +40,6 @@ jobs:
           src/lib/offline/subscriptions.spec.ts
           src/lib/server/notifications.spec.ts
           src/lib/i18n-copy.spec.ts
+      - name: Build without deployment or Sentry uploads
+        if: matrix.time-zone == 'UTC'
+        run: pnpm run build
