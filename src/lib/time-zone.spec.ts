@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
 	addCalendarMonths,
+	addCalendarDays,
+	isValidDateString,
 	diffCalendarDays,
 	getLocalDateString,
 	hasLocalTimeReached,
@@ -8,6 +10,24 @@ import {
 } from './time-zone';
 
 describe('time-zone helpers', () => {
+	it('validates real calendar dates rather than allowing overflow', () => {
+		expect(isValidDateString('2026-02-30')).toBe(false);
+		expect(isValidDateString('2024-02-29')).toBe(true);
+		expect(isValidDateString('2026-02-29')).toBe(false);
+		expect(isValidDateString('0001-01-01')).toBe(true);
+		expect(normalizeDateString(new Date('invalid'))).toBe('');
+		expect(diffCalendarDays('invalid', '2026-01-01')).toBeNaN();
+	});
+
+	it('adds days independently of DST and handles month/year boundaries', () => {
+		expect(addCalendarDays('2026-03-08', 1)).toBe('2026-03-09');
+		expect(addCalendarDays('2026-01-01', -1)).toBe('2025-12-31');
+		expect(addCalendarDays('2024-03-01', -1)).toBe('2024-02-29');
+		expect(addCalendarMonths('2024-02-29', 48)).toBe('2028-02-29');
+		expect(addCalendarMonths('0096-02-29', 48)).toBe('0100-02-28');
+		expect(addCalendarMonths('2026-02-30', 1)).toBe('2026-02-30');
+	});
+
 	it('normalizes ISO timestamps to calendar date strings', () => {
 		expect(normalizeDateString('2026-04-01T00:00:00.000Z')).toBe('2026-04-01');
 		expect(normalizeDateString('2026-04-01')).toBe('2026-04-01');

@@ -14,11 +14,7 @@
 		subscriptionPaymentMethodTable,
 		trackedSubscriptionTable
 	} from '$lib/server/db/schema';
-	import {
-		getFallbackSubscriptionColor,
-		resolveSubscriptionColor,
-		type SubscriptionColor
-	} from '$lib/subscription-colors';
+	import { buildCalendarEvents, type CalendarEvent } from '$lib/calendar-events';
 	import { enhance as kitEnhance } from '$app/forms';
 	import { base } from '$app/paths';
 	import { fromAction } from 'svelte/attachments';
@@ -28,24 +24,6 @@
 	type Subscription = typeof trackedSubscriptionTable.$inferSelect;
 	type Category = typeof subscriptionCategoryTable.$inferSelect;
 	type PaymentMethod = typeof subscriptionPaymentMethodTable.$inferSelect;
-	const cycleToMonths: Record<string, number> = {
-		monthly: 1,
-		quarterly: 3,
-		yearly: 12
-	};
-
-	type CalendarEvent = {
-		id: string;
-		subscriptionId: number;
-		title: string;
-		date: string;
-		amount: number;
-		currency: string;
-		color: SubscriptionColor;
-		iconType: string | null;
-		iconValue: string | null;
-		description?: string | null;
-	};
 
 	let { data } = $props<{
 		data: {
@@ -76,55 +54,15 @@
 		return { gridStart, gridEnd };
 	};
 
-	const buildEventsForRange = (
-		subscriptions: Subscription[],
-		rangeStart: dayjs.Dayjs,
-		rangeEnd: dayjs.Dayjs
-	): CalendarEvent[] => {
-		const events: CalendarEvent[] = [];
-		subscriptions.forEach((sub, index) => {
-			const first = dayjs(sub.firstPaymentDate).startOf('day');
-			if (!first.isValid()) return;
-			const interval = cycleToMonths[sub.cycle] ?? 1;
-			if (interval <= 0) return;
-
-			let occurrence = first;
-			if (occurrence.isBefore(rangeStart, 'day')) {
-				const diffMonths = rangeStart.diff(occurrence, 'month');
-				const steps = Math.floor(diffMonths / interval);
-				occurrence = occurrence.add(steps * interval, 'month');
-				while (occurrence.isBefore(rangeStart, 'day')) {
-					occurrence = occurrence.add(interval, 'month');
-				}
-			}
-
-			const color = resolveSubscriptionColor(sub.color, getFallbackSubscriptionColor(index));
-			while (occurrence.isSame(rangeEnd, 'day') || occurrence.isBefore(rangeEnd, 'day')) {
-				events.push({
-					id: `sub-${sub.id}-${occurrence.format('YYYY-MM-DD')}`,
-					subscriptionId: sub.id,
-					title: sub.serviceName,
-					date: occurrence.format('YYYY-MM-DD'),
-					amount: Number(sub.amount ?? 0),
-					currency: sub.currency ?? 'JPY',
-					color,
-					iconType: sub.iconType,
-					iconValue: sub.iconValue,
-					description: ''
-				});
-				occurrence = occurrence.add(interval, 'month');
-			}
-		});
-		return events;
-	};
-
 	let currentDate = $state(dayjs());
 
 	const events = $derived.by(() => {
 		const { gridStart, gridEnd } = getGridRange(currentDate);
-		return buildEventsForRange(subscriptions, gridStart, gridEnd).sort(
-			(a, b) => a.date.localeCompare(b.date) || a.title.localeCompare(b.title)
-		);
+		return buildCalendarEvents(
+			subscriptions,
+			gridStart.format('YYYY-MM-DD'),
+			gridEnd.format('YYYY-MM-DD')
+		).sort((a, b) => a.date.localeCompare(b.date) || a.title.localeCompare(b.title));
 	});
 
 	let isDetailModalOpen = $state(false);

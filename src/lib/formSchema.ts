@@ -1,4 +1,6 @@
 import { z } from 'zod';
+import { isBillingCycle } from '$lib/billing-dates';
+import { isValidDateString } from '$lib/time-zone';
 import {
 	CANCELLATION_METHODS,
 	DEFAULT_LOCALE,
@@ -74,7 +76,9 @@ export const createSubscriptionSchema = (locale: AppLocale = DEFAULT_LOCALE) => 
 
 	return z
 		.object({
-			select: z.string({ error: errors.selectRequired }).min(1, { error: errors.selectRequired }),
+			select: z
+				.string({ error: errors.selectRequired })
+				.refine(isBillingCycle, { error: errors.selectRequired }),
 			number: z
 				.number({ error: errors.numberRequired })
 				.min(0, { error: errors.numberMin })
@@ -85,7 +89,7 @@ export const createSubscriptionSchema = (locale: AppLocale = DEFAULT_LOCALE) => 
 			currency: z.enum(SUPPORTED_CURRENCIES).default(DEFAULT_SUBSCRIPTION_CURRENCY),
 			datepicker: z
 				.string({ error: errors.dateRequired })
-				.refine((v) => v, { error: errors.dateRequired }),
+				.refine(isValidDateString, { error: errors.dateRequired }),
 			text: z
 				.string({ error: errors.serviceNameRequired })
 				.min(1, { error: errors.serviceNameRequired }),

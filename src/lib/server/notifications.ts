@@ -8,6 +8,7 @@ import {
 	verification as verificationTable
 } from '$lib/server/db/schema';
 import { computeNextBilling } from '$lib/server/subscriptions';
+import { nextBillingDateOnOrAfter } from '$lib/billing-dates';
 import { sendWebPush } from '$lib/server/push';
 import { sendSubscriptionReminderEmail, sendTrialEndingEmail } from '$lib/server/email';
 import { createBillingPortalUrl } from '$lib/server/stripe';
@@ -15,6 +16,8 @@ import { DEFAULT_LOCALE, type AppLocale } from '$lib/constant';
 import { isAppLocale, localizePathname, PUBLIC_SITE_ORIGIN } from '$lib/locale-routing';
 import { subscriptionNotificationCopy } from '$lib/i18n-copy';
 import {
+	addCalendarDays,
+	diffCalendarDays,
 	getLocalDateString,
 	hasLocalTimeReached,
 	normalizeDateString,
@@ -37,9 +40,9 @@ const resolveUserLocale = (locale: string | null | undefined): AppLocale =>
 const buildPayload = (
 	subscription: typeof trackedSubscriptionTable.$inferSelect,
 	locale: AppLocale,
-	targetDate: string
+	targetDate: string,
+	notifyDays: number
 ) => {
-	const notifyDays = subscription.notifyDaysBefore ?? 0;
 	const copy = subscriptionNotificationCopy[locale];
 	const when = copy.when(notifyDays);
 
@@ -107,15 +110,18 @@ export const dispatchSubscriptionNotifications = async (
 	const dueSubscriptions: {
 		subscription: typeof trackedSubscriptionTable.$inferSelect;
 		targetDate: string;
+		billingDate: string;
+		notifyDays: number;
 	}[] = [];
 
 	for (const sub of subscriptions) {
-		if (!sub.userId) continue;
+		if (sub.status !== 'active' || !sub.userId) continue;
 		const user = userById.get(sub.userId);
 		if (!user) continue;
 		const userTimeZone = resolveTimeZone(user.timeZone);
 		const userNotifyTime = resolveNotifyTime(user.defaultNotifyTime);
 		const today = getLocalDateString(now, userTimeZone);
+		if (!nextBillingDateOnOrAfter(sub.firstPaymentDate, sub.cycle, today)) continue;
 
 		const computed = computeNextBilling(sub.firstPaymentDate, sub.cycle, {
 			timeZone: userTimeZone,
@@ -138,15 +144,26 @@ export const dispatchSubscriptionNotifications = async (
 		}
 
 		const notifyDays = Number(sub.notifyDaysBefore ?? 0);
-		if (!Number.isFinite(notifyDays) || notifyDays < 0) continue;
-		if (computed.daysUntilNextBilling !== notifyDays) continue;
-		if (!hasLocalTimeReached(now, userTimeZone, userNotifyTime)) continue;
+		if (!Number.isInteger(notifyDays) || notifyDays < 0 || notifyDays > 365) continue;
 
-		if (sub.lastNotifiedDate === today) {
+		// Evaluate only the most recent scheduled local reminder. The window ends at
+		// the next local reminder time (elapsed hours vary across DST), allowing
+		// hourly cron and failed deliveries to cross midnight without replaying history.
+		const targetDate = hasLocalTimeReached(now, userTimeZone, userNotifyTime)
+			? today
+			: addCalendarDays(today, -1);
+		const billingDate = addCalendarDays(targetDate, notifyDays);
+		if (nextBillingDateOnOrAfter(sub.firstPaymentDate, sub.cycle, billingDate) !== billingDate) {
 			continue;
 		}
+		if (sub.lastNotifiedDate === targetDate) continue;
 
-		dueSubscriptions.push({ subscription: sub, targetDate: today });
+		dueSubscriptions.push({
+			subscription: sub,
+			targetDate,
+			billingDate,
+			notifyDays: diffCalendarDays(billingDate, today)
+		});
 	}
 
 	if (dueSubscriptions.length === 0) {
@@ -191,7 +208,7 @@ export const dispatchSubscriptionNotifications = async (
 		if (shouldPush && pushEnabled) {
 			const userPushSubscriptions = pushByUser.get(userId) ?? [];
 			if (userPushSubscriptions.length > 0) {
-				const payload = buildPayload(sub, userLocale, due.targetDate);
+				const payload = buildPayload(sub, userLocale, due.targetDate, due.notifyDays);
 
 				for (const pushSub of userPushSubscriptions) {
 					try {
@@ -233,8 +250,8 @@ export const dispatchSubscriptionNotifications = async (
 				await sendSubscriptionReminderEmail({
 					user: { email: user.email, name: user.name },
 					serviceName: sub.serviceName,
-					notifyDays: Number(sub.notifyDaysBefore ?? 0),
-					billingDate: formatBillingDate(sub.nextBillingAt, userLocale),
+					notifyDays: due.notifyDays,
+					billingDate: formatBillingDate(due.billingDate, userLocale),
 					manageUrl: subscriptionUrl,
 					locale: userLocale
 				});

@@ -64,11 +64,17 @@ export const subscriptionEmailCopy = {
 		}) =>
 			`${recipientName} 様\n\n${serviceName}をご利用いただきありがとうございます。\n\n${endDate} より、\nご登録プランの自動課金が開始されます。\n\n課金を希望されない場合は、\n終了日までにプランの変更・解約をお願いいたします。\n\n▼ プラン管理\n${manageUrl}\n\n※ 本メールと行き違いで手続き済みの場合はご了承ください。`,
 		reminderWhen: (notifyDays: number) =>
-			notifyDays === 0 ? '本日が支払い日です。' : `支払いまであと${notifyDays}日です。`,
+			notifyDays < 0
+				? `支払日は${-notifyDays}日前でした。`
+				: notifyDays === 0
+					? '本日が支払い日です。'
+					: `支払いまであと${notifyDays}日です。`,
 		reminderSubject: (serviceName: string, notifyDays: number) =>
-			notifyDays === 0
-				? `【支払い当日】${serviceName}のサブスク通知`
-				: `【支払い通知】${serviceName}の支払いまであと${notifyDays}日`,
+			notifyDays < 0
+				? `【支払い通知】${serviceName}の支払日は${-notifyDays}日前でした`
+				: notifyDays === 0
+					? `【支払い当日】${serviceName}のサブスク通知`
+					: `【支払い通知】${serviceName}の支払いまであと${notifyDays}日`,
 		reminderListLabel: 'サブスク一覧',
 		reminderDateLabel: '支払日',
 		reminderIntro: (serviceName: string) => `${serviceName}の支払いについてのお知らせです。`
@@ -109,15 +115,19 @@ export const subscriptionEmailCopy = {
 		}) =>
 			`Hi ${recipientName},\n\nThanks for using ${serviceName}.\n\nAutomatic billing for your plan will start on ${endDate}.\n\nIf you do not want to be charged, please change or cancel your plan before the trial ends.\n\nPlan management\n${manageUrl}\n\nIf you already made changes, you can ignore this email.`,
 		reminderWhen: (notifyDays: number) =>
-			notifyDays === 0
-				? 'Your payment is due today.'
-				: `Your payment is due in ${notifyDays} day${notifyDays === 1 ? '' : 's'}.`,
+			notifyDays < 0
+				? `Your payment date was ${-notifyDays} day${notifyDays === -1 ? '' : 's'} ago.`
+				: notifyDays === 0
+					? 'Your payment is due today.'
+					: `Your payment is due in ${notifyDays} day${notifyDays === 1 ? '' : 's'}.`,
 		reminderSubject: (serviceName: string, notifyDays: number) =>
-			notifyDays === 0
-				? `[Payment due today] ${serviceName} subscription reminder`
-				: `[Payment reminder] ${serviceName} payment due in ${notifyDays} day${
-						notifyDays === 1 ? '' : 's'
-					}`,
+			notifyDays < 0
+				? `[Payment reminder] ${serviceName} payment date was ${-notifyDays} day${notifyDays === -1 ? '' : 's'} ago`
+				: notifyDays === 0
+					? `[Payment due today] ${serviceName} subscription reminder`
+					: `[Payment reminder] ${serviceName} payment due in ${notifyDays} day${
+							notifyDays === 1 ? '' : 's'
+						}`,
 		reminderListLabel: 'Subscriptions',
 		reminderDateLabel: 'Payment date',
 		reminderIntro: (serviceName: string) => `This is a reminder for your ${serviceName} payment.`
@@ -148,16 +158,22 @@ export const subscriptionNotificationCopy = {
 	ja: {
 		title: 'サブスクの支払い通知',
 		when: (notifyDays: number) =>
-			notifyDays === 0 ? '今日が支払い日です。' : `支払いまであと${notifyDays}日です。`,
+			notifyDays < 0
+				? `支払日は${-notifyDays}日前でした。`
+				: notifyDays === 0
+					? '今日が支払い日です。'
+					: `支払いまであと${notifyDays}日です。`,
 		notSet: '未設定',
 		fallbackTitle: 'SubTrack'
 	},
 	en: {
 		title: 'Subscription payment reminder',
 		when: (notifyDays: number) =>
-			notifyDays === 0
-				? 'Your payment is due today.'
-				: `Your payment is due in ${notifyDays} day${notifyDays === 1 ? '' : 's'}.`,
+			notifyDays < 0
+				? `Your payment date was ${-notifyDays} day${notifyDays === -1 ? '' : 's'} ago.`
+				: notifyDays === 0
+					? 'Your payment is due today.'
+					: `Your payment is due in ${notifyDays} day${notifyDays === 1 ? '' : 's'}.`,
 		notSet: 'Not set',
 		fallbackTitle: 'SubTrack'
 	}

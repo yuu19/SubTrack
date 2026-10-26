@@ -1,5 +1,5 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
-import dayjs from 'dayjs';
+import { computeNextBilling } from '$lib/billing-dates';
 import {
 	defaultSubscriptionColor,
 	getFallbackSubscriptionColor,
@@ -21,12 +21,6 @@ import {
 	type SubscriptionCurrency,
 	type TrackedSubscriptionStatus
 } from '$lib/constant';
-import {
-	addCalendarMonths,
-	diffCalendarDays,
-	getLocalDateString,
-	normalizeDateString
-} from '$lib/time-zone';
 
 const DB_NAME = 'dishpage-offline';
 const DB_VERSION = 1;
@@ -128,11 +122,8 @@ const getDb = () => {
 	return dbPromise;
 };
 
-const cycleToMonths = (cycle: string) => {
-	if (cycle === 'yearly') return 12;
-	if (cycle === 'quarterly') return 3;
-	return 1;
-};
+// Callers must use the account setting, not the browser's time zone.
+type BillingOptions = { timeZone: string; now?: Date };
 
 const toNumber = (value: FormDataEntryValue | null, fallback = 0) => {
 	const parsed = Number(value);
@@ -180,25 +171,22 @@ const toTimestamp = (value: Date | string | number | null | undefined) => {
 	return Number.isFinite(timestamp) ? timestamp : 0;
 };
 
-const normalizeSubscription = (subscription: SubscriptionRecord) => {
+const normalizeSubscription = (
+	subscription: SubscriptionRecord,
+	options: BillingOptions
+): SubscriptionRecord => {
 	const normalizedSubscription: SubscriptionRecord = {
 		...subscription,
 		status: subscription.status ?? 'active',
 		iconType: resolveSubscriptionIconType(subscription.iconType, defaultSubscriptionIconType),
 		iconValue: resolveSubscriptionIconValue(subscription.iconValue, defaultSubscriptionIconValue)
 	};
-	const today = dayjs().format('YYYY-MM-DD');
-	const next = normalizeDateString(normalizedSubscription.nextBillingAt);
-	if (!/^\d{4}-\d{2}-\d{2}$/.test(next)) return normalizedSubscription;
-	const daysUntil = diffCalendarDays(next, today);
-	if (
-		normalizedSubscription.status !== 'canceled' &&
-		Number.isFinite(daysUntil) &&
-		daysUntil !== normalizedSubscription.daysUntilNextBilling
-	) {
-		return { ...normalizedSubscription, daysUntilNextBilling: daysUntil };
-	}
-	return normalizedSubscription;
+	if (normalizedSubscription.status === 'canceled') return normalizedSubscription;
+
+	return {
+		...normalizedSubscription,
+		...computeNextBilling(subscription.firstPaymentDate, subscription.cycle, options)
+	};
 };
 
 const sortSubscriptions = (subscriptions: SubscriptionRecord[]) => {
@@ -207,23 +195,6 @@ const sortSubscriptions = (subscriptions: SubscriptionRecord[]) => {
 		const bTime = toTimestamp(b.createdAt ?? b.updatedAt ?? 0);
 		return bTime - aTime;
 	});
-};
-
-const computeBillingInfo = (payload: SubscriptionPayload) => {
-	const today = getLocalDateString(new Date(), Intl.DateTimeFormat().resolvedOptions().timeZone);
-	const first = normalizeDateString(payload.firstPaymentDate);
-	if (!/^\d{4}-\d{2}-\d{2}$/.test(first)) {
-		return { nextBillingAt: payload.firstPaymentDate, daysUntilNextBilling: 0 };
-	}
-	const monthsToAdd = cycleToMonths(payload.cycle);
-	let next = first;
-	while (diffCalendarDays(next, today) < 0) {
-		next = addCalendarMonths(next, monthsToAdd);
-	}
-	return {
-		nextBillingAt: next,
-		daysUntilNextBilling: diffCalendarDays(next, today)
-	};
 };
 
 export const payloadFromFormData = (formData: FormData): SubscriptionPayload => {
@@ -254,10 +225,12 @@ export const payloadFromFormData = (formData: FormData): SubscriptionPayload => 
 	};
 };
 
-export const getCachedSubscriptions = async (): Promise<SubscriptionRecord[]> => {
+export const getCachedSubscriptions = async (
+	options: BillingOptions
+): Promise<SubscriptionRecord[]> => {
 	const db = await getDb();
 	const stored = await db.getAll(SUBSCRIPTIONS_STORE);
-	const normalized = stored.map(normalizeSubscription);
+	const normalized = stored.map((subscription) => normalizeSubscription(subscription, options));
 	const updated = normalized.filter((item, index) => item !== stored[index]);
 	if (updated.length > 0) {
 		const tx = db.transaction(SUBSCRIPTIONS_STORE, 'readwrite');
@@ -270,7 +243,8 @@ export const getCachedSubscriptions = async (): Promise<SubscriptionRecord[]> =>
 };
 
 export const replaceSubscriptionsFromServer = async (
-	subscriptions: SubscriptionRecord[]
+	subscriptions: SubscriptionRecord[],
+	options: BillingOptions
 ): Promise<SubscriptionRecord[]> => {
 	const db = await getDb();
 	const existing = await db.getAll(SUBSCRIPTIONS_STORE);
@@ -285,15 +259,20 @@ export const replaceSubscriptionsFromServer = async (
 		await tx.store.put(pending);
 	}
 	await tx.done;
-	return getCachedSubscriptions();
+	return getCachedSubscriptions(options);
 };
 
 export const addPendingSubscription = async (
-	payload: SubscriptionPayload
+	payload: SubscriptionPayload,
+	options: BillingOptions
 ): Promise<SubscriptionRecord[]> => {
 	const db = await getDb();
 	const clientId = createClientId();
-	const { nextBillingAt, daysUntilNextBilling } = computeBillingInfo(payload);
+	const { nextBillingAt, daysUntilNextBilling } = computeNextBilling(
+		payload.firstPaymentDate,
+		payload.cycle,
+		options
+	);
 	const existing = await db.getAll(SUBSCRIPTIONS_STORE);
 	const now = new Date();
 	const record: SubscriptionRecord = {
@@ -336,7 +315,7 @@ export const addPendingSubscription = async (
 		createdAt: Date.now()
 	});
 	await tx.done;
-	return getCachedSubscriptions();
+	return getCachedSubscriptions(options);
 };
 
 export type SyncResult = {
@@ -369,7 +348,10 @@ const buildFormData = (payload: SubscriptionPayload) => {
 	return formData;
 };
 
-export const syncPendingSubscriptions = async (endpoint: string): Promise<SyncResult> => {
+export const syncPendingSubscriptions = async (
+	endpoint: string,
+	options: BillingOptions
+): Promise<SyncResult> => {
 	const db = await getDb();
 	const pending = await db.getAll(PENDING_STORE);
 	let synced = 0;
@@ -408,7 +390,7 @@ export const syncPendingSubscriptions = async (endpoint: string): Promise<SyncRe
 			await db.delete(SUBSCRIPTIONS_STORE, item.clientId);
 
 			if (result.data?.subscriptions && Array.isArray(result.data.subscriptions)) {
-				await replaceSubscriptionsFromServer(result.data.subscriptions);
+				await replaceSubscriptionsFromServer(result.data.subscriptions, options);
 			}
 			synced += 1;
 		} catch (error) {
@@ -418,6 +400,6 @@ export const syncPendingSubscriptions = async (endpoint: string): Promise<SyncRe
 		}
 	}
 
-	const subscriptions = await getCachedSubscriptions();
+	const subscriptions = await getCachedSubscriptions(options);
 	return { subscriptions, synced, failed };
 };
