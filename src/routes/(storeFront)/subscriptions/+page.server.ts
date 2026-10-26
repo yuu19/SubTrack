@@ -4,7 +4,7 @@ import { zod4 } from 'sveltekit-superforms/adapters';
 import { createSubscriptionSchema } from '$lib/formSchema';
 import { resolveRequestLocale, subscriptionActionCopy } from '$lib/i18n-copy';
 import { pushSubscriptionTable, trackedSubscriptionTable } from '$lib/server/db/schema';
-import { and, desc, eq } from 'drizzle-orm';
+import { and, desc, eq, sql } from 'drizzle-orm';
 import { createAuth } from '$lib/auth';
 import { listActiveEntitlementsForUser } from '$lib/server/entitlements';
 import { computeNextBilling } from '$lib/server/subscriptions';
@@ -24,6 +24,12 @@ import {
 import { resolveTimeZone } from '$lib/time-zone';
 import { deleteSubscriptionIconImage } from '$lib/server/subscription-icon-images';
 import { serviceTemplates } from '$lib/service-templates';
+import {
+	listReviewStates,
+	parseReviewInput,
+	saveSubscriptionReview
+} from '$lib/server/subscription-reviews';
+import type { ReviewState } from '$lib/subscription-reviews';
 
 const fetchSubscriptions = async (db: NonNullable<App.Locals['db']>, userId: string) => {
 	return db
@@ -149,6 +155,7 @@ export const load: PageServerLoad = async ({ locals, request, cookies }) => {
 		return {
 			form,
 			subscriptions: [],
+			reviewStates: {} as Record<string, ReviewState>,
 			categories: [],
 			paymentMethods: [],
 			vapidPublicKey,
@@ -218,9 +225,16 @@ export const load: PageServerLoad = async ({ locals, request, cookies }) => {
 				)
 			: false;
 
+	const reviewStates = userId
+		? await listReviewStates(db, userId, subscriptions, {
+				timeZone: userNotificationConfig.timeZone
+			})
+		: {};
+
 	return {
 		form,
 		subscriptions,
+		reviewStates,
 		categories: managementItems.categories,
 		paymentMethods: managementItems.paymentMethods,
 		vapidPublicKey,
@@ -230,6 +244,30 @@ export const load: PageServerLoad = async ({ locals, request, cookies }) => {
 };
 
 export const actions: Actions = {
+	review: async ({ request, locals }) => {
+		const db = locals.db;
+		if (!db) return fail(503, { reviewError: 'unavailable' });
+		try {
+			const session = await createAuth(db).api.getSession({ headers: request.headers });
+			if (!session?.user.id) return fail(401, { reviewError: 'unauthorized' });
+			let formData: FormData;
+			try {
+				formData = await request.formData();
+			} catch {
+				return fail(400, { reviewError: 'invalid' });
+			}
+			const input = parseReviewInput(formData);
+			if (!input) return fail(400, { reviewError: 'invalid' });
+			const result = await saveSubscriptionReview(db, session.user.id, input);
+			if ('reviewError' in result) {
+				return fail(result.reviewError === 'not_found' ? 404 : 409, result);
+			}
+			return result;
+		} catch (error) {
+			console.error('Failed to save subscription review', error);
+			return fail(503, { reviewError: 'unavailable' });
+		}
+	},
 	create: async ({ request, locals, cookies }) => {
 		const locale = resolveRequestLocale(request, cookies);
 		const copy = subscriptionActionCopy[locale];
@@ -370,6 +408,12 @@ export const actions: Actions = {
 					color: existingSubscription.color,
 					iconType: form.data.iconType,
 					iconValue: form.data.iconValue,
+					// Evaluate against the actual row so concurrent/repeated edits cannot reuse a revision.
+					reviewRevision: sql`CASE WHEN ${trackedSubscriptionTable.firstPaymentDate} != ${form.data.datepicker}
+						OR ${trackedSubscriptionTable.cycle} != ${form.data.select}
+						OR ${trackedSubscriptionTable.amount} != ${form.data.number}
+						OR ${trackedSubscriptionTable.currency} != ${form.data.currency}
+						THEN ${trackedSubscriptionTable.reviewRevision} + 1 ELSE ${trackedSubscriptionTable.reviewRevision} END`,
 					cycle: form.data.select,
 					amount: form.data.number,
 					currency: form.data.currency,
@@ -423,6 +467,7 @@ export const actions: Actions = {
 			await db
 				.update(trackedSubscriptionTable)
 				.set({
+					reviewRevision: sql`CASE WHEN ${trackedSubscriptionTable.status} != 'canceled' THEN ${trackedSubscriptionTable.reviewRevision} + 1 ELSE ${trackedSubscriptionTable.reviewRevision} END`,
 					status: 'canceled',
 					canceledAt: new Date()
 				})
@@ -484,6 +529,7 @@ export const actions: Actions = {
 			await db
 				.update(trackedSubscriptionTable)
 				.set({
+					reviewRevision: sql`CASE WHEN ${trackedSubscriptionTable.status} != 'active' THEN ${trackedSubscriptionTable.reviewRevision} + 1 ELSE ${trackedSubscriptionTable.reviewRevision} END`,
 					status: 'active',
 					canceledAt: null,
 					nextBillingAt,

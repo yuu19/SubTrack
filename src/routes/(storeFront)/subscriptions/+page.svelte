@@ -34,13 +34,24 @@
 		resolveLocale
 	} from '$lib/locale';
 	import { startLifetimeCheckout } from '$lib/client/lifetime-checkout';
+	import {
+		getReviewIdentity,
+		mergeReviewRevisions,
+		mergeReviewStates
+	} from '$lib/client/subscription-reviews';
 	import { UserConfigContext } from '$lib/states/userConfig.svelte';
 	import { computeNextBilling } from '$lib/billing-dates';
+	import {
+		getReviewContext,
+		isReviewWithinDays,
+		type ReviewState
+	} from '$lib/subscription-reviews';
+	import { subscriptionReviewCopy, type ReviewFeedback } from '$lib/subscription-review-copy';
 	import { localizeInternalHref } from '$lib/locale-routing';
 	import { m } from '$lib/paraglide/messages.js';
 	import { getLocale } from '$lib/paraglide/runtime';
 	import { browser } from '$app/environment';
-	import { enhance as kitEnhance } from '$app/forms';
+	import { deserialize, enhance as kitEnhance } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
 	import { base, resolve } from '$app/paths';
 	import { page } from '$app/state';
@@ -70,9 +81,12 @@
 		_pending?: boolean;
 	};
 
-	let { data } = $props<{
+	let {
+		data
+	}: {
 		data: {
 			subscriptions: Subscription[];
+			reviewStates: Record<number, ReviewState>;
 			categories: Category[];
 			paymentMethods: PaymentMethod[];
 			form: unknown;
@@ -84,7 +98,7 @@
 				hasLifetimeEntitlement?: boolean;
 			};
 		};
-	}>();
+	} = $props();
 
 	function getInitialSubscriptions() {
 		return data.subscriptions as SubscriptionView[];
@@ -93,6 +107,19 @@
 	let subscriptions = $state<SubscriptionView[]>(getInitialSubscriptions());
 	let categories = $state<Category[]>(untrack(() => data.categories));
 	let paymentMethods = $state<PaymentMethod[]>(untrack(() => data.paymentMethods));
+	let reviewStates = $state<Record<number, ReviewState>>(untrack(() => data.reviewStates ?? {}));
+	// Subscription cache normalization intentionally excludes review data. Keep the small
+	// server revision separately, in memory only, so edit/revert cannot revive an old decision.
+	let reviewRevisions = $state<Record<string, number>>(
+		untrack(() => mergeReviewRevisions({}, data.subscriptions))
+	);
+	let pendingReviewId = $state<number | null>(null);
+	let refreshingReviews = $state(false);
+	let reviewLoadFailed = $state(false);
+	let reviewFeedback = $state<
+		Record<string, ReviewFeedback & { context?: string; billingDate?: string }>
+	>({});
+	let showThirtyDayReviews = $state(false);
 	let isOnline = $state(true);
 	let isSyncing = $state(false);
 	let syncError = $state<string | null>(null);
@@ -109,6 +136,7 @@
 	let lastOpenedSubscriptionParam = $state<string | null>(null);
 	const userConfig = UserConfigContext.get();
 	const currentLocale = $derived(resolveLocale(getLocale()));
+	const reviewCopy = $derived(subscriptionReviewCopy[currentLocale]);
 	const isPremium = $derived(Boolean(data.currentPlan?.isPremium));
 	const hasSubscriptionAccess = $derived(Boolean(data.currentPlan?.hasSubscriptionAccess));
 	const hasLifetimeEntitlement = $derived(Boolean(data.currentPlan?.hasLifetimeEntitlement));
@@ -161,7 +189,11 @@
 
 	const pendingCount = $derived(subscriptions.filter((sub) => sub._pending).length);
 	const canMutateSelected = $derived(
-		Boolean(selectedSubscription) && isOnline && !selectedSubscription?._pending
+		Boolean(selectedSubscription) &&
+			isOnline &&
+			!selectedSubscription?._pending &&
+			pendingReviewId === null &&
+			!refreshingReviews
 	);
 	// The layout can initialize the account zone while an IndexedDB read is in flight.
 	// Derive visible dates from the current setting so an older read cannot undo that change.
@@ -191,6 +223,165 @@
 				}
 			: null
 	);
+
+	const rememberReviewRevisions = (serverSubscriptions: Subscription[]) => {
+		reviewRevisions = mergeReviewRevisions(reviewRevisions, serverSubscriptions);
+	};
+
+	const currentReview = (sub: SubscriptionView | null): ReviewState | null => {
+		if (!sub || sub._pending || sub.status !== 'active') return null;
+		const state = reviewStates[Number(sub.id)];
+		if (!state || state.billingDate !== getBillingView(sub).nextBillingAt) return null;
+		const context = getReviewContext({
+			...sub,
+			reviewRevision: reviewRevisions[getReviewIdentity(sub)] ?? 0
+		});
+		return state.context === context ? state : null;
+	};
+	const selectedReview = $derived(currentReview(selectedSubscription));
+	const selectedReviewFeedback = $derived.by(() => {
+		const feedback = selectedSubscription ? reviewFeedback[selectedSubscription.id] : null;
+		if (!feedback?.context) return feedback ?? null;
+		return selectedReview?.context === feedback.context &&
+			selectedReview.billingDate === feedback.billingDate
+			? feedback
+			: null;
+	});
+	const unavailableReviewCount = $derived(
+		activeSubscriptions.filter((sub) => !sub._pending && !currentReview(sub)).length
+	);
+	const upcomingReviews = $derived(
+		activeSubscriptions
+			.filter((sub) => {
+				const review = currentReview(sub);
+				return (
+					review &&
+					!review.decision &&
+					isReviewWithinDays({ ...review, daysUntilBilling: sub.daysUntilNextBilling }, 30)
+				);
+			})
+			.sort(
+				(left, right) =>
+					left.nextBillingAt.localeCompare(right.nextBillingAt) ||
+					left.serviceName.localeCompare(right.serviceName)
+			)
+	);
+	const sevenDayReviews = $derived(upcomingReviews.filter((sub) => sub.daysUntilNextBilling <= 7));
+	const visibleReviewRows = $derived(
+		sevenDayReviews.length > 0 ? sevenDayReviews : showThirtyDayReviews ? upcomingReviews : []
+	);
+
+	// A failed review refresh must not turn a completed create/edit/delete into a
+	// reported save failure, which could invite duplicate submissions.
+	const reloadReviewData = async () => {
+		try {
+			await invalidateAll();
+			reviewLoadFailed = false;
+		} catch {
+			reviewLoadFailed = true;
+		}
+	};
+
+	const refreshReviews = async () => {
+		if (!isOnline || refreshingReviews || pendingReviewId !== null) return;
+		const id = selectedSubscription?.id;
+		refreshingReviews = true;
+		try {
+			await invalidateAll();
+			await applyServerSubscriptions(data.subscriptions);
+			reviewLoadFailed = false;
+			if (id !== undefined) reviewFeedback[id] = { message: 'refreshed', error: false };
+		} catch {
+			reviewLoadFailed = true;
+			if (id !== undefined) reviewFeedback[id] = { message: 'refreshFailed', error: true };
+		} finally {
+			refreshingReviews = false;
+		}
+	};
+
+	const saveReview = async (decision: 'keep' | 'review' | 'undo') => {
+		const sub = selectedSubscription;
+		const state = currentReview(sub);
+		if (!sub || pendingReviewId !== null || refreshingReviews) return;
+		if (!isOnline || !navigator.onLine) {
+			isOnline = false;
+			return;
+		}
+		if (!state) {
+			reviewFeedback[sub.id] = { message: 'stale', error: true };
+			return;
+		}
+		const id = Number(sub.id);
+		pendingReviewId = id;
+		delete reviewFeedback[id];
+		const payload = new FormData();
+		payload.set('id', String(id));
+		payload.set('billingDate', state.billingDate);
+		payload.set('context', state.context);
+		payload.set('reviewedAt', state.reviewedAt === null ? '' : String(state.reviewedAt));
+		payload.set('decision', decision);
+		const controller = new AbortController();
+		const timeout = window.setTimeout(() => controller.abort(), 20_000);
+		try {
+			const response = await fetch(`${page.url.pathname}?/review`, {
+				method: 'POST',
+				body: payload,
+				headers: { accept: 'application/json', 'x-sveltekit-action': 'true' },
+				signal: controller.signal
+			});
+			const result = deserialize(await response.text());
+			if (result.type === 'success') {
+				const saved = result.data as
+					| { subscriptionId?: number; reviewState?: ReviewState }
+					| undefined;
+				if (saved?.subscriptionId !== id || !saved.reviewState)
+					throw new Error('Invalid review response');
+				// Never attach a late result to another detail, a newer payment, or a newer
+				// decision that a concurrent load has already returned.
+				const liveSub = subscriptions.find((item) => Number(item.id) === id);
+				const known = reviewStates[id];
+				const stillCurrent =
+					liveSub?.status === 'active' &&
+					getReviewContext({
+						...liveSub,
+						reviewRevision: reviewRevisions[getReviewIdentity(liveSub)] ?? 0
+					}) === saved.reviewState.context &&
+					getBillingView(liveSub).nextBillingAt === saved.reviewState.billingDate;
+				const newerKnown =
+					known?.context === saved.reviewState.context &&
+					known.billingDate === saved.reviewState.billingDate &&
+					(known.reviewedAt ?? 0) > (saved.reviewState.reviewedAt ?? 0);
+				if (!stillCurrent || newerKnown) {
+					reviewFeedback[id] = { message: 'stale', error: true };
+				} else {
+					reviewStates = { ...reviewStates, [id]: saved.reviewState };
+					reviewFeedback[id] = {
+						message: decision === 'undo' ? 'undone' : 'saved',
+						error: false,
+						context: saved.reviewState.context,
+						billingDate: saved.reviewState.billingDate
+					};
+				}
+			} else {
+				const code =
+					result.type === 'failure'
+						? (result.data as { reviewError?: string } | undefined)?.reviewError
+						: result.type === 'redirect'
+							? 'unauthorized'
+							: 'unavailable';
+				const message =
+					code === 'invalid' || code === 'unauthorized' || code === 'not_found' || code === 'stale'
+						? code
+						: 'unavailable';
+				reviewFeedback[id] = { message, error: true };
+			}
+		} catch {
+			reviewFeedback[id] = { message: 'unavailable', error: true };
+		} finally {
+			window.clearTimeout(timeout);
+			pendingReviewId = null;
+		}
+	};
 
 	const cycleDayMap: Record<string, number> = {
 		monthly: 30,
@@ -231,11 +422,16 @@
 	const applyServerSubscriptions = async (serverSubscriptions: Subscription[]) => {
 		if (!browser) return;
 		if (!navigator.onLine && serverSubscriptions.length === 0) return;
+		rememberReviewRevisions(serverSubscriptions);
 		const merged = await replaceSubscriptionsFromServer(
 			serverSubscriptions as unknown as SubscriptionRecord[],
 			{ timeZone: userConfig.current.timeZone }
 		);
 		subscriptions = merged as SubscriptionView[];
+		if (selectedSubscription) {
+			selectedSubscription =
+				subscriptions.find((sub) => sub.id === selectedSubscription?.id) ?? null;
+		}
 	};
 
 	const loadCachedSubscriptions = async () => {
@@ -255,6 +451,7 @@
 				timeZone: userConfig.current.timeZone
 			});
 			subscriptions = result.subscriptions as SubscriptionView[];
+			if (result.synced > 0) await reloadReviewData();
 			if (result.failed > 0) {
 				syncError = m.subscription_sync_failed_offline();
 			}
@@ -272,6 +469,7 @@
 	};
 
 	const handleServerResult = async (serverSubscriptions: Subscription[]) => {
+		rememberReviewRevisions(serverSubscriptions);
 		const merged = await replaceSubscriptionsFromServer(
 			serverSubscriptions as unknown as SubscriptionRecord[],
 			{ timeZone: userConfig.current.timeZone }
@@ -281,6 +479,7 @@
 			const updated = merged.find((sub) => sub.id === selectedSubscription?.id);
 			selectedSubscription = (updated as SubscriptionView | undefined) ?? null;
 		}
+		await reloadReviewData();
 	};
 
 	const handleManagementItemsChange = (items: {
@@ -434,6 +633,7 @@
 		const handleOnline = () => {
 			isOnline = true;
 			void runSync();
+			void refreshReviews();
 		};
 
 		const handleOffline = () => {
@@ -447,6 +647,15 @@
 			window.removeEventListener('online', handleOnline);
 			window.removeEventListener('offline', handleOffline);
 		};
+	});
+
+	$effect(() => {
+		const loadedReviews = data.reviewStates ?? {};
+		untrack(() => {
+			reviewStates = mergeReviewStates(reviewStates, loadedReviews);
+		});
+		const serverSubscriptions = data.subscriptions;
+		untrack(() => rememberReviewRevisions(serverSubscriptions));
 	});
 
 	$effect(() => {
@@ -566,6 +775,85 @@
 		</div>
 	{/if}
 
+	<section
+		class="bg-card space-y-4 rounded-2xl border p-4 sm:p-5"
+		aria-labelledby="review-list-title"
+		data-testid="subscription-review-list"
+		data-window={sevenDayReviews.length > 0 || !showThirtyDayReviews ? '7' : '30'}
+	>
+		<div class="space-y-1">
+			<h2 id="review-list-title" class="text-lg font-semibold">{reviewCopy.title}</h2>
+			<p class="text-muted-foreground text-sm">{reviewCopy.description}</p>
+		</div>
+		{#if !isOnline}
+			<p class="text-muted-foreground text-sm">{reviewCopy.offline}</p>
+		{/if}
+		{#if unavailableReviewCount > 0 || reviewLoadFailed}
+			<p class="text-muted-foreground text-sm">{reviewCopy.unavailableList}</p>
+			<Button
+				variant="outline"
+				disabled={!isOnline || refreshingReviews || pendingReviewId !== null}
+				onclick={refreshReviews}
+				data-testid="review-list-refresh">{reviewCopy.refresh}</Button
+			>
+		{/if}
+		{#if sevenDayReviews.length === 0}
+			{#if unavailableReviewCount === 0 && !reviewLoadFailed}<p class="text-sm">
+					{reviewCopy.emptySeven}
+				</p>{/if}
+			<Button
+				variant="outline"
+				class="min-h-11 whitespace-normal"
+				onclick={() => (showThirtyDayReviews = !showThirtyDayReviews)}
+				aria-expanded={showThirtyDayReviews}
+				aria-controls="review-thirty-days"
+				data-testid="review-show-30"
+			>
+				{showThirtyDayReviews ? reviewCopy.hideThirty : reviewCopy.showThirty}
+			</Button>
+			{#if showThirtyDayReviews}
+				<div id="review-thirty-days" class="space-y-2">
+					<h3 class="text-sm font-medium">{reviewCopy.thirtyTitle}</h3>
+					{#if upcomingReviews.length === 0 && unavailableReviewCount === 0 && !reviewLoadFailed}<p
+							class="text-muted-foreground text-sm"
+						>
+							{reviewCopy.emptyThirty}
+						</p>{/if}
+				</div>
+			{/if}
+		{/if}
+		{#if visibleReviewRows.length > 0}
+			<ul class="divide-y rounded-lg border">
+				{#each visibleReviewRows as sub (sub.id)}
+					<li>
+						<button
+							type="button"
+							class="hover:bg-muted/50 focus-visible:ring-ring flex min-h-16 w-full items-center gap-3 rounded-lg p-3 text-left focus-visible:ring-2 focus-visible:outline-none"
+							onclick={() => openDetail(sub)}
+							data-testid={`review-open-${sub.id}`}
+						>
+							<SubscriptionIcon
+								iconType={sub.iconType}
+								iconValue={sub.iconValue}
+								subscriptionId={sub.id}
+								class="size-7 shrink-0"
+							/>
+							<span class="min-w-0 flex-1 space-y-1">
+								<span class="block truncate text-sm font-medium">{sub.serviceName}</span>
+								<time datetime={sub.nextBillingAt} class="text-muted-foreground block text-xs"
+									>{formatBillingDate(sub.nextBillingAt)}</time
+								>
+							</span>
+							<span class="shrink-0 text-right text-sm font-medium"
+								>{formatCurrency(sub.amount, sub.currency, currentLocale)}</span
+							>
+						</button>
+					</li>
+				{/each}
+			</ul>
+		{/if}
+	</section>
+
 	{#if filteredSubscriptions.length === 0}
 		<div class="text-muted-foreground flex flex-col gap-4 rounded-lg border border-dashed p-6">
 			{#if canceledSubscriptions.length > 0}
@@ -635,6 +923,13 @@
 											<Badge variant="outline" class="text-[10px]">
 												{getPaymentMethodName(sub.paymentMethodId)}
 											</Badge>
+										{/if}
+										{#if currentReview(sub)?.decision}
+											<Badge variant="outline" class="text-[10px]"
+												>{currentReview(sub)?.decision === 'keep'
+													? reviewCopy.kept
+													: reviewCopy.reviewing}</Badge
+											>
 										{/if}
 										{#if sub._pending}
 											<Badge variant="secondary" class="text-[10px]"
@@ -795,6 +1090,14 @@
 				subscription={selectedSubscriptionDetail}
 				locale={currentLocale}
 				canMutate={canMutateSelected}
+				reviewState={selectedReview}
+				reviewOnline={isOnline}
+				reviewPending={pendingReviewId === Number(selectedSubscription.id)}
+				reviewBlocked={pendingReviewId !== null}
+				reviewRefreshing={refreshingReviews}
+				reviewFeedback={selectedReviewFeedback}
+				onReview={saveReview}
+				onReviewRefresh={refreshReviews}
 				onEdit={openEdit}
 				onCancel={openCancel}
 				onReactivate={openReactivate}

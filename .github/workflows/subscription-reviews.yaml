@@ -1,0 +1,74 @@
+name: Subscription review regressions
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  reviews-unit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        time-zone: [UTC, Asia/Tokyo, America/Los_Angeles]
+    env:
+      TZ: ${{ matrix.time-zone }}
+      SUBTRACK_LOCAL_CHECK: 'true'
+      SENTRY_TELEMETRY: 'false'
+      WRANGLER_SEND_METRICS: 'false'
+      E2E_AUTH_DISABLE_STRIPE: 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.28.2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec svelte-kit sync
+      - name: Verify per-cycle decisions and ownership with isolated databases
+        run: >-
+          pnpm exec vitest run --project server
+          src/lib/subscription-reviews.spec.ts
+          src/lib/client/subscription-reviews.spec.ts
+          src/lib/subscription-review-copy.spec.ts
+          src/lib/server/subscription-reviews.spec.ts
+          src/lib/server/subscription-review-actions.spec.ts
+          src/lib/billing-dates.spec.ts
+          src/lib/time-zone.spec.ts
+  reviews-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SUBTRACK_LOCAL_CHECK: 'true'
+      SENTRY_TELEMETRY: 'false'
+      WRANGLER_SEND_METRICS: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.28.2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec svelte-kit sync
+      - name: Install isolated test browser
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Run online-only review flows with disposable SQLite and no external services
+        run: pnpm exec playwright test --config=playwright.review.config.ts
+      - name: Preserve screenshots and test diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: review-test-diagnostics
+          path: |
+            test-results/
+            playwright-report/
+          retention-days: 7
