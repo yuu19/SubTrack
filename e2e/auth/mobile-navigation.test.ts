@@ -7,6 +7,13 @@ test('mobile navigation responds while the next screen is loading', async ({ pag
 	const subscriptionsPage = new SubscriptionsPage(page);
 	await subscriptionsPage.gotoSubscriptions();
 	await subscriptionsPage.expectLoaded();
+	// Wait for hydration through an actual interaction before testing client-side navigation.
+	await expect(async () => {
+		await page.getByRole('button', { name: /^(サブスクを追加|Add subscription)$/ }).click();
+		await expect(page.getByRole('dialog')).toBeVisible({ timeout: 1_000 });
+	}).toPass();
+	await page.keyboard.press('Escape');
+	await expect(page.getByRole('dialog')).toBeHidden();
 	const navigation = page.getByRole('navigation', { name: 'Primary', exact: true });
 	const subscriptions = navigation.getByRole('link', { name: /サブスク|Subscriptions/ });
 	const calendar = navigation.getByRole('link', { name: /カレンダー|Calendar/ });
