@@ -9,7 +9,8 @@
 	import { CalendarDays, CreditCard, LoaderCircle, PieChart, Settings } from 'lucide-svelte';
 
 	const currentLocale = $derived(resolveLocale(getLocale()));
-	const localizedHref = (href: string) => localizeInternalHref(resolve(href), currentLocale);
+	const localizedHref = (href: '/subscriptions' | '/calendar' | '/analysis' | '/me/settings') =>
+		localizeInternalHref(new URL(resolve(href), page.url).pathname, currentLocale);
 	const items = $derived([
 		{
 			href: localizedHref('/subscriptions'),

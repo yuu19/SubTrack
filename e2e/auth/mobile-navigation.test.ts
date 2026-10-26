@@ -10,6 +10,7 @@ test('mobile navigation responds while the next screen is loading', async ({ pag
 	const navigation = page.getByRole('navigation', { name: 'Primary', exact: true });
 	const subscriptions = navigation.getByRole('link', { name: /サブスク|Subscriptions/ });
 	const calendar = navigation.getByRole('link', { name: /カレンダー|Calendar/ });
+	await expect(calendar).toHaveAttribute('href', '/ja/calendar');
 	await expect(subscriptions).toHaveAttribute('aria-current', 'page');
 
 	let releaseResponse!: () => void;
