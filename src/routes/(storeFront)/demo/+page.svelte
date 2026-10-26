@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { resolve } from '$app/paths';
+	import { base } from '$app/paths';
 	import SubTrackDemoExperience from '$lib/components/demo/SubTrackDemoExperience.svelte';
 	import Button from '$lib/components/ui/button/button.svelte';
 	import { demoPageCopy } from '$lib/content/site-content';
@@ -11,7 +11,7 @@
 	const locale = $derived(resolveLocale(getLocale()));
 	const copy = $derived(demoPageCopy[locale]);
 	const seoLinks = $derived(getLocalizedSeoLinks('/demo', locale));
-	const localizedHref = (href: string) => localizeInternalHref(resolve(href), locale);
+	const localizedHref = (href: string) => localizeInternalHref(`${base}${href}`, locale);
 </script>
 
 <svelte:head>

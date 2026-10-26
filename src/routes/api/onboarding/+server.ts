@@ -11,7 +11,7 @@ export const POST = async ({ request, locals: { db } }) => {
 	const userId = session?.user.id;
 	if (!userId) error(401, 'unauthorized request');
 
-	const body = await request.json().catch(() => ({}));
+	const body = (await request.json().catch(() => ({}))) as { completed?: unknown } | null;
 	const completed = body?.completed ?? true;
 	if (completed !== true) error(400, 'invalid payload');
 

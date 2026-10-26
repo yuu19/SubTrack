@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { resolve } from '$app/paths';
+	import { base } from '$app/paths';
 	import { resolveLocale } from '$lib/locale';
 	import { getLocalizedSeoLinks, localizeInternalHref } from '$lib/locale-routing';
 	import { getLocale } from '$lib/paraglide/runtime';
@@ -9,7 +9,7 @@
 	const locale = $derived(resolveLocale(getLocale()));
 	const copy = $derived(faqPageCopy[locale]);
 	const seoLinks = $derived(getLocalizedSeoLinks('/faq', locale));
-	const localizedHref = (href: string) => localizeInternalHref(resolve(href), locale);
+	const localizedHref = (href: string) => localizeInternalHref(`${base}${href}`, locale);
 </script>
 
 <svelte:head>

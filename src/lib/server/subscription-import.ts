@@ -1,4 +1,3 @@
-import { and, eq } from 'drizzle-orm';
 import {
 	CANCELLATION_METHODS,
 	DEFAULT_SUBSCRIPTION_CURRENCY,

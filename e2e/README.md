@@ -32,6 +32,10 @@ pnpm exec playwright test e2e/public/home.test.ts --project=public
 - `auth-locale.setup.ts`: `subtrack_locale=en` を付けてテストユーザーを作成し、英語初期 locale の `storageState` を保存する。
 - `global-setup.ts`: `E2E_DB_PATH` の SQLite を毎回作り直し、Drizzle schema を反映する。
 
+## 起動確認
+
+サーバー起動の判定には DB を使わない `/favicon.png` を使います。Playwright はサーバー起動後に `globalSetup` で DB を準備するため、起動判定でトップページへアクセスすると、クリーンな環境では DB が未作成のまま待機します。
+
 ## 認証付き E2E
 
 `auth` project は `E2E_DB_PATH=.tmp/e2e/subtrack-e2e.sqlite` を使います。`global-setup.ts` が `drizzle-kit push --force` で schema を反映し、`auth.setup.ts` が `/api/auth/sign-up/email` を通してテストユーザーとセッションを作成し、`e2e/.auth/user.json` を保存します。

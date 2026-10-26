@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SUBTRACK_LOCAL_CHECK: 'true'
+      WRANGLER_SEND_METRICS: 'false'
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@v6.1.0
+        with:
+          version: 10.28.2
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Generate translations
+        run: pnpm exec paraglide-js compile --project ./project.inlang --outdir ./src/lib/paraglide
+      - name: Check types
+        run: pnpm run check
+      - name: Lint server and deployment files
+        run: |
+          pnpm exec eslint src/lib/server src/routes/api/health
+          pnpm exec prettier --check .github/workflows docs/deployment.md src/routes/api/health tests/deployment.test.mjs
+          bash -n scripts/deploy-smoke.sh scripts/deploy-preflight.sh
+      - name: Verify build configuration
+        run: node --test tests/build-config.test.mjs tests/deployment.test.mjs
+      - name: Test authentication regressions
+        run: pnpm run test:auth
+      - name: Test server
+        run: pnpm exec vitest run --project server
+      - name: Install Chromium
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Test browser components
+        run: pnpm exec vitest run --project client
+      - name: Test public and authenticated flows
+        run: pnpm run test:e2e
+      - name: Build without production credentials
+        env:
+          E2E_AUTH_DISABLE_STRIPE: 'true'
+        run: pnpm run build
+      - name: Upload test reports
+        if: failure()
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: test-reports
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore
+          retention-days: 7

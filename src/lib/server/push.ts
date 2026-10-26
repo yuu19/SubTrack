@@ -32,7 +32,7 @@ export const sendWebPush = async (subscription: StoredPushSubscription, payload:
 	const expirationTime =
 		subscription.expirationTime instanceof Date
 			? subscription.expirationTime.getTime()
-			: subscription.expirationTime ?? null;
+			: (subscription.expirationTime ?? null);
 	const details = webPush.generateRequestDetails(
 		{
 			endpoint: subscription.endpoint,
@@ -52,7 +52,7 @@ export const sendWebPush = async (subscription: StoredPushSubscription, payload:
 	const response = await fetch(details.endpoint, {
 		method: details.method,
 		headers: details.headers,
-		body: details.body
+		body: details.body instanceof Uint8Array ? new Uint8Array(details.body) : details.body
 	});
 
 	return response;

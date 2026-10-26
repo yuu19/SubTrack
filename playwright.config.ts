@@ -8,6 +8,7 @@ export default defineConfig({
 	testDir: './e2e',
 	globalSetup: './e2e/global-setup.ts',
 	fullyParallel: true,
+	workers: process.env.CI ? 2 : undefined,
 	forbidOnly: !!process.env.CI,
 	retries: process.env.CI ? 2 : 0,
 	reporter: process.env.CI ? [['list'], ['html', { open: 'never' }]] : [['list'], ['html']],
@@ -54,7 +55,8 @@ export default defineConfig({
 	],
 	webServer: {
 		command: `E2E_DB_PATH=${e2eDbPath} E2E_AUTH_DISABLE_STRIPE=true BETTER_AUTH_SECRET=e2e-secret-for-subtrack-playwright pnpm exec vite dev --host 127.0.0.1 --port 4173`,
-		url: 'http://127.0.0.1:4173',
+		// globalSetup prepares the DB after webServer becomes ready.
+		url: 'http://127.0.0.1:4173/favicon.png',
 		reuseExistingServer: !process.env.CI,
 		timeout: 120_000
 	}

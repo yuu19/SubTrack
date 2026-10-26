@@ -16,11 +16,13 @@
     { name: 'orange', label: 'オレンジ', color: 'color-mix(in oklch, var(--primary) 65%, var(--background) 35%)' }
   ];
   
+  /** @param {import('dayjs').ConfigType} date */
   function formatDate(date) {
     if (!date) return '';
     return dayjs(date).format('YYYY年M月D日（ddd）');
   }
   
+  /** @param {SubmitEvent} e */
   function handleSubmit(e) {
     e.preventDefault();
     if (!title.trim()) return;
@@ -37,12 +39,14 @@
     });
   }
   
+  /** @param {MouseEvent} e */
   function handleBackdropClick(e) {
     if (e.target === e.currentTarget) {
       onClose();
     }
   }
   
+  /** @param {KeyboardEvent} e */
   function handleKeyDown(e) {
     if (e.key === 'Escape') {
       onClose();

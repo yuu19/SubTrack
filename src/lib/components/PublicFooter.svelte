@@ -1,12 +1,12 @@
 <script lang="ts">
-	import { resolve } from '$app/paths';
+	import { base } from '$app/paths';
 	import { resolveLocale } from '$lib/locale';
 	import { localizeInternalHref } from '$lib/locale-routing';
 	import { getLocale } from '$lib/paraglide/runtime';
 	import { m } from '$lib/paraglide/messages.js';
 
 	const locale = $derived(resolveLocale(getLocale()));
-	const localizedHref = (href: string) => localizeInternalHref(resolve(href), locale);
+	const localizedHref = (href: string) => localizeInternalHref(`${base}${href}`, locale);
 	const copy = $derived(
 		locale === 'en'
 			? {
