@@ -7,7 +7,11 @@ import { sentrySvelteKit } from '@sentry/sveltekit';
 
 export default defineConfig({
 	plugins: [
-		sentrySvelteKit(),
+		// Disable build telemetry everywhere; local checks must also skip source map uploads.
+		sentrySvelteKit({
+			telemetry: false,
+			autoUploadSourceMaps: !process.env.VITEST && process.env.SUBTRACK_LOCAL_CHECK !== 'true'
+		}),
 		tailwindcss(),
 		sveltekit(),
 		paraglideVitePlugin({

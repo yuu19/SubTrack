@@ -184,6 +184,10 @@ export const twoFactor = sqliteTable(
 		id: text('id').primaryKey(),
 		secret: text('secret').notNull(),
 		backupCodes: text('backupCodes').notNull(),
+		// Migration backfills legacy enrollment state; new enrollments are explicitly pending.
+		verified: integer('verified', { mode: 'boolean' }).notNull().default(true),
+		failedVerificationCount: integer('failedVerificationCount').notNull().default(0),
+		lockedUntil: integer('lockedUntil', { mode: 'timestamp_ms' }),
 		userId: text('userId')
 			.notNull()
 			.references(() => user.id, { onDelete: 'cascade' })
