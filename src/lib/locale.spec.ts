@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
+	formatCalendarDate,
 	formatCurrency,
 	formatCurrencyYen,
 	formatLongDate,
@@ -68,5 +69,25 @@ describe('locale helpers', () => {
 		expect(getCancellationMethodLabel('google_play', 'en')).toBe('Google Play');
 		expect(getCancellationMethodDescription('phone', 'ja')).toContain('電話');
 		expect(getCancellationMethodDescription(undefined, 'en')).toContain('Save');
+	});
+});
+
+describe('calendar date formatting', () => {
+	afterEach(() => vi.unstubAllEnvs());
+
+	it.each(['America/Los_Angeles', 'Asia/Tokyo', 'UTC'])(
+		'preserves a selected calendar day on a %s device',
+		(timeZone) => {
+			vi.stubEnv('TZ', timeZone);
+			expect(formatCalendarDate('2026-06-24', 'en')).toBe('Wed, June 24, 2026');
+			expect(formatCalendarDate('2026-06-24', 'ja')).toBe('2026年6月24日(水)');
+		}
+	);
+
+	it('preserves instant semantics for Date inputs and handles missing/invalid values', () => {
+		vi.stubEnv('TZ', 'America/Los_Angeles');
+		expect(formatCalendarDate(new Date('2026-06-24T00:00:00Z'), 'en')).toBe('Tue, June 23, 2026');
+		expect(formatCalendarDate('not-a-date', 'en')).toBe('');
+		expect(formatCalendarDate(null, 'en')).toBe('');
 	});
 });

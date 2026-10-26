@@ -68,7 +68,9 @@ export const hasLocalTimeReached = (date: Date, timeZone: string, notifyTime: st
 
 export const normalizeDateString = (value: string | Date | null | undefined): string => {
 	if (!value) return '';
-	if (value instanceof Date) return value.toISOString().slice(0, 10);
+	if (value instanceof Date) {
+		return Number.isFinite(value.getTime()) ? value.toISOString().slice(0, 10) : '';
+	}
 	const trimmed = value.trim();
 	const direct = /^(\d{4})-(\d{2})-(\d{2})/.exec(trimmed);
 	if (direct) return `${direct[1]}-${direct[2]}-${direct[3]}`;
@@ -76,29 +78,49 @@ export const normalizeDateString = (value: string | Date | null | undefined): st
 	return Number.isFinite(parsed.getTime()) ? parsed.toISOString().slice(0, 10) : trimmed;
 };
 
+/** Validate a calendar date without allowing JavaScript's overflow normalization. */
+export const isValidDateString = (value: string): boolean => {
+	if (!/^\d{4}-\d{2}-\d{2}$/.test(value) || value.startsWith('0000-')) return false;
+	const parsed = new Date(`${value}T00:00:00.000Z`);
+	return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
+};
+
 const dateToUtcMs = (value: string) => {
-	const [year, month, day] = normalizeDateString(value).split('-').map(Number);
-	if (!year || !month || !day) return NaN;
-	return Date.UTC(year, month - 1, day);
+	const normalized = normalizeDateString(value);
+	return isValidDateString(normalized) ? Date.parse(`${normalized}T00:00:00.000Z`) : NaN;
 };
 
 export const diffCalendarDays = (left: string, right: string): number => {
 	const leftMs = dateToUtcMs(left);
 	const rightMs = dateToUtcMs(right);
-	if (!Number.isFinite(leftMs) || !Number.isFinite(rightMs)) return 0;
+	if (!Number.isFinite(leftMs) || !Number.isFinite(rightMs)) return NaN;
 	return Math.round((leftMs - rightMs) / 86_400_000);
 };
 
-const daysInMonth = (year: number, month: number) =>
-	new Date(Date.UTC(year, month, 0)).getUTCDate();
+export const addCalendarDays = (value: string, daysToAdd: number): string => {
+	const start = dateToUtcMs(value);
+	if (!Number.isFinite(start) || !Number.isInteger(daysToAdd)) return value;
+	const result = new Date(start + daysToAdd * 86_400_000);
+	if (!Number.isFinite(result.getTime())) return value;
+	const normalized = result.toISOString().slice(0, 10);
+	return isValidDateString(normalized) ? normalized : value;
+};
+
+const daysInMonth = (year: number, month: number) => {
+	const date = new Date(0);
+	date.setUTCFullYear(year, month, 0);
+	return date.getUTCDate();
+};
 
 export const addCalendarMonths = (value: string, monthsToAdd: number): string => {
-	const [year, month, day] = normalizeDateString(value).split('-').map(Number);
-	if (!year || !month || !day) return value;
+	const normalized = normalizeDateString(value);
+	if (!isValidDateString(normalized) || !Number.isInteger(monthsToAdd)) return value;
+	const [year, month, day] = normalized.split('-').map(Number);
 	const zeroBasedMonth = month - 1 + monthsToAdd;
 	const targetYear = year + Math.floor(zeroBasedMonth / 12);
+	if (targetYear < 1 || targetYear > 9999) return value;
 	const targetMonthIndex = ((zeroBasedMonth % 12) + 12) % 12;
 	const targetMonth = targetMonthIndex + 1;
 	const targetDay = Math.min(day, daysInMonth(targetYear, targetMonth));
-	return `${targetYear}-${pad2(targetMonth)}-${pad2(targetDay)}`;
+	return `${String(targetYear).padStart(4, '0')}-${pad2(targetMonth)}-${pad2(targetDay)}`;
 };

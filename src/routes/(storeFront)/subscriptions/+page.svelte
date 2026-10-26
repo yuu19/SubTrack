@@ -34,6 +34,8 @@
 		resolveLocale
 	} from '$lib/locale';
 	import { startLifetimeCheckout } from '$lib/client/lifetime-checkout';
+	import { UserConfigContext } from '$lib/states/userConfig.svelte';
+	import { computeNextBilling } from '$lib/billing-dates';
 	import { localizeInternalHref } from '$lib/locale-routing';
 	import { m } from '$lib/paraglide/messages.js';
 	import { getLocale } from '$lib/paraglide/runtime';
@@ -105,6 +107,7 @@
 	let deleteOpen = $state(false);
 	let selectedSubscription = $state<SubscriptionView | null>(null);
 	let lastOpenedSubscriptionParam = $state<string | null>(null);
+	const userConfig = UserConfigContext.get();
 	const currentLocale = $derived(resolveLocale(getLocale()));
 	const isPremium = $derived(Boolean(data.currentPlan?.isPremium));
 	const hasSubscriptionAccess = $derived(Boolean(data.currentPlan?.hasSubscriptionAccess));
@@ -160,8 +163,19 @@
 	const canMutateSelected = $derived(
 		Boolean(selectedSubscription) && isOnline && !selectedSubscription?._pending
 	);
+	// The layout can initialize the account zone while an IndexedDB read is in flight.
+	// Derive visible dates from the current setting so an older read cannot undo that change.
+	const getBillingView = (subscription: SubscriptionView): SubscriptionView =>
+		subscription.status === 'canceled'
+			? subscription
+			: {
+					...subscription,
+					...computeNextBilling(subscription.firstPaymentDate, subscription.cycle, {
+						timeZone: userConfig.current.timeZone
+					})
+				};
 	const activeSubscriptions = $derived(
-		subscriptions.filter((sub) => (sub.status ?? 'active') !== 'canceled')
+		subscriptions.filter((sub) => (sub.status ?? 'active') !== 'canceled').map(getBillingView)
 	);
 	const canceledSubscriptions = $derived(
 		subscriptions.filter((sub) => (sub.status ?? 'active') === 'canceled')
@@ -171,7 +185,7 @@
 	const selectedSubscriptionDetail = $derived(
 		selectedSubscription
 			? {
-					...selectedSubscription,
+					...getBillingView(selectedSubscription),
 					categoryName: getCategoryName(selectedSubscription.categoryId),
 					paymentMethodName: getPaymentMethodName(selectedSubscription.paymentMethodId)
 				}
@@ -218,14 +232,15 @@
 		if (!browser) return;
 		if (!navigator.onLine && serverSubscriptions.length === 0) return;
 		const merged = await replaceSubscriptionsFromServer(
-			serverSubscriptions as unknown as SubscriptionRecord[]
+			serverSubscriptions as unknown as SubscriptionRecord[],
+			{ timeZone: userConfig.current.timeZone }
 		);
 		subscriptions = merged as SubscriptionView[];
 	};
 
 	const loadCachedSubscriptions = async () => {
 		if (!browser) return;
-		const cached = await getCachedSubscriptions();
+		const cached = await getCachedSubscriptions({ timeZone: userConfig.current.timeZone });
 		if (cached.length > 0) {
 			subscriptions = cached as SubscriptionView[];
 		}
@@ -236,7 +251,9 @@
 		isSyncing = true;
 		syncError = null;
 		try {
-			const result = await syncPendingSubscriptions(`${base}/subscriptions?/create`);
+			const result = await syncPendingSubscriptions(`${base}/subscriptions?/create`, {
+				timeZone: userConfig.current.timeZone
+			});
 			subscriptions = result.subscriptions as SubscriptionView[];
 			if (result.failed > 0) {
 				syncError = m.subscription_sync_failed_offline();
@@ -250,13 +267,14 @@
 	};
 
 	const handleOfflineSubmit = async (payload: SubscriptionPayload) => {
-		const merged = await addPendingSubscription(payload);
+		const merged = await addPendingSubscription(payload, { timeZone: userConfig.current.timeZone });
 		subscriptions = merged as SubscriptionView[];
 	};
 
 	const handleServerResult = async (serverSubscriptions: Subscription[]) => {
 		const merged = await replaceSubscriptionsFromServer(
-			serverSubscriptions as unknown as SubscriptionRecord[]
+			serverSubscriptions as unknown as SubscriptionRecord[],
+			{ timeZone: userConfig.current.timeZone }
 		);
 		subscriptions = merged as SubscriptionView[];
 		if (selectedSubscription) {
