@@ -33,9 +33,12 @@ export class SubscriptionsPage extends BasePage {
 			await expect(addDialogHeading).toBeVisible({ timeout: 1_000 });
 		}).toPass();
 
+		await this.page.getByRole('button', { name: /^(手動で入力する|Enter manually)$/ }).click();
 		await this.page.getByLabel(/^(サービス名|Service name)$/).fill(input.serviceName);
 		await this.page.getByLabel(/^(支払い周期|Billing cycle)$/).selectOption('monthly');
-		await this.page.getByLabel(/^(何日前に通知しますか？|When should we remind you\?)$/).selectOption('3');
+		await this.page
+			.getByLabel(/^(何日前に通知しますか？|When should we remind you\?)$/)
+			.selectOption('3');
 		await this.page.getByLabel(/^(月額料金|Monthly price)$/).fill(String(input.amount));
 		await this.page.getByLabel(/^(初回支払日|First payment date)$/).fill(input.firstPaymentDate);
 		await this.page.getByRole('button', { name: /^(保存する|Save)$/ }).click();
