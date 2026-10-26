@@ -42,4 +42,7 @@ jobs:
           src/lib/i18n-copy.spec.ts
       - name: Build without deployment or Sentry uploads
         if: matrix.time-zone == 'UTC'
+        env:
+          # Route analysis imports auth; use its existing no-Stripe test mode, never real keys.
+          E2E_AUTH_DISABLE_STRIPE: 'true'
         run: pnpm run build
