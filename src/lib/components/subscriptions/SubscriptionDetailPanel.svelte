@@ -1,5 +1,8 @@
 <script lang="ts">
 	import SubscriptionIcon from '$lib/components/subscriptions/SubscriptionIcon.svelte';
+	import SubscriptionReviewControls from '$lib/components/subscriptions/SubscriptionReviewControls.svelte';
+	import type { ReviewState } from '$lib/subscription-reviews';
+	import type { ReviewFeedback } from '$lib/subscription-review-copy';
 	import Button from '$lib/components/ui/button/button.svelte';
 	import {
 		formatCurrency,
@@ -56,8 +59,16 @@
 		onEdit,
 		onCancel,
 		onReactivate,
-		onDelete
-	} = $props<{
+		onDelete,
+		reviewState = null,
+		reviewOnline = true,
+		reviewPending = false,
+		reviewBlocked = false,
+		reviewRefreshing = false,
+		reviewFeedback = null,
+		onReview,
+		onReviewRefresh
+	}: {
 		subscription: SubscriptionDetail | null;
 		locale: AppLocale;
 		canMutate?: boolean;
@@ -65,7 +76,21 @@
 		onCancel?: () => void;
 		onReactivate?: () => void;
 		onDelete?: () => void;
-	}>();
+		reviewState?: ReviewState | null;
+		reviewOnline?: boolean;
+		reviewPending?: boolean;
+		reviewBlocked?: boolean;
+		reviewRefreshing?: boolean;
+		reviewFeedback?: ReviewFeedback | null;
+		onReview?: (decision: 'keep' | 'review' | 'undo') => void;
+		onReviewRefresh?: () => void;
+	} = $props();
+
+	let cancellationSection = $state<HTMLDivElement | undefined>();
+	const openCancellationDetails = () => {
+		cancellationSection?.scrollIntoView({ block: 'nearest' });
+		cancellationSection?.focus({ preventScroll: true });
+	};
 
 	const isCanceled = $derived(subscription?.status === 'canceled');
 	const cancellationUrl = $derived(subscription?.cancellationUrl?.trim() ?? '');
@@ -134,6 +159,21 @@
 				{/if}
 			</div>
 
+			{#if onReview && onReviewRefresh && !isCanceled}
+				<SubscriptionReviewControls
+					{reviewState}
+					{locale}
+					isOnline={reviewOnline}
+					pending={reviewPending}
+					blocked={reviewBlocked}
+					refreshing={reviewRefreshing}
+					feedback={reviewFeedback}
+					onDecision={onReview}
+					onRefresh={onReviewRefresh}
+					onCancellationDetails={openCancellationDetails}
+				/>
+			{/if}
+
 			<div class="bg-card space-y-3 rounded-xl border px-4 py-4 text-sm">
 				{#if subscription.planName}
 					<div class="flex items-center justify-between gap-4">
@@ -177,7 +217,12 @@
 				{/if}
 			</div>
 
-			<div class="bg-card space-y-3 rounded-xl border px-4 py-4 text-sm">
+			<div
+				bind:this={cancellationSection}
+				tabindex="-1"
+				class="bg-card space-y-3 rounded-xl border px-4 py-4 text-sm focus-visible:outline-2 focus-visible:outline-offset-2"
+				data-testid="subscription-cancellation-details"
+			>
 				<div class="flex items-center gap-2 font-semibold">
 					<Link class="size-4" />
 					<span>{m.subscription_cancellation_section_title()}</span>
