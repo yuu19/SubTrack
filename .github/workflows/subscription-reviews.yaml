@@ -59,8 +59,12 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec svelte-kit sync
-      - name: Install isolated test browser
-        run: pnpm exec playwright install --with-deps chromium
+      # Ubuntu runners already include Chromium runtime libraries. Avoid the
+      # broad --with-deps apt upgrade and unrelated fonts (11+ minutes in CI).
+      - name: Install Japanese font for readable localization screenshots
+        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y fonts-ipafont-gothic
+      - name: Install isolated headless test browser
+        run: pnpm exec playwright install --only-shell chromium
       - name: Run online-only review flows with disposable SQLite and no external services
         run: pnpm exec playwright test --config=playwright.review.config.ts
       - name: Preserve screenshots and test diagnostics

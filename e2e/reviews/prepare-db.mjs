@@ -2,7 +2,8 @@ import { execFileSync } from 'node:child_process';
 import { mkdirSync, rmSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 
-export default function globalSetup() {
+// Runs before Vite: Playwright globalSetup starts after webServer readiness.
+{
 	const dbPath = resolve('.tmp/e2e/subtrack-reviews.sqlite');
 	if (process.env.E2E_DB_PATH !== '.tmp/e2e/subtrack-reviews.sqlite') {
 		throw new Error('Review tests must use their disposable SQLite file');

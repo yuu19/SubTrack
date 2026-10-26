@@ -23,7 +23,6 @@ Object.assign(process.env, {
 
 export default defineConfig({
 	testDir: './e2e',
-	globalSetup: './e2e/reviews/global-setup.ts',
 	workers: 1,
 	fullyParallel: false,
 	forbidOnly: !!process.env.CI,
@@ -65,7 +64,8 @@ export default defineConfig({
 		}
 	],
 	webServer: {
-		command: 'node node_modules/vite/bin/vite.js dev --host 127.0.0.1 --port 4175',
+		command:
+			'node e2e/reviews/prepare-db.mjs && node node_modules/vite/bin/vite.js dev --host 127.0.0.1 --port 4175',
 		url: 'http://127.0.0.1:4175',
 		reuseExistingServer: false,
 		timeout: 120_000
