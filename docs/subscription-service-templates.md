@@ -2,6 +2,53 @@
 
 作成日: 2026年6月23日
 
+## 2026年10月27日のサービス・プラン拡充
+
+新規登録時に選べるサービスを20件から26件に増やした。
+既存のNetflix、YouTube Premium、Amazon Prime、U-NEXTに不足していたプランと参考料金を追加した。
+Apple MusicとiCloud+は、日本円の参考料金を公式の現行表示に更新した。
+保存済みのサブスクの料金は変更しない。
+
+料金の確認日は2026年10月27日。
+通常の継続料金を採用し、無料体験や初回割引は含めない。
+年払いは年額全体を登録し、月額換算値は入れない。
+既存の外貨価格は、今回再確認した円価格と確認日を分けて保持する。
+
+### 既存サービスの補完と更新
+
+| サービス        | 追加・更新した参考料金                                                                  | 公式の参照元                                                                                                                                                                                          |
+| --------------- | --------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Netflix         | スタンダード月額1,590円、プレミアム月額2,290円を追加。広告つき月額890円も再確認。       | [プラン表示](https://www.netflix.com/jp-ja/browse/genre/839338)                                                                                                                                       |
+| YouTube Premium | 個人月額1,280円・年額12,800円、ファミリー月額2,280円、学割月額780円。                   | [Google ストアの案内](https://store.google.com/jp/magazine/youtube-premium-trial?hl=ja)                                                                                                               |
+| Amazon Prime    | 通常会員月額600円・年額5,900円。Prime Student月額300円・年額2,950円。                   | [通常会員](https://www.aboutamazon.jp/news/amazon-prime/prime-membership-seven-benefits)、[Prime Student](https://www.aboutamazon.jp/news/amazon-prime/what-are-the-benefits-of-amazon-prime-student) |
+| U-NEXT          | Web登録月額2,189円、アプリ登録月額2,400円。                                             | [料金の説明](https://help.unext.jp/guide/detail/price-description)、[月額プランの料金](https://help.unext.jp/guide/detail/types-of-service-plan)                                                      |
+| Apple Music     | 個人月額1,180円、ファミリー月額1,980円、学生月額680円に更新。                           | [プラン比較](https://www.apple.com/jp/apple-music/)                                                                                                                                                   |
+| iCloud+         | 50GB月額180円、200GB月額540円、2TB月額1,800円、6TB月額5,500円、12TB月額11,000円に更新。 | [日本の料金表](https://support.apple.com/ja-jp/108047)                                                                                                                                                |
+
+### 新しく追加したサービス
+
+| サービス       | 選べるプランと参考料金                                                                                     | 公式の参照元                                                                                                                             |
+| -------------- | ---------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| Hulu           | Web等・ポイント付き月額1,320円、アプリ内課金の改定後月額1,450円、Huluチケット・対象事業者経由月額1,026円。 | [料金と適用日](https://www.hulu.jp/static/legal/act/)                                                                                    |
+| DMM TV         | DMMプレミアムのWeb登録月額550円、App Store・Google Play登録月額650円。                                     | [DMMプレミアムの料金](https://premium.dmm.com/about/)                                                                                    |
+| dアニメストア  | Web登録月額660円。                                                                                         | [利用料の表示](https://animestore.docomo.ne.jp/animestore/CF/specified_commercial_transactions)                                          |
+| Apple TV       | 月額1,200円。                                                                                              | [Apple TVアプリの案内](https://www.apple.com/jp/apple-tv-app/)                                                                           |
+| Claude         | Pro月額20 USD・年額200 USD、Max 5x月額100 USD、Max 20x月額200 USD。                                        | [料金表](https://claude.com/pricing)、[Maxの料金](https://support.claude.com/en/articles/11049741-what-is-the-max-plan?subjects=product) |
+| GitHub Copilot | Pro月額10 USD、Pro+月額39 USD、Max月額100 USD。                                                            | [個人向け料金表](https://github.com/features/copilot/plans)                                                                              |
+
+Web登録、アプリ内課金、パートナー経由で料金が異なるサービスは、別のプランとして選べる。
+Huluのアプリ内課金は料金改定後の金額を候補にしている。
+既存契約への適用日は請求元で異なるため、保存前に契約画面の金額を確認する。
+
+ClaudeとGitHub Copilotは、確認できたUSDの価格を登録した。
+円への為替換算や、未確認の地域別価格は追加しない。
+税や従量課金などで請求額が変わる場合は、利用者が料金欄を修正する。
+新サービスにも「自分で入力」を用意し、候補にない請求額や契約に対応する。
+
+新サービスのアイコン6件は、既存の取得方式に合わせて64×64 PNGで用意した。
+本番反映時には、既存のアイコン同期スクリプトでR2への同期も行う。
+同期元の一覧は `scripts/template-icon-sources.mjs`、画像は `static/template-icons/` にある。
+
 ## 目的
 
 サブスク登録時に代表的なサービスを選択すると、サービス名、標準カテゴリー、候補価格、支払い周期、解約URL、解約方法、解約メモをフォームへ自動入力する。
