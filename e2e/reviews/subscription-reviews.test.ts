@@ -190,6 +190,7 @@ test('[P1] localized review controls support keyboard use without mobile horizon
 	const id = seedSubscription({ name: 'Keyboard and mobile' });
 	await page.goto(`/${appLocale}/subscriptions`);
 	const row = page.getByTestId(`review-open-${id}`);
+	await expect(row).toBeEnabled();
 	await row.focus();
 	await page.keyboard.press('Enter');
 	const keep = page.getByRole('button', {

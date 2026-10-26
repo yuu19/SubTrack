@@ -120,6 +120,8 @@
 		Record<string, ReviewFeedback & { context?: string; billingDate?: string }>
 	>({});
 	let showThirtyDayReviews = $state(false);
+	// SSR content is visible before client handlers are attached. Do not lose an early click.
+	let reviewInteractive = $state(false);
 	let isOnline = $state(true);
 	let isSyncing = $state(false);
 	let syncError = $state<string | null>(null);
@@ -608,6 +610,7 @@
 
 	onMount(() => {
 		isOnline = navigator.onLine;
+		reviewInteractive = true;
 		const checkoutResult = new URL(window.location.href).searchParams.get('checkout');
 		if (checkoutResult === 'success' || checkoutResult === 'cancel') {
 			if (checkoutResult === 'success') {
@@ -778,6 +781,7 @@
 	<section
 		class="bg-card space-y-4 rounded-2xl border p-4 sm:p-5"
 		aria-labelledby="review-list-title"
+		aria-busy={!reviewInteractive || refreshingReviews}
 		data-testid="subscription-review-list"
 		data-window={sevenDayReviews.length > 0 || !showThirtyDayReviews ? '7' : '30'}
 	>
@@ -792,7 +796,7 @@
 			<p class="text-muted-foreground text-sm">{reviewCopy.unavailableList}</p>
 			<Button
 				variant="outline"
-				disabled={!isOnline || refreshingReviews || pendingReviewId !== null}
+				disabled={!reviewInteractive || !isOnline || refreshingReviews || pendingReviewId !== null}
 				onclick={refreshReviews}
 				data-testid="review-list-refresh">{reviewCopy.refresh}</Button
 			>
@@ -804,6 +808,7 @@
 			<Button
 				variant="outline"
 				class="min-h-11 whitespace-normal"
+				disabled={!reviewInteractive}
 				onclick={() => (showThirtyDayReviews = !showThirtyDayReviews)}
 				aria-expanded={showThirtyDayReviews}
 				aria-controls="review-thirty-days"
@@ -828,7 +833,8 @@
 					<li>
 						<button
 							type="button"
-							class="hover:bg-muted/50 focus-visible:ring-ring flex min-h-16 w-full items-center gap-3 rounded-lg p-3 text-left focus-visible:ring-2 focus-visible:outline-none"
+							class="hover:bg-muted/50 focus-visible:ring-ring flex min-h-16 w-full items-center gap-3 rounded-lg p-3 text-left focus-visible:ring-2 focus-visible:outline-none disabled:cursor-wait disabled:opacity-60"
+							disabled={!reviewInteractive}
 							onclick={() => openDetail(sub)}
 							data-testid={`review-open-${sub.id}`}
 						>
