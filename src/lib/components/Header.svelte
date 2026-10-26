@@ -6,7 +6,7 @@
 	import { authClient } from '$lib/auth-client';
 	import { invalidateAll } from '$app/navigation';
 	import { page } from '$app/state';
-	import { resolve } from '$app/paths';
+	import { base } from '$app/paths';
 	import LanguageSwitcher from '$lib/components/LanguageSwitcher.svelte';
 	import { localizeInternalHref } from '$lib/locale-routing';
 	import { m } from '$lib/paraglide/messages.js';
@@ -39,7 +39,7 @@
 	const pathname = $derived(page.url.pathname);
 	const currentLocale = $derived(resolveLocale(getLocale()));
 	const localizedHref = (href: string) =>
-		href.startsWith('#') ? href : localizeInternalHref(resolve(href), currentLocale);
+		href.startsWith('#') ? href : localizeInternalHref(`${base}${href}`, currentLocale);
 	const mainNavItems = $derived([
 		{
 			title: () => m.mobile_nav_subscriptions(),

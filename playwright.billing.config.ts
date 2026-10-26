@@ -46,7 +46,8 @@ export default defineConfig({
 	],
 	webServer: {
 		command: 'pnpm exec vite dev --host 127.0.0.1 --port 4174',
-		url: 'http://127.0.0.1:4174',
+		// globalSetup prepares the DB after webServer becomes ready.
+		url: 'http://127.0.0.1:4174/favicon.png',
 		reuseExistingServer: !process.env.CI,
 		timeout: 120_000
 	}

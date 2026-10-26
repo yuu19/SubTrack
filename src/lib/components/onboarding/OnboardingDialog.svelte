@@ -3,7 +3,7 @@
 	import { cubicIn, cubicOut } from 'svelte/easing';
 	import { prefersReducedMotion } from 'svelte/motion';
 	import { fly } from 'svelte/transition';
-	import { resolve } from '$app/paths';
+	import { base } from '$app/paths';
 	import * as Dialog from '$lib/components/ui/dialog';
 	import Button from '$lib/components/ui/button/button.svelte';
 	import { resolveLocale } from '$lib/locale';
@@ -213,7 +213,7 @@
 	};
 	const locale = $derived(resolveLocale(getLocale()));
 	const copy = $derived(copyByLocale[locale]);
-	const localizedHref = (href: string) => localizeInternalHref(resolve(href), locale);
+	const localizedHref = (href: string) => localizeInternalHref(`${base}${href}`, locale);
 
 	const steps = $derived([
 		{

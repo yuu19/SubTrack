@@ -214,7 +214,8 @@
 			return roundDemoAmount(subscription.amount, subscription.currency);
 		}
 
-		if (subscription.cycle === 'yearly') return roundDemoAmount(subscription.amount, subscription.currency);
+		if (subscription.cycle === 'yearly')
+			return roundDemoAmount(subscription.amount, subscription.currency);
 		if (subscription.cycle === 'quarterly') {
 			return roundDemoAmount(subscription.amount * 4, subscription.currency);
 		}
@@ -461,7 +462,7 @@
 		interactionMessage = copy.operations.selectedEventMessage;
 	}
 
-	function handleCalendarEventSelect(event: DemoCalendarEvent) {
+	function handleCalendarEventSelect(event: Pick<DemoCalendarEvent, 'subscriptionId'>) {
 		selectedCalendarSubscriptionId = event.subscriptionId;
 	}
 
