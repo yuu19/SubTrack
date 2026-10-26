@@ -21,6 +21,8 @@ jobs:
           node-version: 20
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Verify build telemetry and source map settings
+        run: node --test tests/build-config.test.mjs
       - run: pnpm test:auth
       - name: Build Cloudflare bundle with synthetic configuration
         run: pnpm run build
@@ -32,4 +34,5 @@ jobs:
           GOOGLE_CLIENT_ID: isolated-google-client
           GOOGLE_CLIENT_SECRET: isolated-google-secret
           RESEND_API_KEY: re_isolated_build
+          SUBTRACK_LOCAL_CHECK: 'true'
           WRANGLER_SEND_METRICS: 'false'
