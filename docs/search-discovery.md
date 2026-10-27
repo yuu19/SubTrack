@@ -35,6 +35,8 @@ robots.txtは `static/robots.txt` にある。
 
 https://subtracknotify.com/llms.txt から、アプリの概要、主要機能、通知の利用条件、デモの制約、日英の公開ページへのリンクを配信する。
 実ファイルは `static/llms.txt` にあり、DBや認証を通さず取得できる。
+日本語を正しく表示するため、プロジェクト直下の `_headers` で `Content-Type: text/plain; charset=utf-8` を指定する。
+Cloudflare向けビルドでは、この設定が配信ディレクトリの `_headers` にコピーされる。
 
 料金や件数制限などの固定値を重複して記載せず、最新情報があるトップページやFAQへ案内する。
 機能や公開URLを変更した際は、公開ページと合わせて内容を更新する。
