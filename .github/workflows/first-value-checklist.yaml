@@ -38,6 +38,6 @@ jobs:
       - name: Verify checklist progress
         run: pnpm exec vitest run --project server src/lib/onboarding-progress.spec.ts
       - name: Install test browser
-        run: pnpm exec playwright install --with-deps chromium
+        run: pnpm exec playwright install chromium
       - name: Verify onboarding in Japanese and English
         run: pnpm exec playwright test e2e/auth/first-value-checklist.test.ts --project=auth --workers=1
