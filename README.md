@@ -8,6 +8,7 @@ Subscription tracking for costs, upcoming billing dates, and reminders, availabl
 - **公式サイト / Official website**: [subtracknotify.com](https://subtracknotify.com/)
 - **日本語**: [トップページ](https://subtracknotify.com/ja) · [デモ](https://subtracknotify.com/ja/demo) · [FAQ](https://subtracknotify.com/ja/faq)
 - **English**: [Home](https://subtracknotify.com/en) · [Demo](https://subtracknotify.com/en/demo) · [FAQ](https://subtracknotify.com/en/faq)
+- **AI向け案内 / AI-friendly overview**: [llms.txt](https://subtracknotify.com/llms.txt)
 
 デモではアカウントを作成せずに操作を試せます。
 The demo lets you try SubTrack without creating an account.
