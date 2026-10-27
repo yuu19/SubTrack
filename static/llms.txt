@@ -1,0 +1,36 @@
+# SubTrack
+
+> SubTrack is a subscription management web app for tracking recurring costs, upcoming billing dates, and reminders. It is available in Japanese and English.
+
+SubTrackは、契約中のサブスク、料金、次回請求日、通知をまとめて管理するWebアプリです。
+
+- Users record and manage subscriptions, review billing dates in a calendar, and analyze subscription spending.
+- Reminders are available by email and Web Push. Web Push requires sign-in, a supported browser, and notification permission. On iPhone and iPad, open SubTrack as a Home Screen web app; see the notification guides for current requirements.
+- CSV import/export and some other features depend on the user's plan. Consult the relevant homepage and FAQ for current pricing, limits, and plan terms.
+- The public demo uses sample data. Demo interactions do not save records to a real account, send notifications, register Push subscriptions, or process payments.
+- Service-template prices are reference values for data entry. Users should confirm them against their actual bills.
+
+## 日本語の公開ページ
+
+- [公式サイト](https://subtracknotify.com/ja): アプリの概要、機能、現在のプランと料金。
+- [デモ](https://subtracknotify.com/ja/demo): アカウントを作成せずに試せるサンプルデータの操作画面。
+- [よくある質問](https://subtracknotify.com/ja/faq): プラン、通知、データ、利用環境に関する案内。
+- [Push通知の設定](https://subtracknotify.com/ja/push): 対応環境、通知許可、ホーム画面への追加、トラブル時の確認手順。
+- [利用規約](https://subtracknotify.com/ja/terms): サービスの利用条件。
+- [プライバシーポリシー](https://subtracknotify.com/ja/privacy): 個人情報と利用データの取り扱い。
+- [特定商取引法に基づく表記](https://subtracknotify.com/ja/commercial-transactions): 有料サービスの取引条件と事業者情報。
+
+## English public pages
+
+- [Official website](https://subtracknotify.com/en): Product overview, features, and current plans and pricing.
+- [Demo](https://subtracknotify.com/en/demo): An interactive sample-data experience that does not require an account.
+- [FAQ](https://subtracknotify.com/en/faq): Plans, reminders, data, and supported usage environments.
+- [Push notification guide](https://subtracknotify.com/en/push): Platform requirements, permissions, Home Screen setup, and troubleshooting.
+- [Terms of service](https://subtracknotify.com/en/terms): Conditions for using the service.
+- [Privacy policy](https://subtracknotify.com/en/privacy): How personal information and usage data are handled.
+- [Commercial transactions disclosure](https://subtracknotify.com/en/commercial-transactions): Paid-service transaction terms and business information.
+
+## Optional
+
+- [Sitemap](https://subtracknotify.com/sitemap.xml): Canonical Japanese and English public URLs and language alternatives.
+- [Source repository](https://github.com/yuu19/SubTrack): Source code and development information.

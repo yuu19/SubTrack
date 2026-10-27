@@ -31,6 +31,17 @@ Cloudflareが配信時に付ける説明文とは別に、アプリ側の宣言�
 公開ページの追加・削除時にはサイトマップも更新し、対象URLと言語の対応関係をテストする。
 robots.txtは `static/robots.txt` にある。
 
+## AI向けの公開情報
+
+https://subtracknotify.com/llms.txt から、アプリの概要、主要機能、通知の利用条件、デモの制約、日英の公開ページへのリンクを配信する。
+実ファイルは `static/llms.txt` にあり、DBや認証を通さず取得できる。
+
+料金や件数制限などの固定値を重複して記載せず、最新情報があるトップページやFAQへ案内する。
+機能や公開URLを変更した際は、公開ページと合わせて内容を更新する。
+llms.txtはAI向けの情報案内であり、robots.txtのアクセス許可やサイトマップの代わりにはしない。
+
+形式は [llms.txtの仕様提案](https://llmstxt.org/) を参照する。
+
 ## Search Consoleへの送信
 
 1. subtracknotify.comの所有者または管理権限を持つGoogleアカウントでSearch Consoleにログインする。
