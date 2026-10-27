@@ -26,15 +26,16 @@ SubTrackの公開ページを検索エンジンが見つけられるよう、サ
 robots.txtでは一般のクローラーによるアクセスを許可し、サイトマップの絶対URLを案内する。
 Cloudflareが配信時に付ける説明文とは別に、アプリ側の宣言を管理する。
 
-実装は `src/routes/sitemap.xml/+server.ts` と `src/lib/server/sitemap.ts` にある。
-サイトマップはビルド時に生成し、アクセスのたびにDBへ問い合わせる処理を必要としない。
+サイトマップは `static/sitemap.xml` にある。
+固定の公開URLを静的XMLとして配信し、DBや認証処理の状態に依存せず取得できるようにする。
+公開ページの追加・削除時にはサイトマップも更新し、対象URLと言語の対応関係をテストする。
 robots.txtは `static/robots.txt` にある。
 
 ## Search Consoleへの送信
 
 1. subtracknotify.comの所有者または管理権限を持つGoogleアカウントでSearch Consoleにログインする。
 2. 対象のドメインプロパティ、または `https://subtracknotify.com/` のURLプレフィックスプロパティを選ぶ。
-3. 「サイトマップ」を開き、`https://subtracknotify.com/sitemap.xml` を送信する。
+3. 「サイトマップ」を開き、`https://subtracknotify.com/sitemap.xml` を送信する。入力欄の前に `https://subtracknotify.com/` が表示される場合は、`sitemap.xml` だけを入力する。
 4. 送信したURLと処理結果を確認する。
 
 送信できたことと、Googleが取得・インデックス登録したことは別の状態として確認する。

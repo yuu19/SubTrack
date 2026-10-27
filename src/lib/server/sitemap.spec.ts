@@ -1,10 +1,12 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { buildSitemap } from './sitemap';
+
+const readSitemap = () =>
+	readFileSync(new URL('../../../static/sitemap.xml', import.meta.url), 'utf8');
 
 describe('public sitemap', () => {
 	it('lists both canonical languages for every public page', () => {
-		const xml = buildSitemap();
+		const xml = readSitemap();
 		const locations = [...xml.matchAll(/<loc>(.*?)<\/loc>/g)].map((match) => match[1]);
 		expect(locations).toHaveLength(14);
 		expect(new Set(locations).size).toBe(14);
@@ -27,7 +29,7 @@ describe('public sitemap', () => {
 	});
 
 	it('includes reciprocal language alternatives for each page', () => {
-		const xml = buildSitemap();
+		const xml = readSitemap();
 		expect(xml).toContain('xmlns:xhtml="http://www.w3.org/1999/xhtml"');
 		const entries = [...xml.matchAll(/<url>([\s\S]*?)<\/url>/g)];
 		expect(entries).toHaveLength(14);

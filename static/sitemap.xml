@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <url>
+    <loc>https://subtracknotify.com/ja</loc>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://subtracknotify.com/ja" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://subtracknotify.com/en" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://subtracknotify.com/ja" />
+  </url>
+  <url>
+    <loc>https://subtracknotify.com/en</loc>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://subtracknotify.com/ja" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://subtracknotify.com/en" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://subtracknotify.com/ja" />
+  </url>
+  <url>
+    <loc>https://subtracknotify.com/ja/demo</loc>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://subtracknotify.com/ja/demo" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://subtracknotify.com/en/demo" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://subtracknotify.com/ja/demo" />
+  </url>
+  <url>
+    <loc>https://subtracknotify.com/en/demo</loc>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://subtracknotify.com/ja/demo" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://subtracknotify.com/en/demo" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://subtracknotify.com/ja/demo" />
+  </url>
+  <url>
+    <loc>https://subtracknotify.com/ja/faq</loc>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://subtracknotify.com/ja/faq" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://subtracknotify.com/en/faq" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://subtracknotify.com/ja/faq" />
+  </url>
+  <url>
+    <loc>https://subtracknotify.com/en/faq</loc>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://subtracknotify.com/ja/faq" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://subtracknotify.com/en/faq" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://subtracknotify.com/ja/faq" />
+  </url>
+  <url>
+    <loc>https://subtracknotify.com/ja/push</loc>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://subtracknotify.com/ja/push" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://subtracknotify.com/en/push" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://subtracknotify.com/ja/push" />
+  </url>
+  <url>
+    <loc>https://subtracknotify.com/en/push</loc>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://subtracknotify.com/ja/push" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://subtracknotify.com/en/push" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://subtracknotify.com/ja/push" />
+  </url>
+  <url>
+    <loc>https://subtracknotify.com/ja/terms</loc>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://subtracknotify.com/ja/terms" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://subtracknotify.com/en/terms" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://subtracknotify.com/ja/terms" />
+  </url>
+  <url>
+    <loc>https://subtracknotify.com/en/terms</loc>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://subtracknotify.com/ja/terms" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://subtracknotify.com/en/terms" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://subtracknotify.com/ja/terms" />
+  </url>
+  <url>
+    <loc>https://subtracknotify.com/ja/privacy</loc>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://subtracknotify.com/ja/privacy" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://subtracknotify.com/en/privacy" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://subtracknotify.com/ja/privacy" />
+  </url>
+  <url>
+    <loc>https://subtracknotify.com/en/privacy</loc>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://subtracknotify.com/ja/privacy" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://subtracknotify.com/en/privacy" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://subtracknotify.com/ja/privacy" />
+  </url>
+  <url>
+    <loc>https://subtracknotify.com/ja/commercial-transactions</loc>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://subtracknotify.com/ja/commercial-transactions" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://subtracknotify.com/en/commercial-transactions" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://subtracknotify.com/ja/commercial-transactions" />
+  </url>
+  <url>
+    <loc>https://subtracknotify.com/en/commercial-transactions</loc>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://subtracknotify.com/ja/commercial-transactions" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://subtracknotify.com/en/commercial-transactions" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://subtracknotify.com/ja/commercial-transactions" />
+  </url>
+</urlset>
