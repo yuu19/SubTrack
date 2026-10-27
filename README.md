@@ -1,4 +1,16 @@
-# サブスク管理アプリ
+# SubTrack
+
+契約中のサブスク、料金、次回請求日、通知をまとめて管理するアプリです。
+日本語・英語に対応しています。
+
+Subscription tracking for costs, upcoming billing dates, and reminders, available in Japanese and English.
+
+- **公式サイト / Official website**: [subtracknotify.com](https://subtracknotify.com/)
+- **日本語**: [トップページ](https://subtracknotify.com/ja) · [デモ](https://subtracknotify.com/ja/demo) · [FAQ](https://subtracknotify.com/ja/faq)
+- **English**: [Home](https://subtracknotify.com/en) · [Demo](https://subtracknotify.com/en/demo) · [FAQ](https://subtracknotify.com/en/faq)
+
+デモではアカウントを作成せずに操作を試せます。
+The demo lets you try SubTrack without creating an account.
 
 ## 必要な商品と価格を作成
 
