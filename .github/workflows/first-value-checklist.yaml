@@ -1,0 +1,43 @@
+name: First value checklist regression
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/lib/components/onboarding/**'
+      - 'src/lib/onboarding-progress*'
+      - 'src/routes/(storeFront)/subscriptions/**'
+      - 'src/routes/(storeFront)/me/settings/**'
+      - 'e2e/**'
+      - 'playwright.config.ts'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/first-value-checklist.yaml'
+
+permissions:
+  contents: read
+
+jobs:
+  first-value:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      SUBTRACK_LOCAL_CHECK: 'true'
+      WRANGLER_SEND_METRICS: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.34.5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec svelte-kit sync
+      - name: Verify checklist progress
+        run: pnpm exec vitest run --project server src/lib/onboarding-progress.spec.ts
+      - name: Install test browser
+        run: pnpm exec playwright install chromium
+      - name: Verify onboarding in Japanese and English
+        run: pnpm exec playwright test e2e/auth/first-value-checklist.test.ts --project=auth --workers=1

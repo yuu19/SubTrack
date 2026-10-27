@@ -54,7 +54,8 @@ export default defineConfig({
 	],
 	webServer: {
 		command: `E2E_DB_PATH=${e2eDbPath} E2E_AUTH_DISABLE_STRIPE=true BETTER_AUTH_SECRET=e2e-secret-for-subtrack-playwright pnpm exec vite dev --host 127.0.0.1 --port 4173`,
-		url: 'http://127.0.0.1:4173',
+		// Probe a static asset: globalSetup creates the isolated DB after server readiness.
+		url: 'http://127.0.0.1:4173/favicon.png',
 		reuseExistingServer: !process.env.CI,
 		timeout: 120_000
 	}

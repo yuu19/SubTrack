@@ -480,7 +480,7 @@
 		</div>
 	</section>
 
-	<section class={sectionDividerClass}>
+	<section id="notification-settings" class={sectionDividerClass}>
 		<div class={sectionGridClass}>
 			<div class={sectionHeaderClass}>
 				<h2 class="text-muted-foreground text-sm font-semibold tracking-wide uppercase">
