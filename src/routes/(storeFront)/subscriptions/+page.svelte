@@ -1,4 +1,5 @@
 <script lang="ts">
+	import FirstValueChecklist from '$lib/components/onboarding/FirstValueChecklist.svelte';
 	import AddSubscription from '$lib/components/modals/AddSubscription.svelte';
 	import EditSubscription from '$lib/components/modals/EditSubscription.svelte';
 	import PushNotificationControl from '$lib/components/push/PushNotificationControl.svelte';
@@ -517,6 +518,25 @@
 			{/if}
 		</div>
 	</header>
+	{#if page.data.user}
+		{#key page.data.user.id}
+			<FirstValueChecklist
+				userId={page.data.user.id}
+				subscriptions={activeSubscriptions}
+				locale={currentLocale}
+				notificationMethod={userConfig.current.notificationMethod}
+				settingsHref={localizeInternalHref(
+					`${base}/me/settings#notification-settings`,
+					currentLocale
+				)}
+				onAdd={() => (addSubscriptionOpen = true)}
+				onReview={(id) => {
+					const subscription = subscriptions.find((item) => item.id === id);
+					if (subscription) openDetail(subscription);
+				}}
+			/>
+		{/key}
+	{/if}
 	<PushNotificationControl
 		vapidPublicKey={data.vapidPublicKey}
 		initialSubscribed={data.hasPushSubscription}
