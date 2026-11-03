@@ -19,7 +19,15 @@ import {
 	defaultSubscriptionIconType,
 	defaultSubscriptionIconValue
 } from '../../subscription-icons';
-import { sqliteTable, text, integer, real, index, uniqueIndex } from 'drizzle-orm/sqlite-core';
+import {
+	sqliteTable,
+	text,
+	integer,
+	real,
+	index,
+	uniqueIndex,
+	check
+} from 'drizzle-orm/sqlite-core';
 export const timestamps = {
 	updatedAt: integer('updated_at', {
 		mode: 'timestamp_ms'
@@ -305,6 +313,8 @@ export const subscriptionPaymentMethodTable = sqliteTable(
 );
 
 export const trackedSubscriptionTable = sqliteTable('tracked_subscription', {
+	// Only billing terms/status changes advance this; daily date refreshes do not.
+	reviewRevision: integer('review_revision').notNull().default(0),
 	id: integer('id').primaryKey(),
 	userId: text('user_id').references(() => user.id, { onDelete: 'set null' }),
 	categoryId: integer('category_id').references(() => subscriptionCategoryTable.id, {
@@ -344,6 +354,39 @@ export const trackedSubscriptionTable = sqliteTable('tracked_subscription', {
 	tags: array<string>('tags').notNull(),
 	...timestamps
 });
+
+export const subscriptionReviewTable = sqliteTable(
+	'subscription_review',
+	{
+		id: integer('id').primaryKey(),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id, { onDelete: 'cascade' }),
+		subscriptionId: integer('subscription_id')
+			.notNull()
+			.references(() => trackedSubscriptionTable.id, { onDelete: 'cascade' }),
+		billingDate: text('billing_date').notNull(),
+		billingContext: text('billing_context').notNull(),
+		// A null decision is an undo tombstone, preserving stale-request protection.
+		decision: text('decision', { enum: ['keep', 'review'] }),
+		reviewedAt: integer('reviewed_at').notNull()
+	},
+	(table) => ({
+		cycleIdx: uniqueIndex('subscription_review_cycle_idx').on(
+			table.subscriptionId,
+			table.billingDate
+		),
+		userIdx: index('subscription_review_user_idx').on(table.userId),
+		decisionCheck: check(
+			'subscription_review_decision_check',
+			sql`${table.decision} IS NULL OR ${table.decision} IN ('keep', 'review')`
+		),
+		dateCheck: check(
+			'subscription_review_date_check',
+			sql`length(${table.billingDate}) = 10 AND ${table.billingDate} GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]'`
+		)
+	})
+);
 
 export const pushSubscriptionTable = sqliteTable(
 	'push_subscription',
