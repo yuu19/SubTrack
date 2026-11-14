@@ -83,7 +83,7 @@
 		"vitest": "^4.0.10",
 		"vitest-browser-svelte": "^2.0.1",
 		"wrangler": "^4.53.0",
-		"zod": "^4.3.6"
+		"zod": "^4.6.7"
 	},
 	"dependencies": {
 		"@better-auth/stripe": "1.6.22",
